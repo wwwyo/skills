@@ -53,6 +53,7 @@ skill の検索・追加・作成・改善・更新・削除は `skillctrl` に�
 - 手書き skill（`memo` `wiki` `project-setup` 等）は upstream lock に載らず、受理 hash の対象外
 - PR では [skillctrl](.github/workflows/skillctrl.md) が hash drift のときだけ AI に intent 適合を審査させる。土曜 09:00 JST の [skillctrl-update](.github/workflows/skillctrl-update.md) が upstream 更新を取り込み draft PR を作る。AI engine は pi / OpenCode Go を固定し、repo secret `OPENCODE_API_KEY` を使う
 - 独立 skill として残すかの基準は「その skill だけを目的に起動する場面があるか」。無ければ既存 skill の reference か節にする
+- 運用ルールの記載先は、情報の発生源（不具合の根拠・制約の由来）と適用時（操作を行う skill）で分ける。発生源にだけ書くと使う側が見ず、両方に全文書くと drift する
 - skill・reference の rename・移動・削除では、path だけでなく link の表示名・anchor も repo 全体と dotfiles・wwwyo/me を grep して残存参照を消す
 - gh-aw の `.md` を変えたら `gh aw compile` の生成物と、`uses:` が変われば `.github/workflows/actions.lock`（`gh-actions-lock --no-narrow`）も同じ変更に含める（[gh-aw](.agents/skills/dev-env/references/gh-aw.md)）
 
