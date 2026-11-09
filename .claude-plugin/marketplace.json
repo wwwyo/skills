@@ -1,0 +1,64 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "wwwyo",
+  "description": "wwwyo の agent skills。core は cloud（claude.ai）と local の両方、local は手元の開発環境専用",
+  "owner": {
+    "name": "wwwyo",
+    "url": "https://github.com/wwwyo"
+  },
+  "plugins": [
+    {
+      "name": "core",
+      "source": "./",
+      "strict": false,
+      "description": "環境に依存しない汎用 skill。claude.ai アカウントと local の両方で使う",
+      "skills": [
+        "./.agents/skills/agent-friendly-cli",
+        "./.agents/skills/ce-simplify-code",
+        "./.agents/skills/design-md",
+        "./.agents/skills/document",
+        "./.agents/skills/domain-modeling",
+        "./.agents/skills/e2e",
+        "./.agents/skills/grill-with-docs",
+        "./.agents/skills/grilling",
+        "./.agents/skills/hallmark",
+        "./.agents/skills/implement",
+        "./.agents/skills/japanese-tech-writing",
+        "./.agents/skills/learn",
+        "./.agents/skills/media-generation",
+        "./.agents/skills/memo",
+        "./.agents/skills/pr",
+        "./.agents/skills/prd",
+        "./.agents/skills/project-setup",
+        "./.agents/skills/prototype",
+        "./.agents/skills/reporting",
+        "./.agents/skills/skill-structure",
+        "./.agents/skills/solo-product",
+        "./.agents/skills/wiki"
+      ]
+    },
+    {
+      "name": "local",
+      "source": "./",
+      "strict": false,
+      "description": "手元の開発環境（Orca・dotfiles・mise・ローカル CLI）を前提にする skill。local 専用",
+      "skills": [
+        "./.agents/skills/agent-browser",
+        "./.agents/skills/apple-container",
+        "./.agents/skills/cloudflare",
+        "./.agents/skills/delegate",
+        "./.agents/skills/dev-env",
+        "./.agents/skills/gh-stack",
+        "./.agents/skills/ingest-to-markdown",
+        "./.agents/skills/langfuse",
+        "./.agents/skills/orca-cli",
+        "./.agents/skills/orca-computer-use",
+        "./.agents/skills/orchestration",
+        "./.agents/skills/pr-auto-merge",
+        "./.agents/skills/secret-env",
+        "./.agents/skills/skillctrl",
+        "./.agents/skills/typesafe-ai"
+      ]
+    }
+  ]
+}

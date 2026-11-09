@@ -1,0 +1,27 @@
+{
+  "name": "local",
+  "version": "0.1.0",
+  "description": "手元の開発環境（Orca・dotfiles・mise・ローカル CLI）を前提にする skill。local 専用",
+  "author": {
+    "name": "wwwyo",
+    "url": "https://github.com/wwwyo"
+  },
+  "repository": "https://github.com/wwwyo/skills",
+  "skills": [
+    "./skills/agent-browser",
+    "./skills/apple-container",
+    "./skills/cloudflare",
+    "./skills/delegate",
+    "./skills/dev-env",
+    "./skills/gh-stack",
+    "./skills/ingest-to-markdown",
+    "./skills/langfuse",
+    "./skills/orca-cli",
+    "./skills/orca-computer-use",
+    "./skills/orchestration",
+    "./skills/pr-auto-merge",
+    "./skills/secret-env",
+    "./skills/skillctrl",
+    "./skills/typesafe-ai"
+  ]
+}
