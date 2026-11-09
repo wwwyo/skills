@@ -3,9 +3,6 @@
 # Docs: https://gh.io/actions-lockfile
 version: 'v0.0.3'
 workflows:
-    '.github/workflows/pullfrog.yml':
-        - 'actions/checkout@v7'
-        - 'pullfrog/pullfrog@v0'
     '.github/workflows/skillctrl-update.lock.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
         - 'actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510'
@@ -98,8 +95,3 @@ dependencies:
         commit: 'sha1-c2a87611a18de5b3828c5652fe268e992400cb5c'
         owner_id: 216188
         repo_id: 738284564
-    'pullfrog/pullfrog@v0':
-        ref: 'v0'
-        commit: 'sha1-ad4283a862b8377cb525a0f5bf30f17c023b18ea'
-        owner_id: 223181266
-        repo_id: 1032749534
