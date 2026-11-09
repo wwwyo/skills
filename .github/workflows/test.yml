@@ -63,7 +63,7 @@ jobs:
               selected_blocks.append(matching[0])
           Path('/tmp/gh-aw/skillctrl-cli/mise.lock').write_text(''.join(selected_blocks))
           PYTHON
-      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c
         env:
           MISE_GLOBAL_CONFIG_FILE: /tmp/gh-aw/skillctrl-cli/global.toml
           MISE_DATA_DIR: /tmp/gh-aw/skillctrl-cli/data

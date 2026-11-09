@@ -547,7 +547,7 @@ jobs:
       - env:
           MISE_DATA_DIR: /tmp/gh-aw/skillctrl-cli/data
           MISE_GLOBAL_CONFIG_FILE: /tmp/gh-aw/skillctrl-cli/global.toml
-        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c
         with:
           add_shims_to_path: false
           cache: false
@@ -574,7 +574,7 @@ jobs:
           SKILL_PLAN: ${{ needs.select.outputs.plan }}
         name: Prepare immutable selection and trusted validator
         run: "mkdir -p /tmp/gh-aw/skillctrl/pi\nprintf '%s' \"$SKILL_PLAN\" > /tmp/gh-aw/skillctrl/plan.json\nprintf '%s' \"$CHECKER_SOURCE\" > /tmp/gh-aw/skillctrl/source.txt\ngit show \"$CHECKER_SOURCE:.github/pi/models.json\" > /tmp/gh-aw/skillctrl/pi/models.json\npython3 - <<'PYTHON'\nimport json, os, subprocess, tomllib\nfrom pathlib import Path\nsource = os.environ['CHECKER_SOURCE']\nconfig = tomllib.loads(subprocess.check_output(['git', 'show', source + ':mise.toml'], text=True))\ntools = {'node': config['tools']['node'],\n         'npm:@earendil-works/pi-coding-agent': config['tools']['npm:@earendil-works/pi-coding-agent']}\nlines = ['[tools]'] + [json.dumps(k) + ' = ' + json.dumps(v) for k, v in tools.items()]\nlines += ['', '[settings]']\nfor name in ['pin', 'minimum_release_age']:\n    lines.append(name + ' = ' + json.dumps(config['settings'][name]))\nPath('/tmp/gh-aw/skillctrl/mise.toml').write_text('\\n'.join(lines) + '\\n')\nPYTHON\n"
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c
         with:
           add_shims_to_path: false
           cache: false
@@ -1306,7 +1306,7 @@ jobs:
           PR_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_REF: ${{ github.event.pull_request.head.ref }}
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c
         env:
           CHECKER_SOURCE: ${{ github.event.pull_request.base.sha || github.sha }}
           CI_DIR: /tmp/skillctrl
@@ -1976,7 +1976,7 @@ jobs:
               selected_blocks.append(matching[0])
           Path('/tmp/gh-aw/skillctrl-cli/mise.lock').write_text(''.join(selected_blocks))
           PYTHON
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c
         env:
           MISE_DATA_DIR: /tmp/gh-aw/skillctrl-cli/data
           MISE_GLOBAL_CONFIG_FILE: /tmp/gh-aw/skillctrl-cli/global.toml
@@ -2250,7 +2250,7 @@ jobs:
               selected_blocks.append(matching[0])
           Path('/tmp/gh-aw/skillctrl-cli/mise.lock').write_text(''.join(selected_blocks))
           PYTHON
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c
         env:
           MISE_DATA_DIR: /tmp/gh-aw/skillctrl-cli/data
           MISE_GLOBAL_CONFIG_FILE: /tmp/gh-aw/skillctrl-cli/global.toml
