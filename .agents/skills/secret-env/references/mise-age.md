@@ -8,11 +8,7 @@
 
 ## team 共有の repo
 
-age の暗号文は暗号化時の recipient しか復号できない。自分の鍵だけで暗号化した値を team repo の `mise.toml` に commit すると、他のメンバーには読めない文字列になり env にも入らない。team repo には age の暗号文を commit しない。
-
-- 自分だけが使う secret は、その repo の `mise.local.toml` に自分の鍵で暗号化して置く。dotfiles の global gitignore が `mise.local.toml` を除外するので、どの repo でも commit されない
-- team がすでに secret manager（1Password・Doppler・Vault・GitHub Actions secrets・Cloudflare の secrets 等）を使っているならそれに従い、repo には変数名と取得方法だけを書く。手元で使う分は `mise.local.toml` に置く
-- 例外としてメンバー全員の公開鍵へ暗号化して commit する（`--age-recipient` / `--age-ssh-recipient` は複数指定できる）のは、メンバーが少なく固定で、全員が mise + age の運用に合意したときだけ。メンバーの増減で全 secret の再暗号化が要り、抜けた人は git 履歴の古い暗号文を読めるので secret の rotate も要る。CI 用の鍵も recipient に入れて管理する。mise の age 暗号化は experimental 扱い（2026-11 時点）
+mise の age 暗号文は暗号化時の recipient しか開けず、個人の鍵で暗号化した値を team repo に commit すると他のメンバーには読めない。team 共有 repo の secret は fnox + age で扱う（[team-repo-fnox.md](team-repo-fnox.md)）。自分だけが使う値は、その repo の `mise.local.toml`（global gitignore で除外）に自分の鍵で暗号化して置く。
 
 ## 学び
 
