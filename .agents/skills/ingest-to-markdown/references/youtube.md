@@ -2,7 +2,7 @@ Paths in commands are relative to the skill root (the directory containing `SKIL
 
 ## YouTube の取り込み
 
-YouTube 動画は anydoc の対象外(バイナリでもドキュメントでもない)なので、専用スクリプトで字幕を Markdown 化する。字幕が無い動画は yt-dlp で音声だけ落として[Anarlog 文字起こし](anarlog.md)に回す。
+YouTube 動画は anydoc の対象外(バイナリでもドキュメントでもない)なので、専用スクリプトで字幕を Markdown 化する。字幕が無い動画はこの経路では取り込めない。
 
 ```bash
 <skill_dir>/scripts/ingest-youtube.sh <youtube-url> [output_dir] [options]
