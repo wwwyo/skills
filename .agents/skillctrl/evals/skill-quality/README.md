@@ -55,9 +55,9 @@ current単体の82依頼では、この依頼の誤発火も含めて上表を�
 
 ## 方法と限界
 
-- 現行の `triggers.json` はsecret-envを含む26 skillを扱う72依頼。
+- 現行の `triggers.json` はsecret-envを含む25 skillを扱う70依頼。
   タスク・scheduled automationの実運用は検証しない。
-- 全34 skillをGit archiveで固定し、Pi自身のloaderで読み込みを確認する。
+- 全33 skillをGit archiveで固定し、Pi自身のloaderで読み込みを確認する。
   user queryを加工せず、対象snapshotのSKILL.mdを実際に読めたことを発火の証拠にする。
   自己申告・失敗したtool要求は証拠にせず、別treeのskillを読んだ実行は無効にする。
 - 新しいsessionでcontext files・自動extensions・prompt templates・default skill discoveryを
