@@ -38,7 +38,7 @@ s=fnox-REPO a=age-key F=$(mise which fnox)  # REPO を repo 名に変える
 if security find-generic-password -s "$s" -a "$a" >/dev/null 2>&1; then echo "exists: $s/$a"; else
   d=$(mktemp -d) && age-keygen -o "$d/k" 2>/dev/null && age-keygen -y "$d/k" &&
   printf '[providers.keychain]\ntype = "keychain"\nservice = "%s"\n' "$s" > "$d/fnox.toml" &&
-  (cd "$d" && "$F" set K --provider keychain --key-name "$a" < k >/dev/null); rm -rf "$d"
+  (cd "$d" && grep '^AGE-SECRET-KEY' k | "$F" set K --provider keychain --key-name "$a" >/dev/null); rm -rf "$d"
 fi
 ```
 
