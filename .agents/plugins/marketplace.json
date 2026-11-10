@@ -1,0 +1,32 @@
+{
+  "name": "wwwyo",
+  "interface": {
+    "displayName": "wwwyo skills"
+  },
+  "plugins": [
+    {
+      "name": "core",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "local",
+      "source": {
+        "source": "local",
+        "path": "./.agents"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

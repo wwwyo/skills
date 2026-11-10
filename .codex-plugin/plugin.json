@@ -1,0 +1,34 @@
+{
+  "name": "core",
+  "version": "0.1.0",
+  "description": "環境に依存しない汎用 skill。claude.ai アカウントと local の両方で使う",
+  "author": {
+    "name": "wwwyo",
+    "url": "https://github.com/wwwyo"
+  },
+  "repository": "https://github.com/wwwyo/skills",
+  "skills": [
+    "./.agents/skills/agent-friendly-cli",
+    "./.agents/skills/ce-simplify-code",
+    "./.agents/skills/design-md",
+    "./.agents/skills/document",
+    "./.agents/skills/domain-modeling",
+    "./.agents/skills/e2e",
+    "./.agents/skills/grill-with-docs",
+    "./.agents/skills/grilling",
+    "./.agents/skills/hallmark",
+    "./.agents/skills/implement",
+    "./.agents/skills/japanese-tech-writing",
+    "./.agents/skills/learn",
+    "./.agents/skills/media-generation",
+    "./.agents/skills/memo",
+    "./.agents/skills/pr",
+    "./.agents/skills/prd",
+    "./.agents/skills/project-setup",
+    "./.agents/skills/prototype",
+    "./.agents/skills/reporting",
+    "./.agents/skills/skill-structure",
+    "./.agents/skills/solo-product",
+    "./.agents/skills/wiki"
+  ]
+}
