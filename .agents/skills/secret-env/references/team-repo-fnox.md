@@ -31,21 +31,30 @@ recipients = [
 identity = { provider = "keychain", value = "age-key" }
 ```
 
-- 鍵の作成（macOS。公開鍵だけが表示される）。`age-keygen -o` は既存ファイルに書かないので、`mktemp` ではなく `mktemp -d` の中に作る:
-  `d=$(mktemp -d) && age-keygen -o "$d/k" 2>/dev/null && age-keygen -y "$d/k" && security add-generic-password -U -s fnox-<repo> -a age-key -w "$(grep '^AGE-SECRET-KEY' "$d/k")"; rm -rf "$d"`
-- `fnox set X --provider keychain` で鍵を入れると `fnox.toml` の `[secrets]` に記録が増え、以後 `fnox exec` の env に秘密鍵が入る。鍵は `security` で直接入れる
+- 鍵の作成（macOS。repo の中で実行し、公開鍵だけが表示される）。既に項目があれば作らずに止める（上書きすると既存の暗号文を開けなくなる）。秘密鍵を `security add-generic-password -w <値>` に渡すと process 一覧に見えるので、一時 dir の fnox 設定から keychain provider に stdin で書く。`age-keygen -o` は既存ファイルに書かないので `mktemp -d` の中に作る:
+
+```sh
+s=fnox-REPO a=age-key F=$(mise which fnox)  # REPO を repo 名に変える
+if security find-generic-password -s "$s" -a "$a" >/dev/null 2>&1; then echo "exists: $s/$a"; else
+  d=$(mktemp -d) && age-keygen -o "$d/k" 2>/dev/null && age-keygen -y "$d/k" &&
+  printf '[providers.keychain]\ntype = "keychain"\nservice = "%s"\n' "$s" > "$d/fnox.toml" &&
+  (cd "$d" && "$F" set K --provider keychain --key-name "$a" < k >/dev/null); rm -rf "$d"
+fi
+```
+
+- repo の中で `fnox set X --provider keychain` を実行すると repo の `fnox.toml` の `[secrets]` に記録が増え、以後 `fnox exec` の env に秘密鍵が入る。上のように一時 dir の設定で書く
 - AI agent（cloud 環境）・CI には専用の鍵を 1 本ずつ作って recipients に足し、秘密鍵を環境変数 `FNOX_AGE_KEY` で渡す。`FNOX_AGE_KEY` は `identity` より優先されるので、Keychain の無い Linux でも開ける。手元の Keychain には別 account（`age-key-ai` など）で保管し、`security find-generic-password -s fnox-<repo> -a age-key-ai -w | tr -d '\n' | pbcopy` で画面・履歴に出さずに貼る
 - cloud 環境に fnox を入れるときは mise を版固定で入れて `mise.toml` の pin に従わせる（`curl -fsSL https://mise.run | MISE_VERSION=vX.Y.Z sh` → `mise trust --yes && mise install`）。setup script に fnox の版・sha を別に書くと二重管理になる
 
 ## 使い方
 
 - 実行は `fnox exec --if-missing error -- <command>`。`--if-missing error` が無いと、復号できない値は警告だけで env に入らないまま command が走る
-- `fnox get`・`fnox export`・`printenv` で値を画面や log に出さない。値の登録は `fnox set <KEY>` の hidden prompt か stdin（引数は shell 履歴に残る）。既存の値を移すときは `mise -C ~ exec -- printenv KEY | fnox set KEY` で画面に出さずに流す
+- `fnox get`・`fnox export`・`printenv` で値を画面や log に出さない。値の登録は `fnox set <KEY>` の hidden prompt か stdin（引数は shell 履歴に残る）。既存の値を移すときは、取り出しの失敗で空の値を書かないよう、取り出して確かめてから渡す: `v=$(mise -C ~ exec -- printenv KEY) && [ -n "$v" ] && printf %s "$v" | fnox set KEY; unset v`
 - 移行の照合は値を出さず、`printf %s "$KEY" | shasum -a 256 | cut -c1-8` を両側で比べる
 
 ## メンバー・agent の増減
 
-- 足す: その人（agent）の公開鍵を recipients に 1 行足し、鍵を持つ人が `fnox reencrypt -p age` で暗号文を作り直す（新しい宛先の行は file key を知らないと作れない）
+- 足す: その人（agent）の公開鍵を recipients に 1 行足し、鍵を持つ人が `fnox reencrypt -p age` で暗号文を作り直す（新しい宛先の行は file key を知らないと作れない）。`fnox reencrypt` は今の profile だけを作り直すので、profile を分けている repo では `-P <profile>` で profile ごとに繰り返す
 - 外す: 行を消して `fnox reencrypt -p age`、agent なら環境変数 `FNOX_AGE_KEY` も消す。git 履歴の古い暗号文はまだ開けるので、値そのものを rotate する
 - Keychain の項目名を変えたときは `fnox.toml` の `service` / `value` を直すだけで、暗号文は作り直さない（暗号文には鍵の置き場所の情報が無い）
 
