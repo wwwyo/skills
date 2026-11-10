@@ -20,12 +20,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/cloudflare/skills.git"
     },
-    "computer-use": {
-      "skillPath": "skills/computer-use/SKILL.md",
-      "source": "stablyai/orca",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/stablyai/orca.git"
-    },
     "domain-modeling": {
       "computedHash": "b3eb40152b81f0c98fd2095a023c019452dbdce56f7540cc67fece2972db8369",
       "pluginName": "mattpocock-skills",
@@ -69,18 +63,6 @@
       "source": "langfuse/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/langfuse/skills.git"
-    },
-    "orca-cli": {
-      "skillPath": "skills/orca-cli/SKILL.md",
-      "source": "stablyai/orca",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/stablyai/orca.git"
-    },
-    "orchestration": {
-      "skillPath": "skills/orchestration/SKILL.md",
-      "source": "stablyai/orca",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/stablyai/orca.git"
     },
     "prototype": {
       "computedHash": "77be567d8c946608fdd15e61b62ab383cdf289a194dce2479828b7eda860d3ba",

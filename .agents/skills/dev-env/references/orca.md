@@ -1,6 +1,8 @@
 # Orca
 
-Orca 操作の正本は `orca-cli` skill — `ORCA skills get orca-cli` が version-matched guide を返す。ここには guide / `--help` から直接読めない周辺知見と、dotfiles が管理する設定ファイルの仕様を置く。操作時の既定方針は `orca-cli`、バージョン固有の調査結果はこの reference に持たせる。
+Orca 操作の正本は `orca-cli` skill — `ORCA skills get orca-cli` が version-matched guide を返す。ここには guide / `--help` から直接読めない周辺知見と、dotfiles が管理する設定ファイルの仕様を置く。
+
+`orca-cli`・`orchestration`・`orca-computer-use` は Orca が配る skill で、wwwyo/skills には置かない。Orca は `~/.agents/skills/<name>` に copy を書き、各 agent の skills dir（`~/.claude/skills/<name>` 等）へ symlink を張る。Orca 本体の更新時は、Orca が書いたまま手を入れていない copy だけを新しい版に置き換え、手で変えた copy は「edited outside Orca」として更新を止める。そのため Orca の skill には手を入れず、local の方針はこの reference と global instructions に置く。入れ直しは `orca skills install --skill <name>`、状態確認は `orca skills update --all --dry-run`
 
 ## keybindings.json
 
@@ -23,7 +25,12 @@ Orca 操作の正本は `orca-cli` skill — `ORCA skills get orca-cli` が vers
 
 ## embedded browser がユーザーのフォーカスを奪うとき
 
-操作時の既定方針は [orca-cli のフォーカス保持ルール](../../orca-cli/SKILL.md#preserve-the-users-focus-during-browser-automation) を参照。
+既定では、ユーザーが操作している terminal や別アプリのフォーカスを保つ（global instructions にも同じ方針を 1 行で置いている）:
+
+- `ORCA tab switch` に `--focus` を付けない。browser pane を見せる・切り替えるようユーザーに頼まれたときだけ付ける
+- tab を作ったら、結果か `ORCA tab list --json` から `browserPageId` を取り、以降のコマンドは `--page <browserPageId>` で対象を指定する。不要な tab 切り替えをしない
+
+これはフォーカスの移動を減らすだけで、裏での入力を保証しない。`--page` を付けても click・mouse 操作はフォーカスを奪うことがある。`--no-focus` のような flag を作り出したり、実際に確かめずにフォーカスが保たれたと言ったりしない。
 
 2026-10-03、macOS の Orca 1.4.218 の CLI help・同梱実装を確認。`tab switch` の明示的な pane focus は opt-in だが、フォーカス移動を完全に止める設定や `tab create --no-focus` は確認できなかった。操作時のフォーカス保持は、この調査では実測していない。[issue #20595](https://github.com/stablyai/orca/issues/20595) は macOS 1.4.201 で `click` / mouse 操作のフォーカス移動と、`type` / `keypress` がユーザーの terminal に届く挙動を報告している。
 

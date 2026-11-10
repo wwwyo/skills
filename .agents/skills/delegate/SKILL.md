@@ -81,8 +81,8 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 独立した agent の起動・連携は、依頼の目的に応じて次の skill を読み、その手順で行う。依頼文は後述の定型で整える。
 
-- **監督・結果待ち・完了追跡・並列作業の統合を求められた場合**: [`orchestration`](../orchestration/SKILL.md) を使う。
-- **担当を別 repo / agent / worktree へ渡す handoff の場合**: [`orca-cli`](../orca-cli/SKILL.md) の Full Handoffs を使う。引き継ぎ先と送信確認を報告したら親は終了し、完了まで監督しない。
+- **監督・結果待ち・完了追跡・並列作業の統合を求められた場合**: `orchestration` skill（Orca が配る）を使う。
+- **担当を別 repo / agent / worktree へ渡す handoff の場合**: `orca-cli` skill の Full Handoffs を使う。引き継ぎ先と送信確認を報告したら親は終了し、完了まで監督しない。
 
 Orca を利用できない場合は、そのエラーを報告し、別経路へ切り替えない。CLI の解決・バージョンに合った手順の取得・起動確認は上記 skill に従う。
 

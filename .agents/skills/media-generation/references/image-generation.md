@@ -13,7 +13,7 @@
 
 Orca 内蔵ブラウザの ChatGPT で画像を生成する。**ログイン済みアカウントの利用可能な無料枠・既存契約内の枠を使い、追加購入しない**。無制限無料・全アカウントで利用可能とは断言しない。操作は Orca CLI 経由で行い、別ブラウザ・隠し API・認証情報は使わない。
 
-まず [orca-cli skill](../../orca-cli/SKILL.md) の解決規則でこの session の executable を選ぶ（下の `ORCA` はその placeholder — 素の `orca` を呼ばない。非 Orca 管理の Linux 端末では GNOME screen reader に解決しうる）。次に `ORCA skills get orca-cli` で version-matched guide を読み、以下の手順のコマンド名・flag はその guide と `--help` で確認してから使う。
+まず `orca-cli` skill（Orca が配る）の解決規則でこの session の executable を選ぶ（下の `ORCA` はその placeholder — 素の `orca` を呼ばない。非 Orca 管理の Linux 端末では GNOME screen reader に解決しうる）。次に `ORCA skills get orca-cli` で version-matched guide を読み、以下の手順のコマンド名・flag はその guide と `--help` で確認してから使う。
 
 ### 手順（検証済み 2026-10-09）
 
