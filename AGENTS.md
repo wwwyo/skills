@@ -29,7 +29,7 @@ plugin は `core`（cloud と local の両方。環境に依存しない汎用 s
 - Codex は local plugin を cache へコピーし、symlink を落とす。plugin root に skill を symlink で集めず、root からの相対 path で列挙する（core = repo root、local = `.agents`）
 - tool が自分で配って自動更新する skill（Orca の `orca-cli`・`orchestration`・`orca-computer-use` 等）はこの repo に置かない（dotfiles の `.agents/skills` で追跡する）。plugin に入れると、tool が書く `~/.agents/skills` の copy と二重に読まれ、tool の更新にも追従しなくなる。手元の方針は dev-env の reference に置く
 - skill から同梱の tools を呼ぶ手順は SKILL.md の dir からの相対 path で書く。`~/.agents/skills/...` は存在しない。scheduled task・hook など agent 以外の呼び出し元は canonical checkout（`~/src/github.com/wwwyo/skills`）を指す
-- **main への merge は即本番**。手元の各 tool はこの repo の canonical checkout を直接読む（Codex だけは `codex plugin add` で cache を更新するまで古い copy を読む）。claude.ai は marketplace の自動同期で取り込む。skill の rename・削除は、それを読む consumer（dotfiles の scheduled task・hook、他 repo の orca.yaml）の切替と同じタイミングで merge する
+- **main への merge は即本番**。手元の pi・Devin と Claude Code の local はこの repo の canonical checkout を直接読む。Codex は `codex plugin add` で cache を更新するまで古い copy を読み、Claude Code の core と claude.ai は marketplace の自動同期で取り込んだ copy を読む（tool ごとの反映は dev-env の skill-plugins を参照）。skill の rename・削除は、それを読む consumer（dotfiles の scheduled task・hook、他 repo の orca.yaml）の切替と同じタイミングで merge する
 
 tool ごとの読み込み方・編集の反映・確認コマンドは [dev-env の skill-plugins](.agents/skills/dev-env/references/skill-plugins.md) を参照する。
 
@@ -59,7 +59,7 @@ skill の検索・追加・作成・改善・更新・削除は `skillctrl` に�
 
 ## 他 repo・他セッションから触るとき
 
-main から worktree を切って作業し、PR で入れる。canonical checkout は各 tool が直接読む本番なので、そこで branch を切り替えたり未 merge の変更を置いたりしない。
+main から worktree を切って作業し、PR で入れる。canonical checkout は pi・Devin・Claude Code の local が直接読む本番なので、そこで branch を切り替えたり未 merge の変更を置いたりしない。
 
 ## Pullfrog の個別設定
 
