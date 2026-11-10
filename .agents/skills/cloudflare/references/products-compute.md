@@ -4,10 +4,12 @@ Paths in commands are relative to the skill root (the directory containing `SKIL
 
 | What you need to do | Product or tool to consider | When to choose it | Skill or reference |
 | --- | --- | --- | --- |
-| Start a Worker or framework project | C3 | Scaffold a project using the appropriate framework template | [C3](c3/README.md); `wrangler` skill |
+| Start a Worker project | `cf` | Create a basic Worker with `cf init` | `cf-cli` skill; [First Worker](https://developers.cloudflare.com/cf/get-started/first-worker/index.md) |
+| Build, set up, or migrate a framework app | Framework tooling + Workers | Follow the framework's Workers guide and its own agent guidance | `frameworks-on-cloudflare` skill; [Framework guides](https://developers.cloudflare.com/workers/framework-guides/index.md) |
 | Build or deploy a Next.js app on Cloudflare | vinext + Workers | Use vinext rather than OpenNext for new projects | nextjs-on-cloudflare skill; [Next.js docs](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/index.md) |
 | Host a new static site, SPA, or full-stack app | Workers + Workers Static Assets | Serve site files and add server-side logic where needed | [Static Assets](static-assets/README.md); `workers-best-practices` skill |
 | Build an API or handle webhooks | Workers | Run request handlers with access to Cloudflare services | `workers-best-practices` skill; [Workers docs](https://developers.cloudflare.com/workers/index.md) |
+| Get a new or checked-out app running locally | Bindings, secrets, and local development | Connect the resources and values the app needs, then verify a real request | `cloudflare-app-bootstrap` skill; [Local development](https://developers.cloudflare.com/workers/local-development/index.md) |
 | Control team, CI, or service-account access to Developer Platform resources | Roles, scopes, and permission policies | Choose the least-privilege role and a scope supported for the member, User Group, or API token | [Roles and permissions](https://developers.cloudflare.com/workers/authorization/index.md); `wrangler` skill for CLI access |
 | Maintain an existing Pages deployment | Pages + Pages Functions | Update an existing site or its server endpoints; use Workers for new projects | [Pages](pages/README.md); [Pages Functions](pages-functions/README.md) |
 | Move a Pages project to Workers | Workers + Workers Static Assets | The task calls for migrating the hosting platform | [Pages migration guide](https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/index.md) |

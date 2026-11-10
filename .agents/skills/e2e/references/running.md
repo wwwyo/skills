@@ -17,6 +17,8 @@ CLIはmiseまたは導入済みのrepo-local packageから起動し、CIにもte
 mise x -- e2e run [files...] [options]   # run tests
 mise x -- e2e explore [goal] [options]   # explore toward a goal without a test file (topic explore)
 mise x -- e2e list [files...] [options]  # print what run would select
+mise x -- e2e doctor [--check-model]     # can a run start: config, engine setup, models;
+                                         # --reporter json for a host, exit 2 on a failed check
 mise x -- e2e init [directory] [--yes]   # scaffold a project, refresh the agent skill
 mise x -- e2e guide [topic]              # print this skill; topics: setup, writing-tests, agent,
                                    # running, explore, debugging, mcp, bug-bash
@@ -25,7 +27,7 @@ mise x -- e2e login|logout|models [provider]  # e2e/oauth subscription logins: o
                                    # github-copilot, opencode-console, spacexai
 mise x -- e2e mcp [--target <name>]      # MCP server for a coding agent (topic mcp)
 mise x -- e2e upgrade [version|tag]      # e2e and its @e2e-dev packages to latest or a version;
-                                   # alias update, --dry-run shows the plan
+                                   # alias update, --dry-run shows the plan; updates this skill's copies too
 mise x -- e2e telemetry [disable|enable] # anonymous usage telemetry: status or switch
 ```
 
@@ -49,13 +51,14 @@ mise x -- e2e telemetry [disable|enable] # anonymous usage telemetry: status or 
 | `--max-failures <n>` | Stop after n failures: the rest skip (cause `failure-limit`), running tests end `interrupted`; exit 1. |
 | `--max-duration <ms>` | Stop after ms of running tests, over config `maxDuration`: the rest skip (cause `time-limit`), running tests end `interrupted`, `RUN_TIMEOUT`; exit 1. |
 | `--repeat-each <n>` | Run every selected test n times, each run its own result (`repeat` 0 through n-1); add `--no-cache` or later runs replay the first's recording. The `Repeats` summary row names each unstable test's failed runs. |
-| `--reporter <ids>` | `list`, `json`, `junit`, `markdown`, comma-separated; `json` cannot combine with `list`. |
+| `--reporter <ids>` | `list`, `json`, `junit`, `markdown`, comma-separated; `json` cannot combine with `list`. An empty value is a usage error, exit 2. |
 | `--output <dir>` | Results directory, over the config's `output` (default `.e2e`). |
 | `--no-cache` | Replay cache off for this run. |
 | `--strict-cache` | Fail a step whose committed recording no longer replays (`REPLAY_STALE`, exit 2) instead of handing it to the agent; retries replay too, and the run never writes the cache. |
 | `-u`, `--update-snapshots` | Write the stored screenshots `toHaveScreenshot` finds missing or different, and pass. |
 | `-w`, `--watch` | Run, then run again when a test file, a source file beside the tests, or the config is saved, or a key asks: `a` or enter all, `r` the current filters, `f` failed, `u` update snapshots, `p` and `t` filter by file and title, `q` quit; a key during a run cancels it. Refused in CI and with `--reporter json`. |
 | `--pass-with-no-tests` | Exit 0, not `NO_TESTS`, when nothing matches; a run with nothing to run starts no engine or app. |
+| `--step` | Run the first step, then hold each later one until a key at its prompt: Enter runs it, `n` the rest of the test, `a` the rest of the run, `h` lists the keys, `q` stops (exit 130). For a person at a terminal, not an agent: refused in CI, with `--watch`, `--workers` above 1, and the json reporter. |
 | `--debug` | Phase timings and an agent step table on stderr; transcripts as artifacts. |
 | `--ai-trace` | Every model call except a test filter's, to `<output>/ai-trace.json`. |
 | `--trace [mode]`, `--video [mode]` | Which tests keep a trace page (`<output>/results/<test>/trace.md`), or which attempts record a video (WebM on browsers, MP4 on devices), over the config and every target: bare is `on` (`--trace` then pages every test, passing ones too); `--trace off` writes none; `retain-on-failure` keeps only failures; `on-first-retry` keeps first retries, `on-all-retries` every retry. A test's own `trace` or `video` still wins; targets whose engine cannot record video are skipped with a notice. Both are greedy: write `--video=<mode>` or put test files first. The failure recap names the trace page and the video. |
@@ -97,6 +100,15 @@ with teardown. A runtime config uses one in-process worker. Await each run
 before starting the next and close every host first; overlaps reject with
 `RUNNER_BUSY`.
 
+`import { explore } from 'e2e/runner'` runs one exploration the same way:
+`cwd`, `config`, `goal`, `target`, `agent`, `session`, `maxSteps`, and
+`timeoutMs` as `e2e explore` takes them, plus `onEvent` and
+`interruptSignal`. It resolves with the run's result and `explore`, the
+record of the steps, findings, and why it ended. A goal or budget out of
+range, an unknown target or agent, or an agent with no model rejects before
+it starts (`INVALID_CONFIG`, `UNKNOWN_TARGET`, `MODEL_UNAVAILABLE`); branch
+on `isE2EError(error)` and `error.code`. It shares `run`'s reservation.
+
 With a `package.json` script `"test:e2e": "e2e run"`, pnpm forwards `--`
 literally: `pnpm test:e2e -- --headed` reaches e2e as `run -- --headed` and
 exits 2. Write `pnpm test:e2e --headed` or `pnpm exec e2e run --headed`.
@@ -137,11 +149,15 @@ leaves the last run's files, and a `--last-failed` rerun keeps the files
 the report it reruns names and writes its own under each test's `rerun-<n>/`. The report records every artifact path, a
 hosted service's video by URL.
 
-- `list` (default): setup steps, one line per file and target, a `Failed
+- `list` (default): setup steps, one line per file and target (when stdout
+  is not a terminal, each test also prints as it finishes), a `Failed
   Tests` section (error, code, failing line, code frame), then the
   summary rows `Test Files`, `Tests`, `AI`, `Cache` (when the replay cache
   ran), `Repeats` (with `--repeat-each`), `Errors`, `Start at`, `Duration`,
-  `Traces` (when a page was written), `AI trace` (with `--ai-trace`). Past a minute `Duration`
+  `Traces` (when a page was written), `Screenshots` (the first 10
+  `app.screenshot` files, then a count), `AI trace` (with `--ai-trace`), and
+  last `Failed`, one entry per failed test (file and line, error's first
+  line, trace page when written), so `| tail` keeps it. Past a minute `Duration`
   repeats as minutes and seconds, setup time split out as `startup` in the
   same parenthetical (`682.97s (11m 23s, startup 43.00s)`).
 - `report.json`, for scripts rather than reading (`jq`, CI tools; a reader
@@ -156,7 +172,10 @@ hosted service's video by URL.
   run: a signal, `--max-failures`, `--max-duration`, a run-level error; not a failure), `flaky`, and `skipped` add up
   to `selected`; `discovered - selected` were left out.
 - `junit`: `junit.xml` for CI summaries; `--reporter list,junit` keeps the
-  terminal output.
+  terminal output. A case with a failure screenshot links it as
+  `<system-out>[[ATTACHMENT|<path>]]</system-out>`, relative to
+  `$CI_PROJECT_DIR` (else the project root), which GitLab shows in the
+  test report.
 - Every run that reaches its tests also writes a trace page per failed,
   timed-out, interrupted, or flaky test, `results/<test>/trace.md` (the
   `trace` mode, default `retain-on-failure`): every step with what
@@ -231,6 +250,10 @@ jobs:
           node-version: 26 # Node >= 24.8, or >= 22.22.3 on 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm exec e2e-web install chromium --with-deps
       - run: pnpm exec e2e run --reporter list,junit        env:
           E2E_TELEMETRY_DISABLED: '1'
@@ -281,4 +304,4 @@ jobs:
   with `pnpm exec e2e list --changed-since origin/main`, after committing: the
   decision filter reads what the commits change, and a file only the
   working tree changes by name alone.
-  Reference: https://e2e.tester.army/docs/filters
+  Reference: https://e2e.com/docs/filters
