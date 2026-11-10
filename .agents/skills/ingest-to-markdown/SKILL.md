@@ -1,6 +1,6 @@
 ---
 name: ingest-to-markdown
-description: "PDF・Office資料・epub・CSV・YouTube字幕・ローカル動画を Markdown に変換して repo/PJ に保存する。「資料をmd化」「PDFを取り込んで」「動画を文字起こしして保存」など、一次情報を保存する依頼で使う。保存時は必ず Markdown に変換し、生バイナリや動画URLだけを置かない。"
+description: "PDF・Office資料・epub・CSV・YouTube字幕を Markdown に変換して repo/PJ に保存する。「資料をmd化」「PDFを取り込んで」「YouTube の字幕を保存」など、一次情報を保存する依頼で使う。保存時は必ず Markdown に変換し、生バイナリや動画URLだけを置かない。"
 ---
 
 # ingest-to-markdown
@@ -17,8 +17,7 @@ description: "PDF・Office資料・epub・CSV・YouTube字幕・ローカル動�
 
 - `anydoc`。mise(npm backend)で入れる。PATH に無ければ script は失敗する。Rust 実装で決定的パーサのみを使うため、変換はローカル完結・API key 不要・1秒未満で終わる。
 - `yt-dlp`(YouTube 取り込み専用。mise global で install 済み: `asdf:duhow/asdf-yt-dlp` plugin。PATH にある前提でよく、事前 install 作業は不要)。
-- `anarlog`(字幕なし動画・ローカル動画の文字起こし専用)。brew では入らず、Anarlog.app の初回起動で `~/.local/bin/anarlog` に auto install される(後述の手順と MIGRATION.md の手動対応リスト参照)。
-- 実行権限: anydoc 自体はネットワーク不要なので、sandbox 下でも動く。yt-dlp は youtube.com へのアクセスが要るので常に sandbox 解除。`anarlog` は既定の source(local)なら local DB を読むだけでネットワーク不要だが、`meetings --source auto|cloud ...`(`--source` は leaf より前に置く)は cloud に出る場合がある。
+- 実行権限: anydoc 自体はネットワーク不要なので、sandbox 下でも動く。yt-dlp は youtube.com へのアクセスが要るので常に sandbox 解除。
 
 ### 対応形式と、対応していないもの
 
@@ -106,11 +105,9 @@ md 冒頭に「- 種別: スキャン PDF」または「- 除外したページ:
 
 ## YouTube の取り込み
 
-YouTube URL は [references/youtube.md](references/youtube.md) を読み、同梱スクリプトで字幕を Markdown 化する。字幕が無ければ次の Anarlog 経路に進む。
+YouTube URL は [references/youtube.md](references/youtube.md) を読み、同梱スクリプトで字幕を Markdown 化する。
 
-## 字幕なし動画・ローカル動画
-
-字幕の無い YouTube・mp4/mov・会議録画には [references/anarlog.md](references/anarlog.md) を読む。GUI import と文字起こしの完了を確認し、transcript と必要な映像情報を保存する。
+字幕の無い YouTube・mp4/mov・会議録画の文字起こし経路は持たない。ユーザーに文字起こし手段を確認する。
 
 ## 補足
 
