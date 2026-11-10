@@ -49,18 +49,44 @@ def split_comment(text):
     return text.rstrip(), ""
 
 
-def parse_field(line, lineno):
+def split_top(code, seps=";,"):
+    """Split on separators that are outside brackets and string literals."""
+    out, depth, in_str, start = [], 0, None, 0
+    for i, ch in enumerate(code):
+        if in_str:
+            if ch == in_str:
+                in_str = None
+        elif ch in "'\"":
+            in_str = ch
+        elif ch in "{<[(":
+            depth += 1
+        elif ch in "}>])":
+            depth -= 1
+        elif ch in seps and depth == 0:
+            out.append(code[start:i])
+            start = i + 1
+    out.append(code[start:])
+    return [p.strip() for p in out if p.strip()]
+
+
+def parse_fields(line, lineno):
+    """Fields on one line (`a: X; b: Y  // comment`). The comment goes to the last field."""
     code, comment = split_comment(line)
-    m = FIELD.match(code)
-    if not m:
-        raise ParseError(f"line {lineno}: cannot read field: {line.strip()}")
-    name, opt, ty = m.group(1), bool(m.group(2)), m.group(3).strip().rstrip(";").strip()
-    key = ""
-    k = KEY.match(comment)
-    if k:
-        key = "・".join(x for x in (k.group(1), k.group(2)) if x)
-        comment = comment[k.end():].strip()
-    return {"name": name, "optional": opt, "type": ty, "note": comment, "key": key}
+    parts = split_top(code)
+    rows = []
+    for j, part in enumerate(parts):
+        m = FIELD.match("  " + part)
+        if not m:
+            raise ParseError(f"line {lineno}: cannot read field: {part}")
+        note = comment if j == len(parts) - 1 else ""
+        key = ""
+        k = KEY.match(note)
+        if k:
+            key = "・".join(x for x in (k.group(1), k.group(2)) if x)
+            note = note[k.end():].strip()
+        rows.append({"name": m.group(1), "optional": bool(m.group(2)),
+                     "type": m.group(3).strip(), "note": note, "key": key})
+    return rows
 
 
 def parse_types(text):
@@ -85,14 +111,19 @@ def parse_types(text):
             name = m.group(1)
             rhs, note = split_comment(m.group(2))
             rhs = rhs.strip().rstrip(";").strip()
-            if rhs.endswith("{"):
+            one = re.fullmatch(r"((?:[^{}]*&)?)\s*\{(.*)\}", rhs)
+            if one:  # one-line object: type X = { a: A; b: B } or Base & { … }
+                base = re.sub(r"<.*>", "", one.group(1)).strip().rstrip("&").strip() or None
+                types[name] = {"kind": "obj", "rows": parse_fields(one.group(2), lineno) if one.group(2).strip() else [],
+                               "note": note, "base": base}
+            elif rhs.endswith("{"):
                 base = rhs[:-1].strip().rstrip("&").strip() or None
                 rows = []
                 i += 1
                 while i < len(lines) and not lines[i].startswith("}"):
                     body = lines[i]
                     if body.strip() and not body.strip().startswith("//"):
-                        rows.append(parse_field(body, i + 1))
+                        rows += parse_fields(body, i + 1)
                     i += 1
                 if i >= len(lines):
                     raise ParseError(f"line {lineno}: unterminated object type {name}")
@@ -251,11 +282,16 @@ class Model:
 
     def auto_refs(self, aggs):
         """Edges from FK fields whose type is another root's single-PK type."""
-        pk_owner = {}
+        pk_owner, shared = {}, set()
         for a in aggs:
             pks = [r for r in a["boxes"][0]["rows"] if "PK" in r[4]]
-            if len(pks) == 1 and "FK" not in pks[0][4]:
-                pk_owner[pks[0][2]] = a["name"]
+            if len(pks) == 1 and "FK" not in pks[0][4] and pks[0][2] in self.types:
+                ty = pks[0][2]  # only a dedicated ID alias identifies one root; `string` etc. do not
+                if ty in pk_owner:
+                    shared.add(ty)
+                pk_owner[ty] = a["name"]
+        for ty in shared:
+            del pk_owner[ty]
         edges = []
         for a in aggs:
             for b in a["boxes"]:
@@ -290,7 +326,18 @@ def build_overview(model, aggs, spec):
     ov["aggregates"] = merged
     if "refs" not in ov:
         ov["refs"] = model.auto_refs(aggs)
-    names = {a["name"] for a in merged} | {c["name"] for a in merged for c in a["children"]}
+    names = {a["name"] for a in merged}
+    for a in merged:
+        prev, own = a["name"], set()
+        for c in a["children"]:
+            if c["name"] in names:
+                raise ParseError(f"overview child '{c['name']}' duplicates another node name")
+            parent = c.get("parent", prev)
+            if parent != a["name"] and parent not in own:
+                raise ParseError(f"overview child '{c['name']}' has unknown parent '{parent}'")
+            names.add(c["name"])
+            own.add(c["name"])
+            prev = c["name"]
     for e in ov["refs"]:
         for end in (e["from"], e["to"]):
             if end not in names:
@@ -358,7 +405,7 @@ def main(argv=None):
         if not a.out:
             p.error("--out is required unless --dump")
         Path(a.out).write_text(render(data, Path(a.template).read_text()))
-    except (ParseError, json.JSONDecodeError, KeyError, OSError) as e:
+    except (ParseError, ValueError, KeyError, TypeError, AttributeError, OSError) as e:
         print(f"domain_viz: {type(e).__name__}: {e}", file=sys.stderr)
         return 1
     summary = {"out": a.out, "aggregates": [x["name"] for x in data["aggregates"]],

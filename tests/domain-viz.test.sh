@@ -35,7 +35,7 @@ EOF
 
 python3 "$TOOL" --types "$EX/model.ts" --spec "$EX/viz.json" --out "$tmp/out.html" >/dev/null
 grep -q '"title": "通販のドメイン（例）"' "$tmp/out.html"
-! grep -q '__DATA__\|__ICONS__\|__TITLE__' "$tmp/out.html"
+if grep -q '__DATA__\|__ICONS__\|__TITLE__' "$tmp/out.html"; then echo "placeholder left in output" >&2; exit 1; fi
 
 # bad references fail with a message instead of drawing a broken page
 sed 's/"ref": "product"/"ref": "nope"/' "$EX/viz.json" >"$tmp/bad.json"
@@ -43,5 +43,43 @@ if python3 "$TOOL" --types "$EX/model.ts" --spec "$tmp/bad.json" --out "$tmp/bad
   echo "expected failure for unknown ref" >&2; exit 1
 fi
 grep -q "unknown table 'nope'" "$tmp/err"
+
+# one-line objects, several fields per line, and a PK type (`string`) that identifies no root
+cat >"$tmp/edge.ts" <<'TS'
+// ===== A（root）
+type A = { id: string; pay: Pay }
+type Pay = Card | Wire
+type Card = { kind: 'card'; no: string }
+type Wire = {
+  kind: 'wire'; on?: string
+}
+// ===== B（root）
+type B = {
+  id: string // PK
+  a: string  // FK
+}
+TS
+python3 "$TOOL" --types "$tmp/edge.ts" --dump >"$tmp/edge.json"
+python3 - "$tmp/edge.json" <<'EOF'
+import json, sys
+d = json.load(open(sys.argv[1]))
+a = d["aggregates"][0]
+assert [b["name"] for b in a["boxes"]] == ["A", "Pay", "Card", "Wire"], [b["name"] for b in a["boxes"]]
+assert [r[0] for r in a["boxes"][0]["rows"]] == ["id", "pay"]
+assert [(r[0], r[1]) for r in a["boxes"][3]["rows"]] == [("kind", False), ("on", True)]
+assert d["overview"]["refs"] == [], d["overview"]["refs"]
+EOF
+
+# broken specs fail with a message, not a traceback or a phantom node
+echo '{"overview":{"aggregates":[{"name":"A","children":[{"name":"x","parent":"nope"}]}]}}' >"$tmp/badov.json"
+if python3 "$TOOL" --types "$tmp/edge.ts" --spec "$tmp/badov.json" --dump >/dev/null 2>"$tmp/err"; then
+  echo "expected failure for unknown parent" >&2; exit 1
+fi
+grep -q "unknown parent 'nope'" "$tmp/err"
+echo '{"overview":{"aggregates":[{"name":"A","children":null}]}}' >"$tmp/nullov.json"
+if python3 "$TOOL" --types "$tmp/edge.ts" --spec "$tmp/nullov.json" --dump >/dev/null 2>"$tmp/err"; then
+  echo "expected failure for null children" >&2; exit 1
+fi
+grep -q '^domain_viz: ' "$tmp/err"
 
 echo "domain-viz: ok"
