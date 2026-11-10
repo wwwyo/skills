@@ -27,7 +27,7 @@ plugin は `core`（cloud と local の両方。環境に依存しない汎用 s
 - skill を足す・plugin を移すときは `.claude-plugin/marketplace.json` の `skills` を編集し、`scripts/sync-plugin-manifests.py` で Codex の定義を再生成する。`tests/plugin-manifests.test.sh` が、全 skill がちょうど 1 つの plugin に載っていることと生成物の一致を検査する
 - cloud に載せてよいかで core / local を決める。手元の path・CLI・secret を前提にする skill は local
 - Codex は local plugin を cache へコピーし、symlink を落とす。plugin root に skill を symlink で集めず、root からの相対 path で列挙する（core = repo root、local = `.agents`）
-- tool が自分で配って自動更新する skill（Orca の `orca-cli`・`orchestration`・`orca-computer-use` 等）はこの repo に置かない。plugin に入れると、tool が書く `~/.agents/skills` の copy と二重に読まれ、tool の更新にも追従しなくなる。手元の方針は dev-env の reference に置く
+- tool が自分で配って自動更新する skill（Orca の `orca-cli`・`orchestration`・`orca-computer-use` 等）はこの repo に置かない（dotfiles の `.agents/skills` で追跡する）。plugin に入れると、tool が書く `~/.agents/skills` の copy と二重に読まれ、tool の更新にも追従しなくなる。手元の方針は dev-env の reference に置く
 - skill から同梱の tools を呼ぶ手順は SKILL.md の dir からの相対 path で書く。`~/.agents/skills/...` は存在しない。scheduled task・hook など agent 以外の呼び出し元は canonical checkout（`~/src/github.com/wwwyo/skills`）を指す
 - **main への merge は即本番**。手元の各 tool はこの repo の canonical checkout を直接読む（Codex だけは `codex plugin add` で cache を更新するまで古い copy を読む）。claude.ai は marketplace の自動同期で取り込む。skill の rename・削除は、それを読む consumer（dotfiles の scheduled task・hook、他 repo の orca.yaml）の切替と同じタイミングで merge する
 
