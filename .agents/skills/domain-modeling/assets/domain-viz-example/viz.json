@@ -1,0 +1,47 @@
+{
+  "title": "通販のドメイン（例）",
+  "lead": "domain_viz.py の入力例。★は案で、まだ表がない。",
+  "overview": {
+    "aggregates": [
+      {"name": "注文", "label": "1回の購入", "invariant": "明細は1件以上",
+       "children": [{"name": "明細"}, {"name": "支払い", "parent": "注文"}]}
+    ],
+    "notes": ["商品は共通のマスタで、集約に入れない"]
+  },
+  "db": {
+    "domains": [
+      {"name": "注文（order）", "tables": [
+        {"name": "customer", "root": true, "columns": [
+          {"name": "customer_id", "type": "string", "key": "PK"},
+          {"name": "name", "type": "string"}
+        ]},
+        {"name": "orders", "root": true, "columns": [
+          {"name": "order_id", "type": "string", "key": "PK"},
+          {"name": "customer_id", "type": "string", "key": "FK", "ref": "customer"},
+          {"name": "ordered_on", "type": "string"},
+          {"name": "status", "type": "string"}
+        ]},
+        {"name": "order_line", "columns": [
+          {"name": "order_id", "type": "string", "key": "PK, FK", "ref": "orders"},
+          {"name": "line_no", "type": "integer", "key": "PK"},
+          {"name": "product_code", "type": "string", "key": "FK", "ref": "product"},
+          {"name": "unit_price_yen", "type": "integer"}
+        ]}
+      ]},
+      {"name": "商品（catalog）", "tables": [
+        {"name": "product", "columns": [
+          {"name": "product_code", "type": "string", "key": "PK"},
+          {"name": "name", "type": "string"},
+          {"name": "similar_product_code", "type": "string", "key": "FK", "ref": "product", "optional": true, "judgment": true}
+        ]}
+      ]},
+      {"name": "返品を足すときの表", "proposed": true, "tables": [
+        {"name": "order_return", "root": true, "columns": [
+          {"name": "order_id", "type": "string", "key": "PK, FK", "ref": "orders"},
+          {"name": "received_on", "type": "string", "key": "PK"},
+          {"name": "reason", "type": "string"}
+        ]}
+      ]}
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 ---
 name: domain-modeling
-description: Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing the Glossary section of AGENTS.md, or recording or editing an ADR.
+description: Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing the Glossary section of AGENTS.md, recording or editing an ADR, or writing the model as strict TS types and visualizing aggregates, types, and tables as one HTML page.
 ---
 
 # Domain Modeling
@@ -54,3 +54,13 @@ Only offer to create an ADR when all three are true:
 3. **The result of a real trade-off**: there were genuine alternatives and you picked one for specific reasons
 
 If any of the three is missing, skip the ADR. Use the format in [document ADR format](../document/references/adr-format.md).
+
+## Visualize the model
+
+When aggregates, their types, or the table design are being decided (or reviewed with someone), write the model as TS types and render it as one HTML page: 1. aggregate overview, 2. types per aggregate, 3. table design.
+
+- Keep the types in one TS block next to the decision docs (e.g. `docs/domain-model.ts`). Mark aggregates with `// ===== Title` (first type = root), shared types with `// -----`, invariants with `// 守ること:`, and key columns with a leading `PK` / `FK` / `PK・FK` in the field comment.
+- Make the types precise: one alias per ID or value, unions of object types wherever the shape changes, literal unions for fixed values. Check with `tsc --strict --noEmit --lib es2022`.
+- Put what types cannot say (responsibilities, inner nodes of the overview, DB tables, proposals) in a JSON spec, then run `python3 tools/domain_viz.py --types <ts> --spec <json> --out <html>` from this skill's directory and open the result.
+
+Formats and conventions: [references/domain-viz.md](references/domain-viz.md).
