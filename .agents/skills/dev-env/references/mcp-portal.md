@@ -5,7 +5,7 @@ ChatGPT・claude.ai（web・スマホ）とローカル agent から、この Ma
 portal は 2 つある。
 
 - `mcphub`（`mcp.wwwyo.dev`、portal ID `wwwyo`）: 開発で常用する MCP
-- `mcp-marketing`（`mcp-marketing.wwwyo.dev`、portal ID `marketing`）: マーケティング用。外部サービスの連携（Composio）をここに載せ、マーケ作業の agent にはこの portal だけを渡す
+- `mcp-marketing`（`mcp-marketing.wwwyo.dev`、portal ID `marketing`）: マーケティング用。マーケ系の外部サービス（Composio 経由の GSC 等）をここに載せ、マーケ作業の agent にはこの portal だけを渡す
 
 ```text
 ChatGPT / claude.ai / ローカル agent ──OAuth──▶ portal mcp.wwwyo.dev ─┬─▶ Gateway ──▶ Tunnel ──▶ 127.0.0.1:<port>
@@ -17,11 +17,17 @@ ChatGPT / claude.ai / ローカル agent ──OAuth──▶ portal mcp.wwwyo.d
                                                               └─▶ https://mcp.cloudflare.com/mcp
 ```
 
-## 外部サービス連携は Composio に統一し、portal 経由で入れる
+## 外部サービスは portal に集約し、既存の MCP が無いものだけ Composio を使う
 
-GSC・GA4・広告・CRM などの SaaS へ agent を繋ぐときは、サービスごとに MCP を探したり自作したりせず Composio に統一する。Composio の MCP は client に直接登録せず、Cloudflare の portal（マーケ用途は `mcp-marketing`）の upstream として入れる（2026-11-09 に決定）。
+agent から使う MCP は、外部サービスも含めて Cloudflare の portal に集約する。client（Claude Code・Codex・ChatGPT 等）にサービスごとの MCP を直接登録しない（2026-11-10 に決定。11-09 の「外部サービスは Composio に統一」から改めた）。
 
-- **役割の分担**: Composio は連携を持ち、OAuth token を保管・更新する。portal は agent の認証・tool 単位の公開・ログ・Code Mode を受け持つ。Composio 自体も複数 toolkit を 1 endpoint に束ねられるが、Composio の外の MCP（context7・自作）は束ねられないので、入口は portal に寄せる
+- **まず既存の MCP server を探す**: 公式（または提供元が保守する）remote MCP があれば、それを portal の upstream として入れる（Cloudflare API・context7 が先例。手順は下の「MCP を追加するとき」）。OAuth で scope を絞れるか、tool 単位で読み取りだけを公開できるかを確認してから入れる
+- **既存の MCP が無い・使えないものだけ Composio**: 公式 MCP が無い、remote で提供されていない、権限を絞れない、といったサービスは Composio の tool router session を経由して portal に入れる（GSC が先例）。自作はどちらも無いときの最後の手段
+- どちらの経路でも入口は portal 1 つに保つ（マーケ用途は `mcp-marketing`、開発用途は `mcphub`）。
+
+### Composio を使うときの構成
+
+- **役割の分担**: Composio は連携を持ち、OAuth token を保管・更新する。portal は agent の認証・tool 単位の公開・ログ・Code Mode を受け持つ。Composio 自体も複数 toolkit を 1 endpoint に束ねられるが、Composio の外の MCP（公式 remote MCP・context7・自作）は束ねられないので、入口は portal に寄せる
 - **汎用 endpoint（`connect.composio.dev/mcp`）は使わない**: `COMPOSIO_SEARCH_TOOLS`・`COMPOSIO_MULTI_EXECUTE_TOOL`・`COMPOSIO_PROXY_EXECUTE`・`COMPOSIO_REMOTE_BASH_TOOL` などのメタツール経由で、全 toolkit の全操作（削除系も）を呼べる。portal の tool 単位の公開設定が効かない
 - **portal ごとに tool router session を 1 つ作り、その session の MCP URL を server `composio` として portal に入れる**（2026-11-10 に toolkit ごとの session・server から切り替えた）: Composio Platform の API（`POST /api/v3.1/tool_router/session`）で、`toolkits.enable` と `tools.<toolkit>.enable` に許可する tool だけを並べ、`search`・`execute.enable_multi_execute`・`workbench`・`manage_connections` を無効にする。session の `mcp.url` は許可した tool だけを個別の tool として出し、メタツールは出さない。portal 側は Code Mode なので、toolkit・tool が増えても agent の context は増えない
   - toolkit を足すときは `PATCH /api/v3.1/tool_router/session/<id>` で `toolkits.enable` と `tools.<toolkit>.enable` に追加する。URL は変わらないので、portal 側は `cf mcp servers sync composio` で再同期するだけでよい。PATCH が渡した配列で置き換わるかは未検証なので、既存の toolkit・tool も含めて送り、後で `GET` で確認する
@@ -32,7 +38,7 @@ GSC・GA4・広告・CRM などの SaaS へ agent を繋ぐときは、サービ
 - **portal へは共有 key で入れる**: server は `auth_type: bearer` にし、`auth_credentials` に `{"headers":{"x-api-key":"<ak_ key>"}}` を JSON 文字列で渡す（Composio は `Authorization: Bearer` ではなく `x-api-key` を読む）。portal 側の `on_behalf` は `false`
 - **書き込み系の tool を agent に渡すときは別に判断する**: Composio の `require_approval` は experimental で、portal（Code Mode）経由で elicitation が中継されるかは未検証。いまは読み取りだけを出している
 
-### Composio の key・project の区別
+#### Composio の key・project の区別
 
 - **Composio Connect（consumer、`connect.composio.dev`）と Composio Platform（`platform.composio.dev`）は project が別。** Connect で繋いだ接続は Platform の key から見えない。session 方式は Platform 側で作り、接続も Platform 側の auth config で作り直す
 - key は 2 種類ある。Connect の設定画面で出るのは `ck_`（consumer key、header は `x-consumer-api-key`）で、session 作成には使えない（`Invalid API key` の 401 になる）。session 作成と portal 用には、Platform の Project Settings → API Keys で `ak_`（header は `x-api-key`）を発行する
