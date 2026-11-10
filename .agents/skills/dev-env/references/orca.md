@@ -2,7 +2,7 @@
 
 Orca 操作の正本は `orca-cli` skill — `ORCA skills get orca-cli` が version-matched guide を返す。ここには guide / `--help` から直接読めない周辺知見と、dotfiles が管理する設定ファイルの仕様を置く。
 
-`orca-cli`・`orchestration`・`orca-computer-use` は Orca が配る skill で、wwwyo/skills には置かない。Orca は `~/.agents/skills/<name>` に copy を書き、各 agent の skills dir（`~/.claude/skills/<name>` 等）へ symlink を張る。Orca 本体の更新時は、Orca が書いたまま手を入れていない copy だけを新しい版に置き換え、手で変えた copy は「edited outside Orca」として更新を止める。そのため Orca の skill には手を入れず、local の方針はこの reference と global instructions に置く。入れ直しは `orca skills install --skill <name>`、状態確認は `orca skills update --all --dry-run`
+`orca-cli`・`orchestration`・`orca-computer-use` は Orca が配る skill で、wwwyo/skills には置かず dotfiles の `.agents/skills/` で git 追跡する（`~/.agents` は dotfiles の `.agents` への link。Claude 向けは dotfiles の `.claude/skills/<name>` 相対 symlink）。Orca 本体の更新時は、Orca が書いたまま手を入れていない copy だけを新しい版に置き換えるので、その書き換えは dotfiles の差分として現れ、そのまま commit する。手で変えた copy は「edited outside Orca」として更新が止まるため、Orca の skill には手を入れず、local の方針はこの reference と global instructions に置く。状態確認は `orca skills update --all --dry-run`
 
 ## keybindings.json
 
