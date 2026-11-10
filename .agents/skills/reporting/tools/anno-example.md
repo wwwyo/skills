@@ -2,7 +2,7 @@
 
 `anno.js` はブラウザページ内で動く関数。selector とテキストで対象を指定し、座標は自分で計算させる（エージェントが目視で座標を推定しない）。
 
-[orca-cli](../../orca-cli/SKILL.md) の version-matched browser guideを先に読む。以下の `orca` は同skillで解決したexecutable、`page` は対象の `browserPageId`。
+`orca-cli` skill（Orca が配る）の version-matched browser guideを先に読む。以下の `orca` は同skillで解決したexecutable、`page` は対象の `browserPageId`。
 
 ## spec の例
 

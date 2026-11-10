@@ -28,7 +28,7 @@ diff・出力・調査で確認した事実を本文にする。推定は「（�
 
 beforeはmainまたはデプロイ済み、afterはbranch。同じURL・viewport・表示条件で撮る。beforeを取得できなければその不足を明記し、画像を捏造しない。
 
-1. [orca-cli](../orca-cli/SKILL.md) のversion-matched browser guideを読む
+1. `orca-cli` skill（Orca が配る）のversion-matched browser guideを読む
 2. このskillの [tools/anno-example.md](tools/anno-example.md) に従って [tools/anno.js](tools/anno.js) で変更箇所へ注釈を入れる。selector・テキストで対象を指定する
 3. Orca内蔵browserで注釈付き画像を撮る。原稿では画像の上に「反映前」「反映後」のキャプションを置き、必要なら番号と本文を対応させる
 4. `cwebp` が利用できればWebPへ圧縮する。learnの共有成果物の制作に従い、画像をdata URIとして原稿に埋め込む
