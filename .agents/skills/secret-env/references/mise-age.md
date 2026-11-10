@@ -2,17 +2,21 @@
 
 ## 運用前提
 
-- API key / token は設定ファイルやリポジトリに平文で置かず、`mise set --age-encrypt` で age 暗号化して `mise.toml` の `[env]` に格納する。暗号文なので commit / 同期してよい。
+- API key / token は設定ファイルやリポジトリに平文で置かず、`mise set --age-encrypt` で age 暗号化して `mise.toml` の `[env]` に格納する。暗号文なので、自分の鍵だけで復号する場所（dotfiles・個人の repo）では commit / 同期してよい。
 - 復号鍵（age secret key）は生ファイルとして持たず、macOS Keychain（service=`mise-age-key`）にのみ置く。
 - Keychain の age key は shell 起動時に `MISE_AGE_KEY` env へ注入し、mise がそれを使って復号する。
+
+## team 共有の repo
+
+mise の age 暗号文は暗号化時の recipient しか開けず、個人の鍵で暗号化した値を team repo に commit すると他のメンバーには読めない。team 共有 repo の secret は fnox + age で扱う（[team-repo-fnox.md](team-repo-fnox.md)）。自分だけが使う値は、その repo の `mise.local.toml` に自分の鍵で暗号化して置く。global gitignore の無い環境もあるので、置く前に `git check-ignore -q mise.local.toml` で除外されていることを確かめる。
 
 ## 学び
 
 - `~/.config/mise/age.txt` を削除して Keychain の `MISE_AGE_KEY` だけで運用している環境では、`mise set --age-encrypt` の新規暗号化時に recipient を自動導出できないため、`security find-generic-password -a "$USER" -s mise-age-key -w | age-keygen -y` で導出した値を `--age-recipient` に明示する。
 - `age-keygen -y` が環境によって通らない（stdin の扱い・引数解釈差）場合の代替: `MISE_AGE_KEY` を 600 の temp file に書いて `mise set --age-encrypt --age-key-file <path>` に identity file として渡すと recipient 導出をスキップできる（用後は file を消す）。復号の検証では値を表示せず、対象 key の一致判定だけを出す。
-- global config の `[env]` に置いた age 暗号文は全ディレクトリで復号・注入される。repo 配下だけに閉じたい secret は、その repo の `mise.toml` に同じ recipient で暗号化して置き、global 側から削除して scope を検証する。
+- global config の `[env]` に置いた age 暗号文は全ディレクトリで復号・注入される。repo 配下だけに閉じたい secret は、自分だけが使う repo（個人の repo・dotfiles）ならその repo の `mise.toml`、team 共有 repo なら `mise.local.toml`（team で使うものは fnox）に同じ recipient で暗号化して置き、global 側から削除して scope を検証する。
 - scope の変更（repo-local ⇄ global）は同一 recipient なら**暗号文をそのままコピーすれば済む** — `mise set --age-encrypt` で再暗号化すると平文を手元に出す必要が生じる。移設の検証は復号値の sha256 先頭数桁を移設前後で突き合わせれば、平文を画面に出さずに一致を確認できる。
-- repo-local `mise.toml` へ secret を移した後は、原本一致・repo 内で env が出ること・repo 外で env が出ないことを確認してから global 側を消す。復号鍵は Keychain の age key 単一なので、Keychain を失うと全 age 暗号文が復号不能になる（鍵自体は別途バックアップして単一障害点を避ける）。
+- repo-local の `mise.toml`（team 共有 repo では `mise.local.toml`）へ secret を移した後は、原本一致・repo 内で env が出ること・repo 外で env が出ないことを確認してから global 側を消す。復号鍵は Keychain の age key 単一なので、Keychain を失うと全 age 暗号文が復号不能になる（鍵自体は別途バックアップして単一障害点を避ける）。
 - 非対話に spawn されたプロセス（agent セッション等）では shell 起動 hook が走らず `MISE_AGE_KEY` 未注入のことがあり、`mise exec` しても `[env]` の age 暗号文が復号されず secret が空に見える。macOS では Keychain から値を表示・ファイル保存せず、そのプロセスの env にだけ渡して復号させる:
 
 ```bash
