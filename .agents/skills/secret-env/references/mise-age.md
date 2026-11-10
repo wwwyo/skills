@@ -2,9 +2,17 @@
 
 ## 運用前提
 
-- API key / token は設定ファイルやリポジトリに平文で置かず、`mise set --age-encrypt` で age 暗号化して `mise.toml` の `[env]` に格納する。暗号文なので commit / 同期してよい。
+- API key / token は設定ファイルやリポジトリに平文で置かず、`mise set --age-encrypt` で age 暗号化して `mise.toml` の `[env]` に格納する。暗号文なので、自分の鍵だけで復号する場所（dotfiles・個人の repo）では commit / 同期してよい。
 - 復号鍵（age secret key）は生ファイルとして持たず、macOS Keychain（service=`mise-age-key`）にのみ置く。
 - Keychain の age key は shell 起動時に `MISE_AGE_KEY` env へ注入し、mise がそれを使って復号する。
+
+## team 共有の repo
+
+age の暗号文は暗号化時の recipient しか復号できない。自分の鍵だけで暗号化した値を team repo の `mise.toml` に commit すると、他のメンバーには読めない文字列になり env にも入らない。team repo には age の暗号文を commit しない。
+
+- 自分だけが使う secret は、その repo の `mise.local.toml` に自分の鍵で暗号化して置く。dotfiles の global gitignore が `mise.local.toml` を除外するので、どの repo でも commit されない
+- team がすでに secret manager（1Password・Doppler・Vault・GitHub Actions secrets・Cloudflare の secrets 等）を使っているならそれに従い、repo には変数名と取得方法だけを書く。手元で使う分は `mise.local.toml` に置く
+- 例外としてメンバー全員の公開鍵へ暗号化して commit する（`--age-recipient` / `--age-ssh-recipient` は複数指定できる）のは、メンバーが少なく固定で、全員が mise + age の運用に合意したときだけ。メンバーの増減で全 secret の再暗号化が要り、抜けた人は git 履歴の古い暗号文を読めるので secret の rotate も要る。CI 用の鍵も recipient に入れて管理する。mise の age 暗号化は experimental 扱い（2026-11 時点）
 
 ## 学び
 
