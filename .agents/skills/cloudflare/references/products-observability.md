@@ -2,7 +2,7 @@
 
 | What you need to do | Product or tool to consider | When to choose it | Skill or reference |
 | --- | --- | --- | --- |
-| Debug failures and trace application requests | Workers Logs and Traces | Investigate runtime errors and execution paths | [Observability](observability/README.md) |
+| Debug failures and trace application requests | Local Explorer; Workers Logs and Traces | Inspect binding data and traces locally, or investigate deployed runtime errors | `workers-development` skill; [Observability](observability/README.md) |
 | Process Worker execution events in code | Tail Workers | Build custom log or exception processing | [Tail Workers](tail-workers/README.md) |
 | Profile CPU usage or memory allocations in deployed Workers or Durable Objects | Workers profiling | Investigate CPU and memory issues in production | `workers-profiling` skill |
 | Export Worker logs to another system | Workers Logpush | Deliver logs to a supported external destination | [Logpush docs](https://developers.cloudflare.com/workers/observability/logs/logpush/index.md) |

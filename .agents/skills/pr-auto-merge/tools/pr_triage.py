@@ -263,10 +263,19 @@ def orca_json(args, timeout=120):
 
 # ---------- GitHub fetch ----------
 
+def repo_is_archived(repo):
+    """repo が archive 済みかを返す。archive 済み repo は read-only で
+    push も merge もできないため、open PR の列挙段階で lane の対象から外す
+    （hold として報告もしない — merge に進む余地が無い PR を毎 tick の判断
+    待ちに積み続けない）。"""
+    return bool((gh_json(["api", f"repos/{repo}"]) or {}).get("archived"))
+
+
 def list_open_prs():
     """対象 owner の open PR を全件列挙する。search API は 1000 件 hard
     cap があり、total_count と一致しなければ取り切れていない → fail-closed
-    （先頭だけで判定して 51件目以降を見落とすのと同じ失敗を防ぐ）。"""
+    （先頭だけで判定して 51件目以降を見落とすと同じ失敗を防ぐ。archive 済み
+    repo の除外で列挙が減るのは取りこぼしではない）。"""
     items, total = [], None
     for page in range(1, MAX_PAGES + 1):
         d = gh_json(["api", "-X", "GET", "search/issues",
@@ -283,10 +292,15 @@ def list_open_prs():
         raise ApiError(f"PR enumeration truncated: got {len(items)} of "
                        f"total_count={total} (search cap)")
     prs = []
+    archived_cache = {}
     for it in items:
         repo = (it.get("repository_url") or "").rsplit("/", 2)
         name = "/".join(repo[-2:]) if len(repo) >= 2 else None
         if not name:
+            continue
+        if name not in archived_cache:
+            archived_cache[name] = repo_is_archived(name)
+        if archived_cache[name]:
             continue
         prs.append({"repo": name, "number": it.get("number"),
                     "title": it.get("title"), "url": it.get("html_url"),

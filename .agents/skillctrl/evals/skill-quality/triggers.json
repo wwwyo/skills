@@ -43,8 +43,6 @@
   {"id":"setup-near-miss","skill":"project-setup","should_trigger":false,"query":"既存repoのREADMEのinstall節だけ更新して。repoや開発基盤を新しく作る依頼ではありません。"},
   {"id":"prototype-positive","skill":"prototype","should_trigger":true,"query":"検索結果のカードを3案試作して比較したい。構造が明確に異なる候補を作り、人が切り替えて選べる画面にして。"},
   {"id":"prototype-near-miss","skill":"prototype","should_trigger":false,"query":"前に選んだ検索カードの余白だけ修正して。比較用の新しい案は作らず、選択済みの1案を仕上げて。"},
-  {"id":"reporting-positive","skill":"reporting","should_trigger":true,"query":"今回の設定移行のdiffと検証結果を、共有できる単体HTMLの作業レポートにまとめて。変更の目的と影響が短時間で分かるようにして。"},
-  {"id":"reporting-near-miss","skill":"reporting","should_trigger":false,"query":"作業の進捗をこのチャットで2文だけ教えて。HTMLやレポートファイルは不要です。"},
   {"id":"creator-positive","skill":"skillctrl","should_trigger":true,"query":"自分の運用専用の新しいskillを作りたい。既存文章を根拠に短い入口と用途別referencesに分け、代表タスクで評価するところまで進めて。"},
   {"id":"creator-near-miss","skill":"skillctrl","should_trigger":false,"query":"このPythonのCLI実装をrefactorして。skillファイルの作成・更新・性能評価は必要ありません。"},
   {"id":"structure-positive","skill":"skill-structure","should_trigger":true,"query":"repo固有の学びskillの構造を決めたい。references、tools、review loopをどこに分けるか、他skillに頼る部分も整理して。"},

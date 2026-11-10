@@ -353,6 +353,9 @@ pullfrog-approval を免除する。
 
 ## 運用上の前提
 
+- archive 済み repo の open PR は列挙段階（`list_open_prs`）で除外する。
+  archive 済み repo は read-only で push も merge もできないため、judge・hold
+  の対象にも報告にも載せない（毎 tick 判断待ちに積み続けない）
 - `gh` はネットワーク/認証が要るので sandbox 外で実行する
 - `pullfrog-approval` が absent・fail でも直ちに異常としない。bot の
   manifest・lock・workflow だけの PR は script の依存自動 ok または

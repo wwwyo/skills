@@ -29,7 +29,7 @@ Paths below show the default `output` directory, `.e2e`. If `output` or
      timeout, changing values at a race;
    - what the app logged meanwhile (`✗ network error: POST /api/save 500`,
      `✗ uncaught error: ...`, `⚠ console warning: ...`, `ℹ console: ...`);
-     `❯ app 2 errors` in the terminal says there are some, and the page's
+     `❯ app 2 errors` in the terminal quotes the first 3 errors, and the page's
      `## App log` lists up to 50 with their step, errors and warnings
      first, counting the rest;
    - where the page went (`↪ navigated to /login`, a new tab the app
@@ -57,10 +57,11 @@ Paths below show the default `output` directory, `.e2e`. If `output` or
      screen at failure, the app source, or a live session.
    - For a screen the evidence and the source leave out, look live (topic
      `mcp`): open or reuse a session, go straight to that screen, then
-     `observe` and `locate`. On the web, `navigate` to the path of the
-     `❯ at` URL or the screen's route, and tap only to reach a state no URL
-     opens. A device session starts on the app's launch screen: take the
-     shortest path from there.
+     `observe` and `locate`, or `run_code` for the fixed line and the ones
+     after it. On the web, `navigate` to the path of the `❯ at` URL or the
+     screen's route, and tap only to reach a state no URL opens. A device
+     session starts on the app's launch screen: take the shortest path from
+     there.
    - Then rerun only that test by `file:line` (SKILL.md, "Rerunning a
      test while you fix it"; topic `mcp` says when a session must close
      first).
@@ -124,7 +125,7 @@ jq '.run.results[] | select(.selected and .status != "passed") | .attempts[-1]
 | `AUTOMATION_UNSUPPORTED` | The step needs an interaction the engine's toolset lacks (drag on a device, say); blocked, exit 1 | Do that step with `screen` actions, or run the test on a target that supports it |
 | `STEP_TIMEOUT`, `STEP_BUDGET_EXHAUSTED` | Goal too big or ambiguous, or a slow provider | Split the goal, use on-screen wording, add vocabulary via `agents.<name>.context` or `agentContext`; raise `maxSteps` or `maxModelCalls` (budget), the config `timeout` (`act`), `judgmentTimeout` (judgments); `--debug` |
 | `CONTEXT_OVERFLOW` | Screen plus step history did not fit the model's context window (`act` after one shrink-and-retry; a judgment on the first overflow) | Lower `agents.<name>.maxObservationBytes`, split the step, or pick a larger-window model |
-| `POLICY_DENIED` | A URL whose scheme is not `http:` or `https:` (`file:`, `view-source:`, `data:`); a password `Secret` into a non-password sink; reading a secure field, `toHaveValue`, `toHaveText`, `toContainText`, `toHaveAttribute` included; an `act` or `vision: true` step whose tree read timed out after a secret fill | http(s) or `about:blank` only; passwords into password inputs only; assert the outcome, not the value |
+| `POLICY_DENIED` | A URL whose scheme is not `http:` or `https:` (`file:`, `view-source:`, `data:`); a password `Secret` into a non-password sink; reading a secure field, `toHaveValue`, `toHaveText`, `toContainText`, `toHaveAttribute` included; `vision: 'only'` with pixels withheld | http(s) or `about:blank` only; passwords into password inputs only; assert the outcome, not the value |
 | `UNSUPPORTED_CAPABILITY` | A fixture the engine lacks (`browser` on a device), `schema` or `vision` on `act`, an action the surface lacks | Declare `requires: ['browser']`; drop the option or action |
 | `SESSION_UNAVAILABLE`, `SESSION_CONTRACT` | `session: 'x'` with no setup saving `x`; a setup that skipped a declared name. `SESSION_MISMATCH`, `SESSION_EXPIRED`, `SESSION_INVALID`: the stored session is another run's or app's, expired, or corrupt | Add or fix the `test.setup`; rerun it |
 | `ONLY_IN_CI` | `test.only` reached CI | Remove it |
@@ -150,6 +151,7 @@ stdout/stderr 直接書き込みまでは隔離しない。
 | Do | When |
 | --- | --- |
 | `--headed` | Watch the failing step |
+| `--step --headed` | A person steps through the test one key per step |
 | `--workers 1 --retries 0` | Take parallelism and retries out of the picture |
 | `--action-timeout 5000` | While writing a test: a wrong locator fails in 5 s instead of 30 s (`--assertion-timeout` for `expect`). Keep it longer than the slowest screen takes to load |
 | `--no-cache` | Rule out a stale `agent.act` replay; one run, not every rerun. A failed run already deletes the replay that ran into the failure, so rerun with the cache on first. When the failure repeats after a replay the trace page shows as kept and the `--no-cache` run passes, tighten the check after that goal: the stale replay then fails it and is deleted |
@@ -158,6 +160,7 @@ stdout/stderr 直接書き込みまでは隔離しない。
 | `--video`, `--video=retain-on-failure` | Watch the failed attempt; `step.startedAt` minus the segment's `startedAt` is the step's offset into it |
 | `command.log: '.e2e/logs/app.log'` | The app's output when it never gets ready or errors mid-test |
 | `await app.screenshot('before-submit')` | Evidence at a point you choose; it masks secure fields only |
+| `app.startRecording()`, then `await app.stopRecording()` | One transition as a video; fails while the test's `video` records |
 | `CI=1 mise x -- e2e run` | Reproduce CI-only behaviour (defaults: topic running) |
 
 ## Flaky tests

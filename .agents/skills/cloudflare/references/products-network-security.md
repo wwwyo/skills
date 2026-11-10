@@ -9,6 +9,7 @@ Paths in commands are relative to the skill root (the directory containing `SKIL
 | Distribute traffic across origins and fail over unhealthy servers | Load Balancing | Use health checks and traffic steering for multiple origin servers | [Load Balancing docs](https://developers.cloudflare.com/load-balancing/index.md) |
 | Connect an existing server to Cloudflare | Cloudflare Tunnel | Reach an origin without a publicly routable IP address | [Tunnel](tunnel/README.md) |
 | Connect Workers to private services | Workers VPC | Access services in private networks from a Worker | [Workers VPC](https://developers.cloudflare.com/workers-vpc/index.md) |
+| Access a protected webpage or API from an agent, script, or crawler | Access service tokens | Authenticate an authorized non-browser client to an Access application | `cloudflare-one` skill; [Service token docs](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/index.md) |
 | Require employee login before accessing an internal app | Access | Put identity-based access policies in front of an internal application | `cloudflare-one` skill; [Access docs](https://developers.cloudflare.com/cloudflare-one/access-controls/index.md) |
 | Transform permitted Gateway HTTP traffic with a Worker | Gateway Forward + Workers | Apply custom request or response logic to traffic passing through Gateway | `gateway-workers` skill |
 | Protect access to internal applications and networks | Cloudflare One | Apply identity and network access policies | `cloudflare-one` skill; [Cloudflare One docs](https://developers.cloudflare.com/cloudflare-one/index.md) |
@@ -16,7 +17,7 @@ Paths in commands are relative to the skill root (the directory containing `SKIL
 | Proxy a TCP or UDP application | Spectrum | Protect and accelerate non-HTTP application traffic | [Spectrum](https://developers.cloudflare.com/spectrum/index.md) |
 | Connect a network directly to Cloudflare | Network Interconnect | Dedicated network connectivity is required | [Network Interconnect](https://developers.cloudflare.com/network-interconnect/index.md) |
 | Improve routing across the network | Argo Smart Routing | Optimize traffic paths to the origin | [Argo Smart Routing](https://developers.cloudflare.com/argo-smart-routing/index.md) |
-| Reduce Worker-to-backend latency | Smart Placement | Place Worker execution closer to the backends it calls | [Smart Placement](smart-placement/README.md) |
+| Reduce Worker-to-backend latency | Workers placement | Use explicit region hints for known regional databases, or traffic-based Smart Placement | [Workers placement docs](https://developers.cloudflare.com/workers/configuration/placement/index.md) |
 | Redirect URLs, rewrite paths or headers, or change origin routing | Rules | Use Redirect, Transform, or Origin Rules when configuration can express the required behavior | [Rules docs](https://developers.cloudflare.com/rules/index.md) |
 | Make small HTTP request or response changes | Snippets | Lightweight edge logic meets the need | [Snippets](https://developers.cloudflare.com/rules/snippets/index.md) |
 | Protect forms from automated abuse | Turnstile | Add bot challenges and server-side token validation | `turnstile-spin` skill; [Turnstile docs](https://developers.cloudflare.com/turnstile/index.md) |

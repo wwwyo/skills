@@ -2,7 +2,7 @@
 
 | What you need to do | Product or tool to consider | When to choose it | Skill or reference |
 | --- | --- | --- | --- |
-| Run locally and manage resources from the CLI | Wrangler | Develop, configure, deploy, and inspect the intended account and environment | `wrangler` skill; [Wrangler docs](https://developers.cloudflare.com/workers/wrangler/index.md) |
+| Run locally and manage resources from the CLI | Cloudflare CLI (`cf`); Wrangler for existing Wrangler projects | Develop, configure, deploy, and inspect the intended account and environment; choose the CLI as described in [Choose the CLI](../SKILL.md#choose-the-cli) | `cf-cli` skill; [cf docs](https://developers.cloudflare.com/cf/index.md); `wrangler` skill for Wrangler projects |
 | Test Worker behavior before deployment | Workers testing tools | Choose runtime tests or integration tests for the affected behavior | [Testing docs](https://developers.cloudflare.com/workers/testing/index.md); `durable-objects` skill for DO tests |
 | Embed local Worker simulation in tooling | Miniflare | A programmatic emulator is needed for a custom development or test harness | [Miniflare](miniflare/README.md) |
 | Run or investigate the underlying Workers runtime | workerd | Work directly with the runtime outside normal managed deployment | [workerd](https://github.com/cloudflare/workerd) |

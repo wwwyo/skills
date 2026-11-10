@@ -1,20 +1,21 @@
 {
   "skills": {
     "agent-browser": {
+      "computedHash": "60a9cbe5af176150582c019e16e5d3703a41bb02d88438e881349876120d7944",
       "skillPath": "skills/agent-browser/SKILL.md",
       "source": "vercel-labs/agent-browser",
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel-labs/agent-browser.git"
     },
     "ce-simplify-code": {
-      "computedHash": "243c3829c267e45e54467da94919058e23b44c1133309fa2518f44478665d7bc",
+      "computedHash": "10b3639265eabf61c7bf7c2f97a867271a9c56c05bc180e3ab67b21d957d1f72",
       "skillPath": "skills/ce-simplify-code/SKILL.md",
       "source": "everyinc/compound-engineering-plugin",
       "sourceType": "github",
       "sourceUrl": "https://github.com/everyinc/compound-engineering-plugin.git"
     },
     "cloudflare": {
-      "computedHash": "f08c8c1be96dfad7f9d5418b1345477dd2e55af58c8da01326c9a2616c7ed721",
+      "computedHash": "1cce94a0fea413a5d5f9dd18d2a72cd90e925017c791eb6554be14f5bb777576",
       "skillPath": "skills/cloudflare/SKILL.md",
       "source": "cloudflare/skills",
       "sourceType": "github",
@@ -29,14 +30,14 @@
       "sourceUrl": "https://github.com/mattpocock/skills.git"
     },
     "e2e": {
-      "computedHash": "591f37470ab28fbee0e60f4dae8d4308898558d819003ee0b020a1c50ff8cb86",
+      "computedHash": "433d512c9334d38b8dd9426489e54a82d94999fafb1d8d76e3dacfffc4fb9c72",
       "skillPath": "skills/e2e/SKILL.md",
       "source": "tester-army/e2e",
       "sourceType": "github",
       "sourceUrl": "https://github.com/tester-army/e2e.git"
     },
     "gh-stack": {
-      "computedHash": "15d9ce292d8b90b097463c8c3232fdc61f93474add776235245326de532fef2e",
+      "computedHash": "e54bf50370987f13ca2803b3be829f36350b68a79dc36ffd3b27350bc6d2fde1",
       "skillPath": "skills/gh-stack/SKILL.md",
       "source": "github/gh-stack",
       "sourceType": "github",
@@ -50,7 +51,7 @@
       "sourceUrl": "https://github.com/mattpocock/skills.git"
     },
     "grilling": {
-      "computedHash": "ef1641a2047b71b60f1942cd35efb47d3afc9d584dff5a0b01f8c7db923aaa08",
+      "computedHash": "e40cc1d348f6d935e28f1e24474302d7368f0a400429271a43b35fe154891dc5",
       "pluginName": "mattpocock-skills",
       "skillPath": "skills/productivity/grilling/SKILL.md",
       "source": "mattpocock/skills",
@@ -58,7 +59,7 @@
       "sourceUrl": "https://github.com/mattpocock/skills.git"
     },
     "langfuse": {
-      "computedHash": "ff5c606d22961ae0c70968e8944c73ce576a3a0a8422415861d6d7839a45539d",
+      "computedHash": "c1dc8c4e847791c62a3145894be9ec318220e76fdf0ee1a13422842f9908a48b",
       "skillPath": "skills/langfuse/SKILL.md",
       "source": "langfuse/skills",
       "sourceType": "github",
