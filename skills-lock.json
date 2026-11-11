@@ -85,6 +85,13 @@
       "source": "typesafe-ai/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/typesafe-ai/skills.git"
+    },
+    "unslop": {
+      "computedHash": "c03b6e1a1e95ce9def5d9c3d7aff089deaa01b93d2999e080c986d3517ce1eea",
+      "skillPath": "skills/unslop/SKILL.md",
+      "source": "heydamir/unslop",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/heydamir/unslop.git"
     }
   },
   "version": 3

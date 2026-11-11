@@ -8,7 +8,7 @@ Paths in commands are relative to the skill root (the directory containing `SKIL
 # Design — <プロダクト名>
 
 Locked design system。この repo の視覚値の正本。product-design skill はこれを参照し、
-Hallmark は検出すると pick をこれに従わせる。値を変えるときはこのファイルだけを編集し、
+unslop は検出すると色・書体・余白をこれに従わせる。値を変えるときはこのファイルだけを編集し、
 派生物は再生成する。
 
 ## System
