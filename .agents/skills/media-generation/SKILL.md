@@ -47,6 +47,10 @@ metadata:
 
 音声生成のモデル・話者・認証・感情や話し方のタグ・日本語の読み分け・失敗時の扱いは [references/audio-generation.md](references/audio-generation.md) を正本とする。音声を作る前に読む。`learn` などの呼び出し側にはこの手順を複製せず、参照を置く。
 
+## 動画は流す場所から決める
+
+動画を作るとき（Video A・B・併用のどれでも）は、台本・構成を書く前に**どこで流すか**（宣伝／解説／発表の中で流す）を決める。通りごとに場面の切り替えの基準・動き・音の扱いが逆になるため。依頼に流す場所が無ければ一度だけ聞く。三通りのどれにも当てはまらない動画は依頼者の目的に合わせて構成する。通りの決め方と通りごとの確認項目は [references/video-by-destination.md](references/video-by-destination.md)。
+
 ## Video A — 生成AI
 
 **使いどころ**: 実写に見せる短いクリップ、実写真からの image-to-video、テキスト→動画、必要時の実写編集。
