@@ -16,7 +16,6 @@
     "./.agents/skills/e2e",
     "./.agents/skills/grill-with-docs",
     "./.agents/skills/grilling",
-    "./.agents/skills/hallmark",
     "./.agents/skills/implement",
     "./.agents/skills/japanese-tech-writing",
     "./.agents/skills/learn",
@@ -28,6 +27,7 @@
     "./.agents/skills/prototype",
     "./.agents/skills/skill-structure",
     "./.agents/skills/solo-product",
+    "./.agents/skills/unslop",
     "./.agents/skills/wiki"
   ]
 }

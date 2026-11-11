@@ -35,7 +35,7 @@
 
 視覚値の正本は **repo root の `design.md`** に置く（skill 配下ではない）。`## Tokens` / `## Components` の fenced ```css block に、色・字・余白・角丸の custom property と header / table / stat strip / button など基盤 component 用のクラスを持つ。語彙は shadcn/ui 規約（`--primary` / `--primary-foreground` の `-foreground` ペア、`--radius`、`.dark` override）。
 
-repo root に置くのは reader がこの skill の agent だけではないため — Hallmark は Step 0 で design.md を検出して生成 pick をそれに従わせるし、skill を持たない agent も同じ正本を読める。skill 直下に置くと consumer ごとに正本が分かれる。
+repo root に置くのは reader がこの skill の agent だけではないため — unslop は作業の最初に design.md を読んで色・書体・余白をそれに従わせるし、skill を持たない agent も同じ正本を読める。skill 直下に置くと consumer ごとに正本が分かれる。
 
 agent には SKILL.md か reference に「視覚値は `/design.md` を読む」と1行書いておき、design.md 自体を読ませる。design.md は 〜200 行を目安に抑える（design-md skill の format 定義が上限の正本）。肥大して語彙表なしでは読めなくなったら、クラス名・変数名の一覧を SKILL.md / reference に畳み、CSS 本体を読ませない形に戻す。
 

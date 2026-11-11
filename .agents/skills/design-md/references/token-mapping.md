@@ -7,7 +7,7 @@
 - **値だけを取る。** 配布物の DESIGN.md を repo root の `design.md` として置かない。節構成（System / Tokens / …）も持ち込まず、[format.md](format.md) の形で新しく書く。語彙・format・check はこの skill が正本
 - **1 システムにつき1回。** ページ単位で素材を差し替えない（`design.md` の前提は「pages must share the system」）。複数必要なときは `## Variants` に増やす
 - **実数値を取る。** 値の出所は配布物の実装側（`theme.css` / shadcn kit / computed style）を優先し、一覧プレビュー用の JSON や screenshot の目測で色・余白を決めない。抽出モードと同じ規律
-- **audit は Hallmark のまま。** step 5 の audit を素材が上書きしない。素材の署名が gate で落ちる場合（italic heading・re-drawn chrome・gradient 等）は「この build は gate 例外」と明示する。落ちたまま黙って通さない
+- **監査は unslop のまま。** step 5 の監査を素材が上書きしない。素材の署名が unslop の signs に当たる場合（italic heading・gradient・glow 等）は「この build は例外」と明示する。落ちたまま黙って通さない
 - 素材名・URL・日付・取り込み判断を `## Notes` に記録する
 
 ## 写像

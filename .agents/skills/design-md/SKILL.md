@@ -25,7 +25,7 @@ prototype は大枠の UI/UX（構図・密度・雰囲気）を人間に選ば�
    - **icons**: library を1本に決める（例: lucide・24px grid・stroke 1.5）。icon 系統の混在は slop の典型なので、許す例外（外部サービスの公式 logo 等）も明記する
    - **logo**: 単体で使う **logomark** と、製品名全体を表す **wordmark** をセットで設計し、形のつながりを保つ。作成は後述の「Logo の作成フロー」に従い、symbol 候補 → 人間の選択 → wordmark 候補 → 人間の選択 → 字間調整パネルの順で進める。単純な幾何 SVG や独自字形は手書きしてよい。image generation は exploration / moodboard までに留め final asset に使わない（商標化が困難・ラスタはスケールしない・生成っぽさ自体が slop のため）
 4. **re-skin**: 選ばれた prototype を設計済みの値で上書きして人間に見せ、合意を取る。「構造は選んだもの・値は設計したもの」の状態で承認してもらう — 承認した見た目と ship される値のズレをここで潰す
-5. **監査**: re-skin 済みの案に `hallmark` の audit を1回当て、生成 AI っぽさを潰す。案同士が見かけほど違わないときはここで気づく
+5. **監査**: re-skin 済みの案に `unslop` の監査（signs の洗い出し）を1回当て、生成 AI っぽさを潰す。案同士が見かけほど違わないときはここで気づく
 6. **執筆**: 下のフォーマットで `design.md` を repo root に書き、`design-md-check.py` で error 0 を確認する。design.md が既にあるなら丸ごと書き直さない — 先に読み、この skill が持つ節（System / Tokens / Components / Icons / Logo / Motion）だけを更新し、他 producer 由来の節（`## Exports`・`## Provenance`・`## Macrostructure family` 等）は触らない。token 名を変える（語彙の rename）場合はその節が変わることを人間に伝えて同意を取る
 7. **loop**: design.md と references の種ができたら、product-design template の「固定シナリオの始め方」に渡す。逸脱の判定と振り分けは人間が決め、承認前に encode や commit へ進まない。この skill の担当は値までで、判断を育てる loop は product-design 型 skill 側で回す
 
@@ -81,7 +81,7 @@ logomark と wordmark をセットで設計しても、同じ文字でも用途�
 
 ## 出力
 
-- `design.md` は**対象 repo の root** に書く（product-design skill 配下ではない。Hallmark・他 agent など skill 外の reader も同じ正本を読むため、置き場は repo root 固定）
+- `design.md` は**対象 repo の root** に書く（product-design skill 配下ではない。unslop・他 agent など skill 外の reader も同じ正本を読むため、置き場は repo root 固定）
 - 検証はこの skill 同梱の [`tools/design-md-check.py`](tools/design-md-check.py) を回し、error 0 を確認する
 
 ```bash

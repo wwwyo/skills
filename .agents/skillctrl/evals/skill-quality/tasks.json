@@ -200,62 +200,6 @@
     "qualitative_review": "CLI.md から未経験の agent が introspection、dry-run、実行、失敗処理を判断できるか。必要のない server/MCP を追加していないか。"
   },
   {
-    "id": 5,
-    "skill_name": "hallmark",
-    "eval_name": "one-button-eight-states",
-    "prompt": "この保存 button だけ、既存デザインに合わせて見た目を改善してください。画面全体や保存処理は変更不要です。ローカルで全状態を見比べられる preview も残してください。audience/usecase/tone は研究者/保存操作/控えめなmodern-minimalで合意済みです。質問は不要です。追加質問が必要な点があれば推定を明示し、成果物作成まで続けてください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
-    "input_files": [
-      {
-        "path": "design.md",
-        "content": "# Locked visual system\n\nGenre: modern-minimal. Internal research notebook UI.\n既存 tokens.css が色・font の正本。新しい brand や catalog theme を選ばない。\ncopy: default/hover/focus/active/disabled は『保存』、loading は『保存中…』、error は『再試行』、success は『保存済み』。\n動きは控えめで reduced motion を尊重する。外部 fonts、画像、libraries を取得しない。\n"
-      },
-      {
-        "path": "tokens.css",
-        "content": ":root {\n  --color-paper: #ffffff;\n  --color-paper-2: #e8f1fa;\n  --color-ink: #102a43;\n  --color-accent: #145da0;\n  --color-accent-hover: #0c467b;\n  --color-accent-ink: #ffffff;\n  --color-rule: #64748b;\n  --color-focus: #111827;\n  --color-error: #a11220;\n  --color-success: #116b35;\n  --font-body: system-ui, sans-serif;\n}\n"
-      },
-      {
-        "path": "button.css",
-        "content": ".save-button { border: none; padding: 8px 16px; background: var(--color-accent); color: var(--color-accent-ink); font-family: var(--font-body); }\n.save-button:hover { opacity: .8; }\n"
-      },
-      {
-        "path": "button.html",
-        "content": "<button type=\"button\" class=\"save-button\" id=\"save\">保存</button>\n"
-      },
-      {
-        "path": "index.html",
-        "content": "<!doctype html><html lang=\"ja\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>NoteShelf</title><link rel=\"stylesheet\" href=\"tokens.css\"><link rel=\"stylesheet\" href=\"button.css\"><main><h1>調査メモ</h1><p id=\"memo\">保存操作の確認用ページ。</p><button type=\"button\" class=\"save-button\" id=\"save\">保存</button><output id=\"count\">0</output></main><script>let count=0;document.querySelector('#save').addEventListener('click',()=>{document.querySelector('#count').value=String(++count)});</script></html>\n"
-      }
-    ],
-    "expected_output": "既存 tokens を使用する button artifact とラベル付き8状態 preview。production の画面構成、copy intent、保存処理は保存される。",
-    "assertions": [
-      {
-        "text": "preview に default、hover、focus、active、disabled、loading、error、success の8行があり、それぞれ実際の button と状態を再現する selector/attribute がある。",
-        "method": "DOM と CSS を照合する。コメントやラベルに8状態を書くだけでは pass にしない。"
-      },
-      {
-        "text": "実際の :hover、:focus-visible、:active に styling があり、preview の強制状態にも同じ styling が適用される。",
-        "method": "CSS selector を調べ、可能なら browser computed styles で通常状態との差を確認する。"
-      },
-      {
-        "text": "disabled の button は native disabled として作動せず、loading/error/success は視覚と accessibility attribute または関連メッセージで区別できる。",
-        "method": "DOM と実行結果を検査する。色だけの error/success 表示は fail。"
-      },
-      {
-        "text": "component の色と font-family が既存 named tokens を使い、tokens.css の既存値は保存される。",
-        "method": "token hash と CSS 値を検査する。none/currentColor 等の非色指定は許す。"
-      },
-      {
-        "text": "320/375/414/768px の preview で horizontal overflow がなく、button text が一行、touch target が44px以上である。",
-        "method": "利用可能なローカル browser で各 viewport の scrollWidth、text line rect、button bounds を測定する。実測ができなければ未検証として残し、自己申告から pass にしない。"
-      },
-      {
-        "text": "index.html の本文・保存 click handler が保存され、hero/nav/footer、新しい保存処理、.hallmark/log.json が追加されない。",
-        "method": "変更差分と作成ファイルを確認する。preview の必要な wrapper は許す。"
-      }
-    ],
-    "qualitative_review": "既存の研究メモ UI と自然に馴染むか。8状態が明確で落ち着いた見た目になり、不要なページ装飾が増えていないか。"
-  },
-  {
     "id": 6,
     "skill_name": "skillctrl",
     "eval_name": "restructure-existing-skill-preserve-contract",
