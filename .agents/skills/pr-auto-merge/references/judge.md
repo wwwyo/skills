@@ -67,7 +67,11 @@ lane への推薦で、merge の発行は script が hard gate の再検証後�
   ときは同名の check-run 自体があるかを先に見る — check-run が1件も無ければ
   review の前に workflow が起動していない（private repo の Actions 上限等）。
   [Pullfrog 導入 4](../../project-setup/references/pullfrog.md) の billing 確認へ進み、
-  この不在を PR 側の欠陥として `repair` にしない。
+  この不在を PR 側の欠陥として `repair` にしない。ただし PR の author が bot の
+  場合、`absent` は pullfrog が bot author を review しないためで、依存以外の
+  差分を含む（`bot_dep_only` が立たない）と check は永久に付かない — billing を
+  疑う前に `@pullfrog` でレビューを依頼するか人間が merge するまで hold が続く
+  （script は理由にその旨を書く）。
 - `draft (author ready 待ち)` — draft は author が未完成と明示した PR で、
   plan の hold と hard gate の両方が弾く。draft のまま pullfrog が承認を
   保留すると pullfrog-approval が FAILURE になり、lane は author に代わって
@@ -121,6 +125,16 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   bump した action の outputs・token の永続化・trigger/permissions の差分有無、その action の id を
   workflow が参照しているか、既存成果物の sha・代表値の一致、revert 手順で影響を判定できる。
   何を確認して何が非該当かを `--reason` に列挙する
+- **差分から影響範囲を確定する**: 共有コード（変換器・共通設定）を変える PR は、
+  変更が「どの key / 関数に限定されたか」を列挙し、影響しないはずの側の差分が
+  指紋・整形のみであることを機械走査する。独立な集計値（合計・件数）は base と
+  head の両方で突き合わせる。PR 本文の成功報告（「different 0」「PASS n」）は、
+  この突き合わせが取れてはじめて根拠になる
+- **CI が実行しない検証**: 既存 CI が該当 test を回さない repo では、judge-input の
+  head を executor の作業 worktree ではなく一時 worktree に checkout して
+  install + test を回し、実行したコマンドと結果を `--reason` / note に残す
+  （作業 worktree を汚すと他の action を壊す）。実行しないときはその旨と採った
+  代替根拠を `--reason` に書く
 - **画像・OGP の差分**: diff から実ファイルを取り出して開き、解像度・byte 数・描画内容を確認する。
   `gh` の raw 取得が差分の base64 を返して失敗する経路では、head の commit から取り出すか、
   diff の hunk の base64 を復元する

@@ -49,7 +49,8 @@ if tool == 'orca':
         sys.exit(0 if mode == 'zero-error' else 1)
     if args[:2] == ['worktree', 'ps']:
         worktrees = []
-        if mode in ('busy-shell', 'busy-claude', 'recent-head', 'dirty'):
+        if mode in ('busy-shell', 'busy-claude', 'recent-head', 'dirty', 'tui-stale',
+                    'tui-stale-close-fails'):
             worktrees = [{'worktreeId': 'fixture::checkout', 'path': str(root / 'checkout'),
                           'repo': 'fixture', 'branch': 'refs/heads/wwwyo/fix',
                           'status': 'inactive', 'agents': [], 'liveTerminalCount': 0}]
@@ -84,7 +85,13 @@ if tool == 'orca':
             term['worktreePath'] = str(root / 'checkout')
         reply({'terminal': term})
     elif args[:2] == ['terminal', 'wait']:
+        if mode.startswith('tui-stale'):
+            error('terminal_handle_stale')
         reply({'wait': {'satisfied': True}})
+    elif args[:2] == ['terminal', 'close']:
+        if mode == 'tui-stale-close-fails':
+            error('runtime_access_denied')
+        reply({'closed': True})
     elif args[:2] == ['terminal', 'send']:
         if mode.startswith('unsupported'):
             if mode in ('unsupported-evidence', 'unsupported-stale', 'unsupported-user-only', 'unsupported-error', 'unsupported-no-worktreepath'):
@@ -243,6 +250,33 @@ print(json.dumps(pt.list_open_prs()))
                 orca_calls = [c[1:3] for c in calls if c[0] == "orca"]
                 self.assertEqual(orca_calls, [["worktree", "ps"], ["terminal", "list"]])
                 self.assertFalse((self.root / "state/state.json").exists())
+
+    def dispatch_failure_calls(self):
+        return [json.loads(s) for s in
+                (self.root / "calls.jsonl").read_text().splitlines()]
+
+    def test_dispatch_failure_before_send_closes_its_own_terminal(self):
+        # wait_tui_idle の失敗は入力未送信。terminal を残すと次 tick の
+        # dispatch ガード（liveTerminalCount）が同じ PR を永久に defer する。
+        result = self.run_cli('tui-stale', 'dispatch', '--repo', 'wwwyo/fixture', '--number', '30')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        out = json.loads(result.stdout)
+        self.assertIn('terminal_handle_stale', out['error'])
+        self.assertIn('terminal closed', out['error'])
+        calls = self.dispatch_failure_calls()
+        closes = [c for c in calls if c[:3] == ['orca', 'terminal', 'close']]
+        self.assertEqual(len(closes), 1, calls)
+        self.assertEqual(closes[0][closes[0].index('--terminal') + 1], 'fixture-agent')
+        self.assertFalse(any(c[:3] == ['orca', 'terminal', 'send'] for c in calls))
+        entry = json.loads((self.root / 'state/state.json').read_text())['prs']['wwwyo/fixture#30']
+        self.assertEqual(entry['dispatch_failure']['count'], 1)
+        self.assertNotIn('delivery_pending', entry)
+
+    def test_unclosed_terminal_is_reported_in_the_failure_reason(self):
+        result = self.run_cli('tui-stale-close-fails', 'dispatch', '--repo', 'wwwyo/fixture', '--number', '30')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        # 閉じられなかったことを失敗理由に残す（残置を黙って成功扱いしない）
+        self.assertIn('残置', json.loads(result.stdout)['error'])
 
     def registration_cli(self, repo="wwwyo/fixture", remote="wwwyo/fixture",
                          path_owner="wwwyo", resolved=None):

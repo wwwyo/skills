@@ -372,6 +372,11 @@ pullfrog-approval を免除する。
   上限に数えると、障害の復旧後も全 PR が実査待ちになる
 - dispatch の delivery が未確認なら、入力が届いた可能性があるため pending を
   残し、自動再送せず reason 付き escalate とする。terminal を確認してから復旧する
+- 送信前に失敗した dispatch（`tui-idle not satisfied` 等）が作った terminal は
+  script が閉じる（理由に `terminal closed`）。閉じられなかったときは
+  `terminal close failed (残置)` が付く — 残置した terminal は次 tick の
+  dispatch ガードが占有とみなし、同じ PR を defer し続けるので、report の
+  `handle` から実査して閉じる
 - 依存 manifest・lockfile は置き場所ではなく file 種別で分類する。
   `apps/api/package.json` のように hold path 配下にあっても always-hold には
   ならず、bot の依存更新のみなら自動 ok 判定、それ以外は judge に進む。

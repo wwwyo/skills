@@ -1308,9 +1308,20 @@ def hard_gate(facts, judge=None, via="lane", expect_sha=None):
                          cls.get("dependency_repair")) and (jok or auto_ok))
         ok_app, app_state = pullfrog_approval(roll)
         if need_app and not ok_app:
-            r.append(f"pullfrog-approval not success"
-                     f" ({app_state or 'absent'})")
+            r.append(approval_block_reason(app_state, pr))
     return (not r), r
+
+
+def approval_block_reason(app_state, view):
+    """pullfrog-approval 不足の理由。bot author の PR は pullfrog の review
+    対象外なので、依存以外の差分を含むと（`bot_dep_only` が立たず）check が
+    永久に付かない — `absent` を billing や workflow 障害と読み違えないよう、
+    その場で解消手段を書く（review を伴わない自動 merge はしない）。"""
+    reason = f"pullfrog-approval not success ({app_state or 'absent'})"
+    if app_state is None and _is_bot(view.get("author")):
+        reason += (" — bot author は review 対象外（@pullfrog で依頼するか"
+                   "人間が merge する）")
+    return reason
 
 
 # ---------- Orca ----------
@@ -1609,6 +1620,15 @@ def pi_delivery_evidence(cwd, text, since):
     return None
 
 
+def _unsent_dispatch_error(handle, detail):
+    """入力未送信の dispatch 失敗を ApiError のメッセージにする。同じ結果
+    （close 成功／失敗）なら同じ文字列になるので、`dispatch_failure` の
+    連続回数が理由の表記ゆれでリセットされない。"""
+    closed = close_unsent_terminal(handle)
+    tail = "terminal closed" if closed else "terminal close failed (残置)"
+    return f"tui-idle not satisfied: {detail}; {tail}"
+
+
 def send_prompt(handle, text, fallback_cwds=()):
     """Orca の turn_started、または local pi の新しい generation で確認する。
     未確認なら入力を再送しない。呼び出し側が pending を永続化している。
@@ -1757,6 +1777,23 @@ def spawn_worktree(repo, number, head_ref):
     if not handle:
         raise ApiError(f"terminal create returned no handle: {res}")
     return handle, path, wtid
+
+
+def close_unsent_terminal(handle):
+    """入力未送信で中断した dispatch が作った terminal を閉じる。
+
+    `wait_tui_idle` の失敗（`terminal_handle_stale` 等）は「まだ1文字も
+    送っていない」状態なので安全に閉じられる。閉じないと対象 worktree に
+    live terminal が残り、次 tick の dispatch ガード（`agent_busy` は
+    `liveTerminalCount` を占有とみなす）が同じ PR を永久に defer する —
+    失敗が1 tick の遅延ではなく、人間が terminal を閉じるまで続く詰まりに
+    変わる。閉じられたかを返す（失敗は dispatch 失敗の理由に残す）。
+    """
+    try:
+        orca_json(["terminal", "close", "--terminal", handle], timeout=60)
+        return True
+    except ApiError:
+        return False
 
 
 def wait_tui_idle(handle):
@@ -1966,7 +2003,7 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
     if not ((cls["bot_dep_only"] or cls.get("dependency_repair"))
             and (jok or auto_ok)) and not ok_app:
         entry["actions"].append({"type": "hold", "reason":
-            f"pullfrog-approval not success ({app_state or 'absent'})"})
+            approval_block_reason(app_state, v)})
         return entry
     action = {"type": "merge", "via": "lane", "head": head,
               "bot_dep_only": cls["bot_dep_only"],
@@ -2345,14 +2382,14 @@ def _dispatch(a, st, facts):
         fallback_cwds = [(route.get("worktree") or {}).get("path")]
         ok, detail = wait_tui_idle(handle)
         if not ok:
-            raise ApiError(f"tui-idle not satisfied: {detail}")
+            raise ApiError(_unsent_dispatch_error(handle, detail))
     else:  # spawn
         handle, wpath, _wtid = spawn_worktree(
             a.repo, a.number, v.get("headRefName"))
         fallback_cwds = [wpath]
         ok, detail = wait_tui_idle(handle)
         if not ok:
-            raise ApiError(f"tui-idle not satisfied: {detail}")
+            raise ApiError(_unsent_dispatch_error(handle, detail))
 
     # 呼び出しが中断しても次 tick が同じ入力を再送しないよう、送信前に保存する。
     pending = dispatch_state(st, a.repo, a.number)

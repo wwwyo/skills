@@ -341,6 +341,18 @@ f = facts(view=v2, required=["ci"])
 ok, reasons = pt.hard_gate(f, via="lane")
 assert not ok and any("pullfrog-approval" in r for r in reasons)
 
+# bot author の PR は pullfrog の review 対象外 — 依存以外の差分を含むと
+# check が永久に付かないので、absent を billing 障害と読み違えないよう理由に
+# 解消手段を書く（review 無しの自動 merge はしない）
+bot = {"login": "dependabot[bot]", "is_bot": True}
+assert "review 対象外" in pt.approval_block_reason(None, view(author=bot))
+assert "review 対象外" not in pt.approval_block_reason(None, view())
+assert "review 対象外" not in pt.approval_block_reason(
+    "FAILURE", view(author=bot))
+vb = view(author=bot, statusCheckRollup=[check("ci")])
+ok, reasons = pt.hard_gate(facts(view=vb), via="lane")
+assert not ok and any("review 対象外" in r for r in reasons), reasons
+
 # hold path → judge ok があっても block
 v = view(statusCheckRollup=[check("ci"), check("pullfrog-approval")])
 f = facts(view=v, files=[".env"], required=["ci"])

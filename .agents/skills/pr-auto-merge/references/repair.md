@@ -9,8 +9,16 @@ merge は author session で発行せず、修正後の次 tick で script に�
 - PR の head・base・状態を取得する。OPEN でなければ作業しない。
 - 書き込み開始前に Orca の `worktree ps`・`terminal list --worktree <id>` と
   `git --no-optional-locks status --porcelain --untracked-files=all` を確認する。
-  自分以外の接続中/接続不明 terminal、他 agent の working、既存の dirty があれば
-  書き込まず停止する。agentIdentity が無い shell も他 session の占有とする。
+  占有とみなすのは**対象 worktree の** terminal のうち、(a) `agentIdentity` を持つ
+  もの（idle でも、別 cwd から動く subagent の書き込みを status からは見分けられない）、
+  (b) 接続中/接続不明・working のもの、(c) 既存の dirty、のいずれか。
+  `agentIdentity` の無い shell は、`terminal list` の `preview` に agent の作業中表示が
+  無くシェル prompt に戻っていることと、dirty が無いことを確認できれば占有に数えない —
+  数えると workspace に常設 shell が残っているだけで修復が原理的に止まる。判断と確認方法は
+  PR コメントか jsonl note に残し、確認できなければ停止する。
+  [dispatch の作業中ガード](../SKILL.md#dispatch-の作業中ガード) は外部からの観測で
+  次 tick に回収できるため shell も占有扱いのまま — こちらは送信済みの dispatch を
+  消費した後で、停止しても回収する tick が無い。
   自分の作業開始後の dirty と開始前からの変更を混同しない。
 - script の [dispatch の作業中ガード](../SKILL.md#dispatch-の作業中ガード) を迂回して再送・別 worktree
   での同一 branch 修復を始めない。repo 固有の heavy.lock 等の作業ロックも尊重する。
