@@ -39,10 +39,17 @@ session は終われば文脈を失うので、次の session が聞き直さず
 | wiki | `wiki/` | LLM が書いて維持する markdown。`wiki/index.md` を router にし、domain ごとの dir に分ける |
 | schema | `wiki/AGENTS.md` | wiki の構造・frontmatter・書き込みの境界・ingest / query / lint の手順 |
 
-- 書き込みの境界を schema に最初から書く。wiki が持つのは repo をまたぐ理解・判断・PJ の位置づけで、repo の決定は各 repo の ADR、手順は skill、repo で確かめられる現状（実装状態・件数）は書かない。境界が無いと ADR や repo の内容の写しが溜まり、古い値が事実として引かれる
-- 判断が変わったら古い記述を並べず現在の結論で置き換え、変遷は git の履歴に任せる
-- lint（frontmatter・link 切れ・矛盾・陳腐化の検査）を tools か skill として用意する
-- 個人の home（`wwwyo/me`）はこの構成で運用している。引き方・保存先は `wwwyo/me` の root `AGENTS.md` の「メモリ（wiki）」節、schema は `wiki/AGENTS.md`、検査は me の `wiki-lint` skill。memory の手順は skill にせず home の AGENTS.md に書く（home で起動した session が必ず読むため）。新しい home は、この schema を雛形に domain を決め直して作る
+骨組みは [tools/home_wiki.py](../tools/home_wiki.py) が置く。home の root を渡し、memory の domain を `--domain <name>=<Map の説明>` で並べる（`--dry-run` で書く file だけを確認できる）。
+
+```bash
+python3 <skill-dir>/tools/home_wiki.py <home-dir> --domain fudoki="風土記の事業・顧客・制度の理解" --domain municipality="自治体の業務・制度"
+```
+
+- 置くもの: `raw/`、`wiki/AGENTS.md`（schema の雛形）、`wiki/index.md`（Map）、`wiki/<domain>/index.md`、`tools/okf_check.py`（frontmatter・domain・link 切れの検査）、`.gitignore` の `*.local.*`、root `AGENTS.md` の「メモリ（wiki）」節。既存の file は上書きせず、既存の Map と `okf_check.py` には足りない domain だけを足す。最後に検査を回し、結果を JSON で返す
+- 雛形は [assets/home-wiki/](../assets/home-wiki/)。置いた後は home 側が正本で、schema の調整・domain の追加は home で直接編集する（再実行で domain を足すこともできる）
+- schema の雛形は書き込みの境界を最初から持つ。wiki が持つのは repo をまたぐ理解・判断・PJ の位置づけで、repo の決定は各 repo の ADR、手順は skill、repo で確かめられる現状（実装状態・件数）は書かない。境界が無いと ADR や repo の内容の写しが溜まり、古い値が事実として引かれる
+- 個人の home（`wwwyo/me`）は同じ構成に router（`tools/wiki_route.py`）と `wiki-lint` skill を足して運用している。雛形の schema は me の `wiki/AGENTS.md` から個人用の規約を除いたもの
+- 既存の home から育った PJ を独立させるときは、新しい home で `home_wiki.py` を回してから domain の dir と `raw/` を移し、元の home の inbound link を移し先の URL に置き換えて domain を Map から外す
 
 ## 手順
 
@@ -51,7 +58,7 @@ session は終われば文脈を失うので、次の session が聞き直さず
 1. **repo の棚卸し**: 対象の親 dir（例: `~/src/github.com/<owner>`）配下の git repo を列挙し、path・remote・visibility・最終 commit 日を表にする。どれを含めるか、home をどこに置くか（既定は他 repo と並べた新しい private repo）、個人用かチーム共有かをユーザーに確認する
 2. **共有物の棚卸し**: 各 repo の skill・AGENTS.md・CLAUDE.md・agent 向け doc を列挙し、shared（home へ）・duplicate（最新を 1 つ残す）・repo-specific（残す）・installed（plugin・tool が配るので触らない）に分類する
 3. **計画の合意**: 項目ごとの現在地と移動先の表、「他 repo」節を含む home の AGENTS.md 草案、memory の domain 一覧と schema 草案を出し、未決事項を詰める
-4. **適用**: home repo を作り（新規なら通常ワークフローのステップ 1・10 で repo 作成・publish）、AGENTS.md・共有物・`raw/`・`wiki/`（`index.md`・`AGENTS.md`）を置いて commit する。子 repo から移した copy の削除は、子 repo ごとに新しい branch で行い PR にする
+4. **適用**: home repo を作り（新規なら通常ワークフローのステップ 1・10 で repo 作成・publish）、AGENTS.md・共有物を置き、`tools/home_wiki.py` で memory の骨組みを置いて commit する。子 repo から移した copy の削除は、子 repo ごとに新しい branch で行い PR にする
 
 ## 新しい PJ を立てたとき
 
