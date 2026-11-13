@@ -32,8 +32,7 @@
         "./.agents/skills/prototype",
         "./.agents/skills/skill-structure",
         "./.agents/skills/solo-product",
-        "./.agents/skills/unslop",
-        "./.agents/skills/wiki"
+        "./.agents/skills/unslop"
       ]
     },
     {

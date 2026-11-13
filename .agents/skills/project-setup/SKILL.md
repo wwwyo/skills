@@ -174,7 +174,7 @@ lockfile を commit する JS/TS の package manager（bun / npm / pnpm / yarn�
 - `wiki/index.md` の Map に domain index への link を足す
 - `wiki/life/project-focus.md` の PJ 一覧・フォーカスに反映する
 - hub ページの repo link は、`wwwyo/me` を home として使うときの pointer を兼ねる
-- `wiki` skill に従って検証し、`wwwyo/me` の `AGENTS.md` の checkout 規約に従って、この PJ 登録で変更したファイルだけを stage・commit・push する。push の成功までをステップ 12 の完了条件とする
+- `wwwyo/me` の `wiki/AGENTS.md` の書き込み後チェックで検証し、`wwwyo/me` の `AGENTS.md` の checkout 規約に従って、この PJ 登録で変更したファイルだけを stage・commit・push する。push の成功までをステップ 12 の完了条件とする
 
 ### 13. 最初の PRD へ handoff
 

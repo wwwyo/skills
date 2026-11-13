@@ -50,7 +50,7 @@ claude plugin validate .
 skill の検索・追加・作成・改善・更新・削除は `skillctrl` に統一し、手順は [skillctrl skill](.agents/skills/skillctrl/SKILL.md) と [.agents/skillctrl/README.md](.agents/skillctrl/README.md) に従う。CLI は cwd の Git repo を対象にするので、この repo の worktree で実行する。skill の追加・削除をしたら `.claude-plugin/marketplace.json` も同じ変更で更新する。
 
 - upstream 管理 skill を意図的に変えるときは、保ちたい振る舞いの理由を `.agents/skillctrl/intents/<name>.md` に書き、検証後に `skillctrl record <name>` で受理する。意図ファイルを差分や patch の正本にしない
-- 手書き skill（`memo` `wiki` `project-setup` 等）は upstream lock に載らず、受理 hash の対象外
+- 手書き skill（`memo` `project-setup` 等）は upstream lock に載らず、受理 hash の対象外
 - PR では [skillctrl](.github/workflows/skillctrl.md) が hash drift のときだけ AI に intent 適合を審査させる。土曜 09:00 JST の [skillctrl-update](.github/workflows/skillctrl-update.md) が upstream 更新を取り込み draft PR を作る。AI engine は pi / OpenCode Go を固定し、repo secret `OPENCODE_API_KEY` を使う
 - 独立 skill として残すかの基準は「その skill だけを目的に起動する場面があるか」。無ければ既存 skill の reference か節にする
 - 運用ルールの記載先は、情報の発生源（不具合の根拠・制約の由来）と適用時（操作を行う skill）で分ける。発生源にだけ書くと使う側が見ず、両方に全文書くと drift する

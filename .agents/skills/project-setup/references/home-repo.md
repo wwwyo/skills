@@ -42,7 +42,7 @@ session は終われば文脈を失うので、次の session が聞き直さず
 - 書き込みの境界を schema に最初から書く。wiki が持つのは repo をまたぐ理解・判断・PJ の位置づけで、repo の決定は各 repo の ADR、手順は skill、repo で確かめられる現状（実装状態・件数）は書かない。境界が無いと ADR や repo の内容の写しが溜まり、古い値が事実として引かれる
 - 判断が変わったら古い記述を並べず現在の結論で置き換え、変遷は git の履歴に任せる
 - lint（frontmatter・link 切れ・矛盾・陳腐化の検査）を tools か skill として用意する
-- 個人の home（`wwwyo/me`）はこの構成で運用している。schema は `wwwyo/me` の `wiki/AGENTS.md`、検査は `wiki-lint` skill、参照は `wiki` skill。新しい home は、この schema を雛形に domain を決め直して作る
+- 個人の home（`wwwyo/me`）はこの構成で運用している。引き方・保存先は `wwwyo/me` の root `AGENTS.md` の「メモリ（wiki）」節、schema は `wiki/AGENTS.md`、検査は me の `wiki-lint` skill。memory の手順は skill にせず home の AGENTS.md に書く（home で起動した session が必ず読むため）。新しい home は、この schema を雛形に domain を決め直して作る
 
 ## 手順
 
