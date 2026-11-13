@@ -29,15 +29,15 @@ AGENTS.md の「他 repo」節に 1 repo 1 行で書く。harness が別の file
 
 repo をまたぐ理解・判断を session をまたいで残す場所として、home に [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) 型の `wiki/` を置く。原本は `raw/`（LLM は読むだけ）、LLM が書いて維持する markdown が `wiki/`、その schema が `wiki/AGENTS.md`。
 
-骨組みは [tools/home_wiki.py](../tools/home_wiki.py) が置く。home の root と domain（開発・事業・マーケティングなど、home の中の境界）を渡す。
+骨組みは [tools/home-wiki.ts](../tools/home-wiki.ts)（Bun で動く。先に `setup.sh tools bun` で mise に入れる）が置く。home の root と domain（開発・事業・マーケティングなど、home の中の境界）を渡す。
 
 ```bash
-python3 <skill-dir>/tools/home_wiki.py <home-dir> --domain product="開発" --domain business="事業" --domain marketing="マーケティング"
+bun <skill-dir>/tools/home-wiki.ts <home-dir> --domain product="開発" --domain business="事業" --domain marketing="マーケティング"
 ```
 
-- 置くもの: `raw/`、`wiki/AGENTS.md`（schema の雛形）、`wiki/index.md`（Map）、`wiki/<domain>/index.md`、`tools/okf_check.py`（frontmatter・domain・link 切れの検査）、root `AGENTS.md` の「メモリ（wiki）」節。既存の file は上書きせず、再実行で domain を足せる。最後に検査を回して結果を JSON で返す（`--dry-run` で書く file だけを確認できる）
+- 置くもの: `raw/`、`wiki/AGENTS.md`（schema の雛形）、`wiki/index.md`（Map）、`wiki/<domain>/index.md`、`tools/okf-check.ts`（frontmatter・domain・link 切れの検査）、root `AGENTS.md` の「メモリ（wiki）」節。既存の file は上書きせず、再実行で domain を足せる。最後に検査を回して結果を JSON で返す（`--dry-run` で書く file だけを確認できる）
 - 雛形は [assets/home-wiki/](../assets/home-wiki/)。置いた後は home 側が正本で、schema も home で直接直す
-- 既存の home で育った PJ を独立させるときは、新しい home で `home_wiki.py` を回してページと `raw/` を移し、元の home の inbound link を移し先の URL に置き換える。移し先の domain は PJ 名ではなく、その中の境界で切り直す
+- 既存の home で育った PJ を独立させるときは、新しい home で `home-wiki.ts` を回してページと `raw/` を移し、元の home の inbound link を移し先の URL に置き換える。移し先の domain は PJ 名ではなく、その中の境界で切り直す
 
 ## 手順
 
@@ -46,7 +46,7 @@ python3 <skill-dir>/tools/home_wiki.py <home-dir> --domain product="開発" --do
 1. **repo の棚卸し**: 対象の親 dir 配下の git repo を列挙し、path・remote・visibility・最終 commit 日を表にする。どれを含めるか、home をどこに置くか（既定は他 repo と並べた新しい private repo）、個人用かチーム共有か、harness がどの file を読むかを決める
 2. **共有物の棚卸し**: 各 repo の skill・AGENTS.md・CLAUDE.md・agent 向け doc を列挙し、shared（home へ）・duplicate（差分を見て最新を 1 つ残す）・repo-specific（残す）・installed（公開元から入れたもの）に分類する
 3. **計画の合意**: 項目ごとの現在地と移動先の表と、AGENTS.md の草案を出す。判断は番号付きの回にまとめ、各回に推奨を添える
-4. **適用**: home repo と AGENTS.md を作り、共有物を copy する（skill は dir ごと）。`home_wiki.py` で wiki を置き、home で commit する。子 repo から移した copy は、子 repo ごとに新しいローカル branch で消す
+4. **適用**: home repo と AGENTS.md を作り、共有物を copy する（skill は dir ごと）。`home-wiki.ts` で wiki を置き、home で commit する。子 repo から移した copy は、子 repo ごとに新しいローカル branch で消す
 
 ## 新しい PJ を立てたとき
 

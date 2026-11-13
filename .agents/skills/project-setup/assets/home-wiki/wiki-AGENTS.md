@@ -12,10 +12,10 @@ wiki/ は LLM が書いて維持する知識ベース。人間は読む側、LLM
 
 ## 構造
 
-- **frontmatter** は `type`・`title`・`description`・`tags` の 4 つだけ。他のキーは書かない（`tools/okf_check.py` がエラーにする）
-  - `type` ∈ `concept` / `synthesis` / `person` / `company` / `organization` / `book`。足すときは `tools/okf_check.py` の `ALLOWED_TYPES` に追記する
+- **frontmatter** は `type`・`title`・`description`・`tags` の 4 つだけ。他のキーは書かない（`tools/okf-check.ts` がエラーにする）
+  - `type` ∈ `concept` / `synthesis` / `person` / `company` / `organization` / `book`。足すときは `tools/okf-check.ts` の `ALLOWED_TYPES` に追記する
   - `title`・`description` は非空。`description` は単文（「。」は最大 1）
-  - `tags` は inline 形式（`[a, b]`）で、先頭が domain。domain は配置 dir 名と一致させ、`tools/okf_check.py` の `ALLOWED_DOMAINS` が正本
+  - `tags` は inline 形式（`[a, b]`）で、先頭が domain。domain は配置 dir 名と一致させ、`tools/okf-check.ts` の `ALLOWED_DOMAINS` が正本
   - frontmatter は 1 行スカラーと inline tags だけで書く（checker は YAML を使わず正規表現で読む）
 - **dir = domain**。1 domain に 1 dir と `<domain>/index.md` を置き、root の `index.md` の Map から各 domain の index を指す。dir に domain 以外の意味を持たせない
 - **index.md** は frontmatter を持たない。各行は `* [title](file.md) - description`
@@ -46,8 +46,8 @@ wiki が持つのは、repo をまたぐ理解・判断・PJ の位置づけ。�
 1. 実質更新した節の `added` を当日にする
 2. `<domain>/index.md` の行を足す・直す
 3. 関連する既存ページがあれば file 相対で相互リンクを張る（無ければ孤立のままでよい）
-4. `python3 tools/okf_check.py wiki` で検査し、`git diff` で重複・破損・情報漏洩を読み直す
+4. `bun tools/okf-check.ts wiki` で検査し、`git diff` で重複・破損・情報漏洩を読み直す
 
-**domain を足す・畳む**: dir と `index.md` を作り、`tools/okf_check.py` の `ALLOWED_DOMAINS` と root の `index.md` の Map に足す。畳んだ domain は Map から外し、dir と `ALLOWED_DOMAINS` は残す。
+**domain を足す・畳む**: dir と `index.md` を作り、`tools/okf-check.ts` の `ALLOWED_DOMAINS` と root の `index.md` の Map に足す。畳んだ domain は Map から外し、dir と `ALLOWED_DOMAINS` は残す。
 
 **ページを別の home へ移す**: 移した先で inbound link を直し、元の home の参照は移し先の URL に置き換える。元の home の `ALLOWED_DOMAINS` から外すのは、その domain のページが残っていないときだけ。
