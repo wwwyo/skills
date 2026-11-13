@@ -17,7 +17,6 @@ for f in raw/.gitkeep wiki/AGENTS.md wiki/CLAUDE.md wiki/index.md wiki/alpha/ind
 done
 grep -q '^existing$' "$tmp/AGENTS.md" || fail "AGENTS.md lost existing content"
 grep -q '^## メモリ（wiki）$' "$tmp/AGENTS.md" || fail "memory section not appended"
-grep -qx '\*.local.\*' "$tmp/.gitignore" || fail ".gitignore lacks *.local.*"
 grep -q '^\* \[alpha\](./alpha/index.md) - 最初の domain$' "$tmp/wiki/index.md" || fail "Map row"
 
 # ページを書いて検査が domain を認めること

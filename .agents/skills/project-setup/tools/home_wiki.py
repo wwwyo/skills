@@ -6,8 +6,7 @@
 
 置くもの（既存の file は上書きしない）:
   raw/.gitkeep, wiki/AGENTS.md（schema）, wiki/CLAUDE.md, wiki/index.md（Map）,
-  wiki/<domain>/index.md, tools/okf_check.py（検査）,
-  .gitignore の `*.local.*`, root AGENTS.md の「メモリ（wiki）」節
+  wiki/<domain>/index.md, tools/okf_check.py（検査）, root AGENTS.md の「メモリ（wiki）」節
 既存の wiki/index.md と tools/okf_check.py には、足りない domain だけを追記する。
 最後に tools/okf_check.py wiki を実行し、結果を stdout に 1 行の JSON で返す。
 検査が通らなければ exit 1、引数の誤りは exit 2。
@@ -116,14 +115,6 @@ def ensure_agents_memory(plan: Plan, path: Path) -> None:
     plan.write(path, text.rstrip("\n") + "\n\n" + section, new=False)
 
 
-def ensure_gitignore(plan: Plan, path: Path) -> None:
-    text = path.read_text(encoding="utf-8") if path.exists() else ""
-    if "*.local.*" in text.split("\n"):
-        return
-    block = "# 命名規約: <name>.local.<ext> = 社外秘・個人秘（git 管理しない）\n*.local.*\n"
-    plan.write(path, (text.rstrip("\n") + "\n\n" if text else "") + block, new=not path.exists())
-
-
 def ensure_file(plan: Plan, path: Path, text: str) -> None:
     if not path.exists():
         plan.write(path, text, new=True)
@@ -166,7 +157,6 @@ def main() -> int:
     for name, desc in domains:
         ensure_file(plan, wiki / name / "index.md", (desc or name) + "\n")
     ensure_checker(plan, checker, names)
-    ensure_gitignore(plan, home / ".gitignore")
     ensure_agents_memory(plan, home / "AGENTS.md")
 
     result: dict = {"home": str(home), "dry_run": args.dry_run,

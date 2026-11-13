@@ -3,8 +3,7 @@
 
 使い方: python3 tools/okf_check.py [bundle_root]  (default: wiki)
 
-wwwyo/skills の project-setup（tools/home_wiki.py）が home repo へ置いた copy。
-置いた後は home 側が正本で、domain の追加はこの file の ALLOWED_DOMAINS を直接編集する。
+domain の追加はこの file の ALLOWED_DOMAINS を直接編集する。
 
 検査内容:
   [§9-1]        予約名以外の全 .md が parseable な frontmatter を持つ（OKF 仕様）
@@ -16,9 +15,6 @@ wwwyo/skills の project-setup（tools/home_wiki.py）が home repo へ置いた
   [description] description が単文（。は最大1）（プロジェクト規約）
   [§6]          index.md は frontmatter を持たない（OKF 仕様）
   [link]        bundle 内 link 切れ + 相対内部リンク（bundle-absolute /... 違反）検知（index.md 含む）
-                ただし gitignore 対象への link は違反にしない（件数のみ報告）。worktree /
-                fresh clone には ignore されたページがコピーされないため、公開ページから
-                `*.local.md` の実体がない場合をリンク切れと誤判定しないため
 注: OKF §9 自体は type 非空のみ要求（consumer は未知 type を拒否すべきでない）。
 ALLOWED_TYPES/ALLOWED_DOMAINS の enum 強制は producer 側の規約 lint であり、
 バンドルは OKF valid のまま自分の語彙ドリフト（typo・表記揺れ）を防ぐためのもの。
@@ -36,12 +32,11 @@ from __future__ import annotations
 import argparse
 import posixpath
 import re
-import subprocess
 from pathlib import Path
 
 # OKF 予約名 index.md に加え、本バンドルは AGENTS.md/CLAUDE.md を schema/instruction の
 # 予約 meta として concept 扱いから除外する（OKF 予約集合のローカル拡張）。
-RESERVED = {"index.md", "AGENTS.md", "CLAUDE.md", "index.local.md"}
+RESERVED = {"index.md", "AGENTS.md", "CLAUDE.md"}
 # プロジェクト規約: 許可する type（form）と domain（tags 先頭）。増やすときはここに追記。
 ALLOWED_TYPES = {"concept", "synthesis", "person", "company", "organization", "book"}
 # domain（tags 先頭 = 配置 dir 名）。新しい domain を作るときはここに追記する。
@@ -71,30 +66,6 @@ def get_field(fm: str, key: str):
     空値のとき次行を誤って巻き込む）。"""
     m = re.search(rf"^{key}:[ \t]*(.*)$", fm, re.MULTILINE)
     return m.group(1).strip().strip("\"'") if m else None
-
-
-def filter_gitignored(root: Path, rels: list[str]) -> set[str]:
-    """バンドル相対パスのうち gitignore 対象のものを返す。git が無ければ空集合。
-
-    `git check-ignore` は**パターン照合なのでファイルが実在しなくても判定できる**。
-    これが要るのは worktree / fresh clone で lint を回したときで、gitignore された
-    ページ（`*.local.md`）はそこへコピーされないため、
-    それを指す意図的な link が一斉に「切れリンク」として鳴る。主 working tree では
-    実体があって普通に解決するので、この関数はそこでは何も落とさない。
-
-    ⚠️ git 呼び出しは `--stdin` でまとめて 1 回。パスごとに呼ぶと件数に比例して遅くなる。
-    """
-    if not rels:
-        return set()
-    try:
-        r = subprocess.run(["git", "check-ignore", "--stdin"], cwd=root,
-                           input="\n".join(rels), capture_output=True, text=True)
-    except FileNotFoundError:
-        return set()
-    # exit 0=1件以上 ignore / 1=0件 / それ以外は異常なので黙って諦める
-    if r.returncode not in (0, 1):
-        return set()
-    return {line.strip() for line in r.stdout.splitlines() if line.strip()}
 
 
 def main() -> int:
@@ -195,20 +166,12 @@ def main() -> int:
                     if resolved[:-3] not in all_ids:
                         broken.append((rel, link, resolved))
 
-    # 解決できなかった link のうち、gitignore 対象を指すものは違反にしない。
-    # 主 working tree では実体があって解決済みなので、ここに落ちるのは worktree /
-    # fresh clone で「そもそもコピーされていない」場合＝意図された link である。
-    ignored = filter_gitignored(root, sorted({resolved for _, _, resolved in broken}))
-    ignored_refs = 0
-    for rel, link, resolved in broken:
-        if resolved in ignored:
-            ignored_refs += 1
-        else:
-            violations.append(f"[link] {rel}: 切れリンク -> {link}")
+    for rel, link, _ in broken:
+        violations.append(f"[link] {rel}: 切れリンク -> {link}")
 
     print(f"bundle: {root}")
     print(f"  .md files: {len(md_files)} (concepts: {len(concept_ids)}, "
-          f"external refs skipped: {external_refs}, gitignored refs skipped: {ignored_refs})")
+          f"external refs skipped: {external_refs})")
 
     exit_code = 0
     if violations:
