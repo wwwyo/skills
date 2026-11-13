@@ -21,7 +21,6 @@ wiki/ は LLM が書いて維持する知識ベース。人間は読む側、LLM
 - **index.md** は frontmatter を持たない。各行は `* [title](file.md) - description`
 - **リンク**はすべて file 相対（`./foo.md`・`../other/bar.md`・`../../raw/...`）。先頭 `/` は使わない。GFM の表セル内の `|` は `\|` にする
 - **節末メタデータ**: `##` 節の末尾に `[source: <出典>; added: YYYY-MM-DD]` を置く。出典の無い節は `[added: YYYY-MM-DD]` だけにし、source を捏造しない。`added` は中身を見直した日で、link の貼り足しでは更新しない
-- **非公開**: 個人を特定できる内容・社外秘の数値は `<page>.local.md` に置き、`<domain>/index.local.md` に登録する（`index.md` 側には `index.local.md` への 1 行だけ）。`*.local.*` は `.gitignore` が弾く
 
 ## 書き込みの境界
 
@@ -37,7 +36,6 @@ wiki が持つのは、repo をまたぐ理解・判断・PJ の位置づけ。�
 
 - **決定されたものだけ書く**。判断が変わったら古い記述を並べず、現在の結論で置き換える。変遷は git の履歴が持つ
 - **削るのは時系列で、失敗から確定した制約ではない**。却下した案とその理由、試して潰れた対策は現在の結論として残す
-- `*.local.md` は git が履歴を持たないので、削る前に残すべき判断を該当節へ書き戻す
 
 ## 手順
 
@@ -46,7 +44,7 @@ wiki が持つのは、repo をまたぐ理解・判断・PJ の位置づけ。�
 **書く**: 新規ページの前に対象 domain の既存ページを確認する。書いたら次を行う。
 
 1. 実質更新した節の `added` を当日にする
-2. `<domain>/index.md`（`.local.md` なら `index.local.md`）の行を足す・直す
+2. `<domain>/index.md` の行を足す・直す
 3. 関連する既存ページがあれば file 相対で相互リンクを張る（無ければ孤立のままでよい）
 4. `python3 tools/okf_check.py wiki` で検査し、`git diff` で重複・破損・情報漏洩を読み直す
 

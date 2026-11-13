@@ -3,8 +3,7 @@
 
 使い方: python3 tools/okf_check.py [bundle_root]  (default: wiki)
 
-wwwyo/skills の project-setup（tools/home_wiki.py）が home repo へ置いた copy。
-置いた後は home 側が正本で、domain の追加はこの file の ALLOWED_DOMAINS を直接編集する。
+domain の追加はこの file の ALLOWED_DOMAINS を直接編集する。
 
 検査内容:
   [§9-1]        予約名以外の全 .md が parseable な frontmatter を持つ（OKF 仕様）
