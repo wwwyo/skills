@@ -1,20 +1,21 @@
 # 個人の MCP を MCP Server Portal に集約する
 
-ChatGPT・claude.ai（web・スマホ）とローカル agent から、この Mac の loopback で動く MCP（OpenScreen）と公開 remote MCP（context7・fudoki・Cloudflare API）、Composio 経由の外部サービス（Google Search Console）を portal の入口から使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。
+ChatGPT・claude.ai（web・スマホ）とローカル agent から、この Mac の loopback で動く MCP（OpenScreen）と公開 remote MCP（context7・fudoki・queria・Cloudflare API・Buffer）、Composio 経由の外部サービス（Google Search Console・Google Analytics）を portal の入口から使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。
 
 portal は 2 つある。
 
 - `mcphub`（`mcp.wwwyo.dev`、portal ID `wwwyo`）: 開発で常用する MCP
-- `mcp-marketing`（`mcp-marketing.wwwyo.dev`、portal ID `marketing`）: マーケティング用。マーケ系の外部サービス（Composio 経由の GSC 等）をここに載せ、マーケ作業の agent にはこの portal だけを渡す
+- `mcp-marketing`（`mcp-marketing.wwwyo.dev`、portal ID `marketing`）: マーケティング用。マーケ系の外部サービス（Composio 経由の GSC・GA、Buffer 等）をここに載せ、マーケ作業の agent にはこの portal だけを渡す
 
 ```text
 ChatGPT / claude.ai / ローカル agent ──OAuth──▶ portal mcp.wwwyo.dev ─┬─▶ Gateway ──▶ Tunnel ──▶ 127.0.0.1:<port>
                                                                        ├─▶ https://mcp.context7.com/mcp（key は Cloudflare 保管）
                                                                        ├─▶ https://api.fudoki.dev/mcp（認証なし）
-                                                                       └─▶ https://mcp.cloudflare.com/mcp（利用者ごとの OAuth。token は portal が保持）
+                                                                       └─▶ https://mcp.queria.io（利用者ごとの OAuth。token は portal が保持）
 
-マーケ作業の agent ──OAuth──▶ portal mcp-marketing.wwwyo.dev ─┬─▶ Composio tool router session（portal に 1 つ。いまは GSC 読み取り。key は Cloudflare 保管）
-                                                              └─▶ https://mcp.cloudflare.com/mcp
+マーケ作業の agent ──OAuth──▶ portal mcp-marketing.wwwyo.dev ─┬─▶ Composio tool router session（portal に 1 つ。GSC・GA。key は Cloudflare 保管）
+                                                              ├─▶ https://mcp.buffer.com/mcp（key は Cloudflare 保管）
+                                                              └─▶ https://mcp.cloudflare.com/mcp（server `cloudflare-small`。利用者ごとの OAuth）
 ```
 
 ## 外部サービスは portal に集約し、既存の MCP が無いものだけ Composio を使う
@@ -36,7 +37,9 @@ agent から使う MCP は、外部サービスも含めて Cloudflare の porta
   - portal 側では Composio を toolkit 単位で on/off できない（server が 1 つなので）。tool 単位なら portal の `servers[].updated_tools` で無効にできる。toolkit ごとに渡す agent を分けたいときは portal を分ける
 - **読み取り専用にするときは 3 段で絞る**: auth config の OAuth scope（GSC なら `webmasters.readonly` だけ）、auth config の `tool_access_config.tools_available_for_execution`、session の tool 許可リスト。scope の変更は新しい接続にしか効かないので、scope を変えたら接続し直す
 - **portal へは共有 key で入れる**: server は `auth_type: bearer` にし、`auth_credentials` に `{"headers":{"x-api-key":"<ak_ key>"}}` を JSON 文字列で渡す（Composio は `Authorization: Bearer` ではなく `x-api-key` を読む）。portal 側の `on_behalf` は `false`
-- **書き込み系の tool を agent に渡すときは別に判断する**: Composio の `require_approval` は experimental で、portal（Code Mode）経由で elicitation が中継されるかは未検証。いまは読み取りだけを出している
+- **書き込み系の tool を agent に渡すときは別に判断する**: Composio の `require_approval` は experimental で、portal（Code Mode）経由で elicitation が中継されるかは未検証。いま出している書き込みは GSC の `SUBMIT_SITEMAP` だけ（2026-11-13 にユーザーが選んだ）。これには scope `webmasters` が要るので、Google から見るとトークンは読み書きの権限を持ち、他の書き込みを止めているのは Composio の許可リストだけ
+- **tool 一覧は最新版で取る**: `GET /api/v3/tools?toolkit_slug=<slug>` は `toolkit_versions=latest` を付けないと古い版が返る（2026-11-13 時点で GA 4 件・GSC 6 件。latest では 84 件・14 件）。読み書きの別は tool の tag（`readOnlyHint`・`createHint`・`updateHint`・`destructiveHint`）で判断する
+- **managed auth は scope を足すことがある**: GA の auth config は `analytics.readonly` だけを指定しても `userinfo.profile` が付き、PATCH しても外れなかった（GSC には付かなかった）。scope を厳密にしたいときは、自前の OAuth client を使う auth config にする
 
 #### Composio の key・project の区別
 
@@ -69,26 +72,31 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 
 ## Cloudflare 側の state（`cf` CLI で作成。ダッシュボードに出ない設定がある）
 
+portal・MCP server・それらの Access app の正本は dotfiles の [`mcp/cloudflare/`](https://github.com/wwwyo/dotfiles/tree/main/mcp/cloudflare) の宣言。`apply.py` で差分を表示し、`--apply` で反映する（使い方は dotfiles の AGENTS.md）。下の表は構成の説明なので、値が食い違ったら宣言と `apply.py` の差分表示を正とする。Tunnel・Gateway policy・DNS はまだ宣言に無い。
+
 | 種類 | 値 |
 | --- | --- |
 | Tunnel | リモート管理。ingress は `http_status:404` だけ、`warp-routing` 有効 |
 | Tunnel CIDR route | `127.0.0.1/32` → 上の Tunnel（default virtual network） |
 | Gateway network policy | L4 block: `net.dst.ip in {127.0.0.1/32} and not(net.dst.port in {<公開する port>})` |
-| MCP server | `openscreen`: `http://127.0.0.1:47821/mcp`、`auth_type: bearer`（OpenScreen の token を Cloudflare に保存）、`secure_web_gateway: true`。tool は編集中の動画プロジェクト（クリップ・トリム・ズーム・字幕・音声）の読み書きで、shell・filesystem・画面操作は持たない |
+| MCP server | `openscreen`: `http://127.0.0.1:47821/mcp`、`auth_type: bearer`（OpenScreen の token を Cloudflare に保存）、`secure_web_gateway: true`。tool は編集中の動画プロジェクト（クリップ・トリム・ズーム・字幕・音声）の読み書きで、shell・filesystem・画面操作は持たない。2026-10-15 から同期が `error`（`destination_unavailable`。OpenScreen を起動していないと upstream に届かない） |
 | MCP server | `context7`: `https://mcp.context7.com/mcp`、`auth_type: bearer`（`CONTEXT7_API_KEY` を Cloudflare に保存。context7 は `Authorization: Bearer` で key を受ける）、`secure_web_gateway: false`（公開 upstream なので Gateway・Tunnel を通さない） |
 | MCP server | `fudoki`: `https://api.fudoki.dev/mcp`、`auth_type: unauthenticated`、`secure_web_gateway: false` |
-| MCP server | `cloudflare`: `https://mcp.cloudflare.com/mcp`、`auth_type: oauth`（DCR。client 登録は portal が自動で行い、手動の client_id は持たない）、`secure_web_gateway: false`。tool は `docs` `search` `execute` `whoami` |
-| MCP server | `composio`: portal `marketing` 用の Composio tool router session の `mcp.url`（`https://backend.composio.dev/tool_router/<session_id>/mcp`）、`auth_type: bearer`（`x-api-key` header に Platform の `ak_` key）、`secure_web_gateway: false`。いまの toolkit は GSC だけで、tool は GSC 読み取りの `LIST_SITES` `GET_SITE` `SEARCH_ANALYTICS_QUERY` `INSPECT_URL` `LIST_SITEMAPS` `GET_SITEMAP`。Composio 側は user_id `wwwyo`、auth config `gsc-readonly`（scope `webmasters.readonly`） |
-| MCP portal | `marketing`: `mcp-marketing.wwwyo.dev`、`code_mode: default_on`、portal 側 `secure_web_gateway: false`、server は `composio`（`on_behalf: false`）と `cloudflare-small`（`on_behalf: true`）。Access policy は `Cloudflare account members` |
-| MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: default_on`（2026-10-21 に `off` から変更。client は `?codemode=off` で従来の tool 一覧に戻せる）、portal 側 `secure_web_gateway: false`、`on_behalf` は `cloudflare` だけ `true`、他は `false` |
-| Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback・claude.ai の `https://claude.ai/api/mcp/auth_callback`・任意の localhost/loopback）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`、server ごとに 1 つ）。どれも本人のメールだけ Allow。例外として `marketing` portal と、そこに載せる server（`composio`・`cloudflare-small`）の server 用 app は reusable policy `Cloudflare account members` を使う |
+| MCP server | `queria`: `https://mcp.queria.io`、`auth_type: oauth`（利用者ごとの OAuth）、`secure_web_gateway: false`。portal `wwwyo` に `on_behalf: true` で載せている |
+| MCP server | `cloudflare-small`: `https://mcp.cloudflare.com/mcp`、`auth_type: oauth`（DCR。client 登録は portal が自動で行い、手動の client_id は持たない）、`secure_web_gateway: false`。tool は `docs` `search` `execute` `whoami`。portal `marketing` にだけ載せている（以前 `wwwyo` にあった server `cloudflare` は今は無い） |
+| MCP server | `buffercom`: `https://mcp.buffer.com/mcp`、`auth_type: bearer`（Buffer の key を Cloudflare に保存。mise には無い）、`secure_web_gateway: false`。tool は投稿・アイデア・テンプレートの読み書きで、削除も含む。登録された hostname の先頭に空白が入っている（同期は `ready`。update では直せないので、直すなら作り直す） |
+| MCP server | `my-gmail`: `https://gmailmcp.googleapis.com/mcp/v1`、`auth_type: oauth`（manual。Google Cloud の OAuth client、`is_shared_oauth_callback_enabled: true`）。どの portal にも載っておらず、`needs_reauth` で `waiting` のまま |
+| MCP server | `composio`: portal `marketing` 用の Composio tool router session の `mcp.url`（`https://backend.composio.dev/tool_router/<session_id>/mcp`）、`auth_type: bearer`（`x-api-key` header に Platform の `ak_` key）、`secure_web_gateway: false`。toolkit は GSC と GA。GSC は読み取りの `LIST_SITES` `GET_SITE` `SEARCH_ANALYTICS_QUERY` `INSPECT_URL` `LIST_SITEMAPS` `GET_SITEMAP` と、書き込みの `SUBMIT_SITEMAP`。auth config は `gsc-sitemap`（scope `webmasters`）。GA は readOnlyHint の tool 60 件で、auth config は `ga-readonly`（scope `analytics.readonly`）。Composio 側の user_id は `wwwyo`。旧 `gsc-readonly` は 2026-11-13 に無効化した。tool の一覧は dotfiles の `mcp/composio/sessions/marketing.json` にある |
+| MCP portal | `marketing`: `mcp-marketing.wwwyo.dev`、`code_mode: default_on`、portal 側 `secure_web_gateway: false`、server は `composio`・`buffercom`（`on_behalf: false`）と `cloudflare-small`（`on_behalf: true`）。Access policy は `Cloudflare account members` |
+| MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: default_on`（2026-10-21 に `off` から変更。client は `?codemode=off` で従来の tool 一覧に戻せる）、portal 側 `secure_web_gateway: false`、server は `openscreen`・`context7`・`fudoki`（`on_behalf: false`）と `queria`（`on_behalf: true`） |
+| Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback・claude.ai の `https://claude.ai/api/mcp/auth_callback`・任意の localhost/loopback）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`、server ごとに 1 つ）。`wwwyo` portal と `openscreen`・`context7`・`fudoki` の app は、本人のメールだけを Allow する app 専用の policy（session 1h）。`marketing` portal と、`composio`・`cloudflare-small`・`buffercom`・`queria`・`my-gmail` の server 用 app は reusable policy `Cloudflare account members`（session 24h）。`marketing` portal の app には Managed OAuth・DCR（`oauth_configuration`）が無い |
 | DNS | `mcp` CNAME → `gateway.agents.cloudflare.com`（proxied） |
 
 ## MCP を追加するとき
 
 1. `cf mcp servers create --body @file`（token を含む body はファイル経由で渡し、`--dry-run` に token を通さない）。loopback の server は `secure_web_gateway: true`、公開 remote の server は `false`。同期が `ready` になるまで `cf mcp servers read` で待つ。
 2. server 用の Access app（type `mcp`）を作る。無いと portal 経由でその server が見えない。
-3. 対象の portal（`wwwyo` か `marketing`）に `cf mcp portals update` で server を足す。どちらの portal でも省いた項目は既定値に戻るので、全項目を指定する。upstream が OAuth の server は、ダッシュボードの server 画面で「サーバーの認証」を押して同期させる（`cf` に相当コマンドが無い）。`on_behalf` は「その upstream の権限を利用者ごとに分けるか」で決める — 利用者ごとの同意・token を持つ OAuth upstream は `true`（現状 cloudflare だけ）、portal が共有 credential で呼ぶ bearer・認証なし upstream は `false`。1人運用なら `false` でも動くが、client を共有した時点で権限境界が消える。同意した scope 外の操作を upstream が拒否するかは未検証 — 拒否の挙動を前提に自動承認の範囲を広げない
+3. 対象の portal（`wwwyo` か `marketing`）に `cf mcp portals update` で server を足す。どちらの portal でも省いた項目は既定値に戻るので、全項目を指定する。upstream が OAuth の server は、ダッシュボードの server 画面で「サーバーの認証」を押して同期させる（`cf` に相当コマンドが無い）。`on_behalf` は「その upstream の権限を利用者ごとに分けるか」で決める — 利用者ごとの同意・token を持つ OAuth upstream は `true`（現状 `cloudflare-small`・`queria`）、portal が共有 credential で呼ぶ bearer・認証なし upstream は `false`。1人運用なら `false` でも動くが、client を共有した時点で権限境界が消える。同意した scope 外の操作を upstream が拒否するかは未検証 — 拒否の挙動を前提に自動承認の範囲を広げない
    - 1段目（manager 側の同期）で止まっている signature は `status: waiting` + `authentication_status: required` + `last_successful_sync: null`。2段目の同意はその後に出るので、切り分けはこの3つで行う
 4. loopback の server だけ、Gateway network policy の許可 port に足す。
 5. shell・filesystem 書き込みなど強い権限の MCP は `wwwyo` に入れず（upstream の OAuth 同意で scope を絞れるものは除く）、`<name>-mcp.wwwyo.dev` の別 portal にする（hostname は 1 段。2 段は Universal SSL の対象外）。権限ではなく渡す agent を用途で絞るための portal は `mcp-<用途>.wwwyo.dev`（`mcp-marketing`）と名付けて区別する。
