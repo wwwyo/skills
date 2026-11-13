@@ -112,6 +112,7 @@ portal・MCP server・それらの Access app の正本は dotfiles の [`mcp/cl
 - **tool の無効化はダッシュボードに出ないことがある。** API の `servers[].updated_tools: [{name, enabled: false}]` なら設定できる。
 - **`127.0.0.1/32` の route は loopback の全 port に届きうる。** network policy の対照実験（rule ON で接続失敗、OFF で到達）で効くことを確認済み。新しい port を公開するときは policy の許可も更新する。
 - **Gateway の「Route traffic through Cloudflare Gateway」は server 側の設定が効く。** portal 側の同名設定は server の登録・tool 同期には効かない。private upstream へ portal から届かないときは server の `secure_web_gateway` を先に見る。route は IP 単位で port を指定できないため、port 制限は上記の L4 network policy で行う（doc に記載が無く、検証 server とルール on/off の対照で確認した）。
+- **portal 経由の Composio 呼び出しが HTTP 429 になることがある。** 2026-11-13 に、session を同期した直後と旧接続を消す前後で、`composio_*` だけが数分 429 になった（同じ portal の buffer は通った）。Composio を直接呼ぶと org の上限 2000/60s に余裕があり、成功した。portal 側の制限か、portal に置いた key の上限かは未特定。数分待って再試行すると通るので、429 だけで設定の不備と判断しない
 - **portal は upstream の Server Instructions を引き継がない。** upstream が `initialize` で `instructions` を返していても、portal 経由の接続では消える（2026-10-22 に codemode 有効・無効の双方で実測）。用途を初期コンテキストに載せたいなら client 側（`AGENTS.md`・system prompt）か upstream の tool description に書く — upstream の Instructions は client が server を直接登録する経路でだけ効く。有無は `initialize` を直叩きすれば確認できる。
 - **codemode の値でモデルに見える tool 構成が変わる。** `default_on` では portal の Code Mode tool 5個だけが見え、`?codemode=off` では upstream の個別 tool が見える（2026-10-22 時点で 11個＋UI 用 `_meta`。数は upstream の tool 追加で変わる）。MCP Apps（UI `_meta`）を Code Mode と併用できるかは未検証 — ChatGPT からの UI 動作確認は取れていない。
 - **`cf` は `gh` と同じく sandbox 外で実行する。** sandbox 有効時は通信制限で `cf mcp servers list` 等が落ちる。権限設定を緩めず escalated で実行する。
