@@ -77,11 +77,11 @@ metadata:
 
 demo・product launch・motion graphic、図・字幕・数値、再現できる編集・合成はこちら。
 
-1. cwd を `~/src/github.com/wwwyo/hyperframes` にして `/hyperframes` skill から入る
-2. `/hyperframes` のルーティング表に従って適切な workflow を選ぶ
+1. HeyGen 公式の plugin `hyperframes@hyperframes`（marketplace は `heygen-com/hyperframes`）の入口 skill（Claude では `/hyperframes:hyperframes`）から入る。repo の checkout や cwd は問わない
+2. 入口 skill のルーティング表に従って適切な workflow を選ぶ
 3. 既存プロジェクトの inspect / preview / render も同じ入口
 
-HyperFrames の実装・workflow の中身をこの skill に複製しない。必要な手順は都度 `/hyperframes` 側で読む。
+HyperFrames の実装・workflow の中身をこの skill に複製しない。必要な手順は都度 plugin 側で読む。plugin が入っていなければ、入れるようユーザーに伝える。
 
 ## 併用
 
