@@ -29,13 +29,20 @@ const asset = (name: string) => readFileSync(join(ASSETS, name), "utf8");
 const mapRow = (name: string, desc: string) => `* [${name}](./${name}/index.md)` + (desc ? ` - ${desc}` : "");
 const domainsLiteral = (names: Iterable<string>) => [...new Set(names)].sort().map((n) => `"${n}"`).join(", ");
 
-const { values, positionals } = parseArgs({
-  args: Bun.argv.slice(2),
-  options: { domain: { type: "string", multiple: true }, "dry-run": { type: "boolean", default: false } },
-  allowPositionals: true,
-});
+const USAGE = "usage: home-wiki.ts <home-dir> --domain <name>[=<説明>] [--domain ...] [--dry-run]";
+let parsed;
+try {
+  parsed = parseArgs({
+    args: Bun.argv.slice(2),
+    options: { domain: { type: "string", multiple: true }, "dry-run": { type: "boolean", default: false } },
+    allowPositionals: true,
+  });
+} catch (e) {
+  fail(`${(e as Error).message}\n${USAGE}`);
+}
+const { values, positionals } = parsed!;
 if (positionals.length !== 1 || !values.domain?.length) {
-  fail("usage: home-wiki.ts <home-dir> --domain <name>[=<説明>] [--domain ...] [--dry-run]");
+  fail(USAGE);
 }
 const home = resolve(positionals[0]);
 const dryRun = values["dry-run"]!;
@@ -72,7 +79,7 @@ ensureFile(join(wiki, "CLAUDE.md"), "read @AGENTS.md\n");
 // Map: 無ければ雛形から作り、あれば Map 節の最後の行頭 `* [` の直後へ足りない domain を足す
 const indexPath = join(wiki, "index.md");
 if (!existsSync(indexPath)) {
-  write(indexPath, asset("index.md").replace("__MAP__", domains.map((d) => mapRow(d.name, d.desc)).join("\n")), true);
+  write(indexPath, asset("index.md").replace("__MAP__", () => domains.map((d) => mapRow(d.name, d.desc)).join("\n")), true);
 } else {
   const text = readFileSync(indexPath, "utf8");
   const missing = domains.filter((d) => !text.includes(`](./${d.name}/index.md)`));
@@ -96,7 +103,7 @@ if (!existsSync(indexPath)) {
 for (const d of domains) ensureFile(join(wiki, d.name, "index.md"), `${d.desc || d.name}\n`);
 
 if (!existsSync(checker)) {
-  write(checker, asset("okf-check.ts").replace("__DOMAINS__", domainsLiteral(names)), true);
+  write(checker, asset("okf-check.ts").replace("__DOMAINS__", () => domainsLiteral(names)), true);
   if (!dryRun) chmodSync(checker, 0o755);
 } else {
   const text = readFileSync(checker, "utf8");

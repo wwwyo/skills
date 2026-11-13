@@ -51,6 +51,14 @@ if bun "$tmp/tools/okf-check.ts" "$tmp/wiki" >/dev/null; then fail "undefined do
 
 # 引数の誤り
 if bun "$TOOL" "$tmp" --domain 'Bad Name' 2>/dev/null; then fail "invalid domain accepted"; fi
+# 未知の option・値の無い --domain も引数の誤り（exit 2）
+set +e; bun "$TOOL" "$tmp" --nope >/dev/null 2>&1; c=$?; bun "$TOOL" "$tmp" --domain >/dev/null 2>&1; d=$?; set -e
+[ "$c" = 2 ] && [ "$d" = 2 ] || fail "bad args exit: $c $d"
+# 説明文の $ は置換パターンにせずそのまま Map に書く
+fresh="$(mktemp -d)"; git -C "$fresh" init -q
+bun "$TOOL" "$fresh" --domain 'gamma=a$&b$$c' >/dev/null || fail "dollar desc run"
+grep -qF '* [gamma](./gamma/index.md) - a$&b$$c' "$fresh/wiki/index.md" || fail "dollar desc mangled: $(grep gamma "$fresh/wiki/index.md")"
+rm -rf "$fresh"
 # 読めない checker では何も書かずに exit 2
 sed -i.bak 's/^const ALLOWED_DOMAINS = /const ALLOWED_DOMAINS: Set<string> = /' "$tmp/tools/okf-check.ts"
 before="$(cat "$tmp/wiki/index.md")"
