@@ -41,7 +41,6 @@ from pathlib import Path
 
 # OKF 予約名 index.md に加え、本バンドルは AGENTS.md/CLAUDE.md を schema/instruction の
 # 予約 meta として concept 扱いから除外する（OKF 予約集合のローカル拡張）。
-# かつて存在した log.md/log.local.md（操作ログ）は廃止済み — 遷移は git の履歴が持つ。
 RESERVED = {"index.md", "AGENTS.md", "CLAUDE.md", "index.local.md"}
 # プロジェクト規約: 許可する type（form）と domain（tags 先頭）。増やすときはここに追記。
 ALLOWED_TYPES = {"concept", "synthesis", "person", "company", "organization", "book"}
@@ -113,7 +112,7 @@ def main() -> int:
     # link 存在判定用は reserved（index.md 等）も含む全ファイル集合。
     # index.md → 各 domain の index.md（progressive disclosure）が valid なため。
     all_ids = {f.relative_to(root).with_suffix("").as_posix() for f in md_files}
-    # bundle の実トップdir（/raw・/daily 等のバンドル外 repo-root 参照と区別するため）
+    # bundle の実トップdir（/raw 等のバンドル外 repo-root 参照と区別するため）
     bundle_dirs = {p.name for p in root.iterdir() if p.is_dir()}
     violations: list[str] = []
     external_refs = 0
@@ -184,14 +183,14 @@ def main() -> int:
                 if link.startswith("/"):
                     top = link.lstrip("/").split("/", 1)[0]
                     if top not in bundle_dirs:
-                        external_refs += 1  # /raw・/daily 等 repo-root 参照（bundle 外）
+                        external_refs += 1  # /raw 等 repo-root 参照（bundle 外）
                         continue
                     violations.append(f"[link] {rel}: bundle-absolute 内部リンク -> {link}（file 相対に直す）")
                 else:
                     # 相対リンク（規約）: bundle 内に解決するなら存在チェック。
                     resolved = posixpath.normpath(posixpath.join(rel_dir, link))
                     if resolved.startswith(".."):
-                        external_refs += 1  # bundle 外（../../raw, ../../PROFILE.md 等）
+                        external_refs += 1  # bundle 外（../../raw, ../../AGENTS.md 等）
                         continue
                     if resolved[:-3] not in all_ids:
                         broken.append((rel, link, resolved))

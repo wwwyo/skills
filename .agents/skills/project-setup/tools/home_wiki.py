@@ -147,6 +147,13 @@ def main() -> int:
         print(json.dumps({"error": f"not a git repository: {home}"}, ensure_ascii=False), file=sys.stderr)
         return 2
 
+    # 既存 checker の domain 行を読めないなら、何も書く前に止める（途中まで書いた状態を残さない）
+    checker = home / "tools" / "okf_check.py"
+    if checker.exists() and not DOMAINS_LINE.search(checker.read_text(encoding="utf-8")):
+        print(json.dumps({"error": f"{checker}: ALLOWED_DOMAINS = {{...}} の形の定義が見つからない。手で domain を足すかこの形に戻してから再実行する"},
+                         ensure_ascii=False), file=sys.stderr)
+        return 2
+
     plan = Plan(args.dry_run)
     plan.home = home
     names = [n for n, _ in domains]
@@ -158,7 +165,7 @@ def main() -> int:
     ensure_index(plan, wiki / "index.md", domains)
     for name, desc in domains:
         ensure_file(plan, wiki / name / "index.md", (desc or name) + "\n")
-    ensure_checker(plan, home / "tools" / "okf_check.py", names)
+    ensure_checker(plan, checker, names)
     ensure_gitignore(plan, home / ".gitignore")
     ensure_agents_memory(plan, home / "AGENTS.md")
 

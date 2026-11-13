@@ -49,4 +49,10 @@ if python3 "$tmp/tools/okf_check.py" "$tmp/wiki" >/dev/null; then fail "undefine
 
 # 引数の誤り
 if python3 "$TOOL" "$tmp" --domain 'Bad Name' 2>/dev/null; then fail "invalid domain accepted"; fi
+# 読めない checker では何も書かずに exit 2
+sed -i.bak 's/^ALLOWED_DOMAINS = {/ALLOWED_DOMAINS = set() | {/' "$tmp/tools/okf_check.py"
+before="$(cat "$tmp/wiki/index.md")"
+if python3 "$TOOL" "$tmp" --domain delta 2>/dev/null; then fail "unparsable checker accepted"; fi
+[ "$before" = "$(cat "$tmp/wiki/index.md")" ] || fail "index written before checker error"
+[ ! -e "$tmp/wiki/delta" ] || fail "domain dir written before checker error"
 echo "home-wiki: ok"
