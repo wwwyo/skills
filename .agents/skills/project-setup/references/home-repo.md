@@ -26,7 +26,7 @@ home の AGENTS.md に「他 repo」節を作り、1 repo 1 行で書く。CLAUD
 ```
 
 - local path は ghq の規約（`~/src/github.com/<owner>/<repo>`）で書き、clone は `ghq get <owner>/<repo>`
-- 目安は 20 repo 程度まで 1 行ずつ。それを超えたら領域（PJ・事業）ごとの file に分け、AGENTS.md からはその file を指す（progressive disclosure）。me では wiki の PJ hub ページが repo link を持ち、root `wiki/index.md` の Map から辿る
+- 目安は 20 repo 程度まで 1 行ずつ。それを超えたら領域（PJ・事業）ごとの file に分け、AGENTS.md からはその file を指す（progressive disclosure）。me は約 15 repo なので root `AGENTS.md` の「他 repo」に直接並べている
 - 作業は各 repo の clone から worktree を切って行い、複数 agent が同じ repo を並行して触れるようにする。各 repo の「他 repo から触るとき」の規約があればそれに従う
 
 ## memory（LLM wiki）
@@ -55,4 +55,4 @@ session は終われば文脈を失うので、次の session が聞き直さず
 
 ## 新しい PJ を立てたとき
 
-通常ワークフローで立ち上げた repo は、home の pointer に載せる。個人 PJ（owner `wwwyo`）はステップ 12 の wiki PJ domain の hub ページが pointer を兼ねる。チームの home がある PJ は、その home の「他 repo」節に 1 行足す。
+通常ワークフローで立ち上げた repo は、home の pointer に載せる。個人 PJ（owner `wwwyo`）はステップ 12 で `wwwyo/me` の「他 repo」に足す。チームの home がある PJ は、その home の「他 repo」節に 1 行足す。
