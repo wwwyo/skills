@@ -43,14 +43,7 @@ jobs:
           toolchain = config['tools']['go']
           if not isinstance(toolchain, str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', toolchain):
               raise ValueError('trusted go toolchain must be an exact pin')
-          tools = [('go:github.com/wwwyo/skillctrl', pin), ('go', toolchain)]
-          # tests/home-wiki.test.sh が使う bun。trusted source に pin が無ければ入れない（test 側が skip する）
-          bun = config['tools'].get('bun')
-          if bun is not None:
-              if not isinstance(bun, str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', bun):
-                  raise ValueError('trusted bun version must be an exact pin')
-              tools.append(('bun', bun))
-          lines = ['[tools]'] + [(json.dumps(t) if ':' in t else t) + ' = ' + json.dumps(v) for t, v in tools] + ['', '[settings]']
+          lines = ['[tools]', '"go:github.com/wwwyo/skillctrl" = ' + json.dumps(pin), 'go = ' + json.dumps(toolchain), '', '[settings]']
           for name in ['pin', 'minimum_release_age']:
               lines.append(name + ' = ' + json.dumps(config['settings'][name]))
           Path('/tmp/gh-aw/skillctrl-cli/mise.toml').write_text('\n'.join(lines) + '\n')
@@ -61,7 +54,7 @@ jobs:
           Path('/tmp/gh-aw/skillctrl-cli/pi.txt').write_text(str(pi))
           lock_text = subprocess.check_output(['git', 'show', source + ':mise.lock'], text=True)
           selected_blocks = []
-          for tool, version in tools:
+          for tool, version in [('go:github.com/wwwyo/skillctrl', pin), ('go', toolchain)]:
               name = json.dumps(tool) if ':' in tool else tool
               blocks = re.findall(r'(?ms)^\[\[tools\.' + re.escape(name) + r'\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)
               matching = [block for block in blocks if tomllib.loads(block)['tools'][tool][0]['version'] == version]
@@ -91,7 +84,39 @@ jobs:
           binary="$(mise which skillctrl)"
           echo "SKILLCTRL_BIN=$binary" >> "$GITHUB_ENV"
           echo "binary=$binary" >> "$GITHUB_OUTPUT"
-          if bun="$(mise which bun 2>/dev/null)"; then dirname "$bun" >> "$GITHUB_PATH"; fi
+      # tests/home-wiki.test.sh が使う bun を trusted source の pin と lock から入れる。
+      # pin が無い source（bun を足す前の base）では入れず、test 側が skip する
+      - name: Install the trusted bun
+        env:
+          MISE_GLOBAL_CONFIG_FILE: /tmp/gh-aw/skillctrl-cli/global.toml
+          MISE_DATA_DIR: /tmp/gh-aw/skillctrl-cli/data
+        run: |
+          mkdir -p /tmp/bun-cli
+          python3 - <<'PYTHON'
+          import json, os, re, subprocess, tomllib
+          from pathlib import Path
+          source = os.environ['CHECKER_SOURCE']
+          if not re.fullmatch(r'[0-9a-f]{40}', source):
+              raise ValueError('trusted source must be a commit')
+          config = tomllib.loads(subprocess.check_output(['git', 'show', source + ':mise.toml'], text=True))
+          bun = config['tools'].get('bun')
+          if bun is None:
+              raise SystemExit(0)
+          if not isinstance(bun, str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', bun):
+              raise ValueError('trusted bun version must be an exact pin')
+          lock_text = subprocess.check_output(['git', 'show', source + ':mise.lock'], text=True)
+          blocks = re.findall(r'(?ms)^\[\[tools\.bun\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)
+          matching = [b for b in blocks if tomllib.loads(b)['tools']['bun'][0]['version'] == bun]
+          if len(matching) != 1:
+              raise ValueError('trusted bun lock must match the exact pin')
+          Path('/tmp/bun-cli/mise.toml').write_text('[tools]\nbun = ' + json.dumps(bun) + '\n')
+          Path('/tmp/bun-cli/mise.lock').write_text(matching[0])
+          PYTHON
+          if [ -f /tmp/bun-cli/mise.toml ]; then
+            cd /tmp/bun-cli
+            mise trust --yes . && mise install --locked
+            dirname "$(mise which bun)" >> "$GITHUB_PATH"
+          fi
       - name: Run tests
         run: |
           set -euo pipefail
