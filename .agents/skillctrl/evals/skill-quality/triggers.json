@@ -47,8 +47,6 @@
   {"id":"creator-near-miss","skill":"skillctrl","should_trigger":false,"query":"このPythonのCLI実装をrefactorして。skillファイルの作成・更新・性能評価は必要ありません。"},
   {"id":"structure-positive","skill":"skill-structure","should_trigger":true,"query":"repo固有の学びskillの構造を決めたい。references、tools、review loopをどこに分けるか、他skillに頼る部分も整理して。"},
   {"id":"structure-near-miss","skill":"skill-structure","should_trigger":false,"query":"globalな既存skillのdescriptionを短く言い換えて。repo固有の学びskillの新設や構造変更はしない。"},
-  {"id":"wiki-positive","skill":"wiki","should_trigger":true,"query":"前にwikiにまとめたskill管理の判断を引いて、今の設計に関係する学びを確認したい。必要なら既存ページへ今回の理解を還元して。"},
-  {"id":"wiki-near-miss","skill":"wiki","should_trigger":false,"query":"このチャットの議論を今日のdaily memoにまとめて。既存wikiの参照・更新は依頼していない。"},
   {"id":"find-boundary-positive","skill":"skillctrl","should_trigger":true,"query":"PDF変換の能力をagentに追加したい。対応するskillを探して取得元を比較して。新しい独自skillを書く前に既存候補を知りたい。"},
   {"id":"find-boundary-negative","skill":"skillctrl","should_trigger":false,"query":"PDFの2ページ目の本文を読み、要点を3つ挙げて。能力拡張やskill導入をする場面ではありません。"},
   {"id":"ingest-boundary-positive","skill":"ingest-to-markdown","should_trigger":true,"query":"このYouTubeの技術講演をPJ資料として残して。URLだけでなく、あとから内容をgrepできる状態にしたい。"},
