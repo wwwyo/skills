@@ -12,7 +12,7 @@ printf '# AGENTS.md\n\nexisting\n' >"$tmp/AGENTS.md"
 
 out="$(python3 "$TOOL" "$tmp" --domain "alpha=最初の domain")"
 echo "$out" | jq -e '.check.ok == true' >/dev/null || fail "initial check: $out"
-for f in raw/.gitkeep wiki/AGENTS.md wiki/CLAUDE.md wiki/index.md wiki/alpha/index.md tools/okf_check.py; do
+for f in raw/.gitkeep wiki/AGENTS.md wiki/CLAUDE.md wiki/index.md wiki/alpha/index.md tools/okf-check.ts; do
   [ -f "$tmp/$f" ] || fail "missing $f"
 done
 grep -q '^existing$' "$tmp/AGENTS.md" || fail "AGENTS.md lost existing content"
@@ -36,20 +36,20 @@ echo '* [Page](page.md) - テスト' >>"$tmp/wiki/alpha/index.md"
 echo 'local edit' >>"$tmp/wiki/AGENTS.md"
 out="$(python3 "$TOOL" "$tmp" --domain alpha --domain beta)"
 echo "$out" | jq -e '.check.ok == true' >/dev/null || fail "rerun check: $out"
-echo "$out" | jq -e '.updated | index("tools/okf_check.py") != null' >/dev/null || fail "checker not updated: $out"
-grep -q '"alpha", "beta"' "$tmp/tools/okf_check.py" || fail "domains not merged"
+echo "$out" | jq -e '.updated | index("tools/okf-check.ts") != null' >/dev/null || fail "checker not updated: $out"
+grep -q '"alpha", "beta"' "$tmp/tools/okf-check.ts" || fail "domains not merged"
 grep -q '^local edit$' "$tmp/wiki/AGENTS.md" || fail "schema overwritten"
 [ "$(grep -c '^## メモリ（wiki）$' "$tmp/AGENTS.md")" = 1 ] || fail "memory section duplicated"
 grep -q '^\* \[beta\](./beta/index.md)$' "$tmp/wiki/index.md" || fail "beta Map row"
 
 # 未定義 domain のページは検査で落ちる
 sed 's/\[alpha\]/[gamma]/' "$tmp/wiki/alpha/page.md" >"$tmp/wiki/alpha/bad.md"
-if python3 "$tmp/tools/okf_check.py" "$tmp/wiki" >/dev/null; then fail "undefined domain passed"; fi
+if bun "$tmp/tools/okf-check.ts" "$tmp/wiki" >/dev/null; then fail "undefined domain passed"; fi
 
 # 引数の誤り
 if python3 "$TOOL" "$tmp" --domain 'Bad Name' 2>/dev/null; then fail "invalid domain accepted"; fi
 # 読めない checker では何も書かずに exit 2
-sed -i.bak 's/^ALLOWED_DOMAINS = {/ALLOWED_DOMAINS = set() | {/' "$tmp/tools/okf_check.py"
+sed -i.bak 's/^const ALLOWED_DOMAINS = /const ALLOWED_DOMAINS: Set<string> = /' "$tmp/tools/okf-check.ts"
 before="$(cat "$tmp/wiki/index.md")"
 if python3 "$TOOL" "$tmp" --domain delta 2>/dev/null; then fail "unparsable checker accepted"; fi
 [ "$before" = "$(cat "$tmp/wiki/index.md")" ] || fail "index written before checker error"

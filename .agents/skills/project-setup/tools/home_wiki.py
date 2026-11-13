@@ -6,9 +6,9 @@
 
 置くもの（既存の file は上書きしない）:
   raw/.gitkeep, wiki/AGENTS.md（schema）, wiki/CLAUDE.md, wiki/index.md（Map）,
-  wiki/<domain>/index.md, tools/okf_check.py（検査）, root AGENTS.md の「メモリ（wiki）」節
-既存の wiki/index.md と tools/okf_check.py には、足りない domain だけを追記する。
-最後に tools/okf_check.py wiki を実行し、結果を stdout に 1 行の JSON で返す。
+  wiki/<domain>/index.md, tools/okf-check.ts（検査。Bun で実行）, root AGENTS.md の「メモリ（wiki）」節
+既存の wiki/index.md と tools/okf-check.ts には、足りない domain だけを追記する。
+最後に bun tools/okf-check.ts wiki を実行し、結果を stdout に 1 行の JSON で返す。
 検査が通らなければ exit 1、引数の誤りは exit 2。
 """
 from __future__ import annotations
@@ -16,13 +16,14 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets" / "home-wiki"
 DOMAIN_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
-DOMAINS_LINE = re.compile(r"^ALLOWED_DOMAINS = \{([^}]*)\}", re.MULTILINE)
+DOMAINS_LINE = re.compile(r"^const ALLOWED_DOMAINS = new Set\(\[([^\]]*)\]\);", re.MULTILINE)
 MEMORY_HEADING = "## メモリ（wiki）"
 
 
@@ -88,7 +89,7 @@ def ensure_index(plan: Plan, path: Path, domains: list[tuple[str, str]]) -> None
 
 def ensure_checker(plan: Plan, path: Path, names: list[str]) -> None:
     if not path.exists():
-        text = (ASSETS / "okf_check.py").read_text(encoding="utf-8")
+        text = (ASSETS / "okf-check.ts").read_text(encoding="utf-8")
         plan.write(path, text.replace("__DOMAINS__", domains_literal(names)), new=True)
         if not plan.dry_run:
             path.chmod(0o755)
@@ -96,11 +97,11 @@ def ensure_checker(plan: Plan, path: Path, names: list[str]) -> None:
     text = path.read_text(encoding="utf-8")
     m = DOMAINS_LINE.search(text)
     if not m:
-        raise RuntimeError(f"{path}: ALLOWED_DOMAINS = {{...}} の行が見つからない")
+        raise RuntimeError(f"{path}: const ALLOWED_DOMAINS = new Set([...]); の行が見つからない")
     current = set(re.findall(r'"([^"]+)"', m.group(1)))
     if set(names) <= current:
         return
-    new_line = f"ALLOWED_DOMAINS = {{{domains_literal(sorted(current | set(names)))}}}"
+    new_line = f"const ALLOWED_DOMAINS = new Set([{domains_literal(sorted(current | set(names)))}]);"
     plan.write(path, text[: m.start()] + new_line + text[m.end():], new=False)
 
 
@@ -139,9 +140,9 @@ def main() -> int:
         return 2
 
     # 既存 checker の domain 行を読めないなら、何も書く前に止める（途中まで書いた状態を残さない）
-    checker = home / "tools" / "okf_check.py"
+    checker = home / "tools" / "okf-check.ts"
     if checker.exists() and not DOMAINS_LINE.search(checker.read_text(encoding="utf-8")):
-        print(json.dumps({"error": f"{checker}: ALLOWED_DOMAINS = {{...}} の形の定義が見つからない。手で domain を足すかこの形に戻してから再実行する"},
+        print(json.dumps({"error": f"{checker}: const ALLOWED_DOMAINS = new Set([...]); の形の定義が見つからない。手で domain を足すかこの形に戻してから再実行する"},
                          ensure_ascii=False), file=sys.stderr)
         return 2
 
@@ -163,10 +164,14 @@ def main() -> int:
                     "created": plan.created, "updated": plan.updated}
     code = 0
     if not args.dry_run:
-        r = subprocess.run([sys.executable, "tools/okf_check.py", "wiki"], cwd=home,
-                           capture_output=True, text=True)
-        result["check"] = {"ok": r.returncode == 0, "output": r.stdout.strip()}
-        code = 0 if r.returncode == 0 else 1
+        bun = shutil.which("bun")
+        if bun is None:
+            result["check"] = {"ok": False, "output": "bun が見つからない。mise で入れてから bun tools/okf-check.ts wiki を実行する"}
+            code = 1
+        else:
+            r = subprocess.run([bun, "tools/okf-check.ts", "wiki"], cwd=home, capture_output=True, text=True)
+            result["check"] = {"ok": r.returncode == 0, "output": r.stdout.strip()}
+            code = 0 if r.returncode == 0 else 1
     print(json.dumps(result, ensure_ascii=False))
     return code
 

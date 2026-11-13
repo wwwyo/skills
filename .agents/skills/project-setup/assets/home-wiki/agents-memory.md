@@ -4,4 +4,4 @@
 
 - 引くのは、過去の判断や PJ の文脈が要るとき、対象 repo の code・AGENTS.md・ADR だけでは背景が足りないときだけ。通常の実装では事前に読まない
 - 書くのは、repo をまたいで転用できる理解・判断が生まれたときだけ。repo の決定は対象 repo の ADR、手順は skill、repo の制約は AGENTS.md に置き、wiki に写さない
-- 引き方・書き方・検査（`python3 tools/okf_check.py wiki`）は [wiki/AGENTS.md](./wiki/AGENTS.md) に従う
+- 引き方・書き方・検査（`bun tools/okf-check.ts wiki`）は [wiki/AGENTS.md](./wiki/AGENTS.md) に従う

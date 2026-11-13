@@ -35,7 +35,7 @@ repo をまたぐ理解・判断を session をまたいで残す場所として
 python3 <skill-dir>/tools/home_wiki.py <home-dir> --domain product="開発" --domain business="事業" --domain marketing="マーケティング"
 ```
 
-- 置くもの: `raw/`、`wiki/AGENTS.md`（schema の雛形）、`wiki/index.md`（Map）、`wiki/<domain>/index.md`、`tools/okf_check.py`（frontmatter・domain・link 切れの検査）、root `AGENTS.md` の「メモリ（wiki）」節。既存の file は上書きせず、再実行で domain を足せる。最後に検査を回して結果を JSON で返す（`--dry-run` で書く file だけを確認できる）
+- 置くもの: `raw/`、`wiki/AGENTS.md`（schema の雛形）、`wiki/index.md`（Map）、`wiki/<domain>/index.md`、`tools/okf-check.ts`（frontmatter・domain・link 切れの検査。Bun で動くので、先に `setup.sh tools bun` で mise に入れる）、root `AGENTS.md` の「メモリ（wiki）」節。既存の file は上書きせず、再実行で domain を足せる。最後に検査を回して結果を JSON で返す（`--dry-run` で書く file だけを確認できる）
 - 雛形は [assets/home-wiki/](../assets/home-wiki/)。置いた後は home 側が正本で、schema も home で直接直す
 - 既存の home で育った PJ を独立させるときは、新しい home で `home_wiki.py` を回してページと `raw/` を移し、元の home の inbound link を移し先の URL に置き換える。移し先の domain は PJ 名ではなく、その中の境界で切り直す
 
