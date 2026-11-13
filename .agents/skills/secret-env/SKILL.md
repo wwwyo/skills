@@ -1,6 +1,6 @@
 ---
 name: secret-env
-description: "API key / token / 環境変数を mise+age で管理する（追加・移動・scope 変更・MCP への注入）ときに参照する。Keychain の age key 運用・repo-local への scope 限定・team 共有 repo の fnox（repo 専用の age 鍵・agent 用の鍵）・Context7 等 MCP への env 継承のハマりどころを収録した学び skill。"
+description: "API key / token / 環境変数を mise+age で管理する（追加・移動・scope 変更・MCP への注入）ときに参照する。Keychain の age key 運用・repo-local への scope 限定・Context7 等 MCP への env 継承のハマりどころを収録した学び skill。"
 ---
 
 # Secret Env
@@ -14,4 +14,3 @@ description: "API key / token / 環境変数を mise+age で管理する（追�
 | やること | 読む reference |
 | --- | --- |
 | mise+age で secret を追加・移動・scope 変更する / MCP に env を渡す | [references/mise-age.md](references/mise-age.md) |
-| team 共有 repo で secret を扱う（fnox + age、メンバー・AI agent・CI の鍵、増減時の作り直し） | [references/team-repo-fnox.md](references/team-repo-fnox.md) |

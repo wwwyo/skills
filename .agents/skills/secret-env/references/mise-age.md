@@ -8,7 +8,7 @@
 
 ## team 共有の repo
 
-mise の age 暗号文は暗号化時の recipient しか開けず、個人の鍵で暗号化した値を team repo に commit すると他のメンバーには読めない。team 共有 repo の secret は fnox + age で扱う（[team-repo-fnox.md](team-repo-fnox.md)）。自分だけが使う値は、その repo の `mise.local.toml` に自分の鍵で暗号化して置く。global gitignore の無い環境もあるので、置く前に `git check-ignore -q mise.local.toml` で除外されていることを確かめる。
+mise の age 暗号文は暗号化時の recipient しか開けず、個人の鍵で暗号化した値を team repo に commit すると他のメンバーには読めない。team 共有 repo の secret はその team の規約（各 team の home の skill）に従う。自分だけが使う値は、その repo の `mise.local.toml` に自分の鍵で暗号化して置く。global gitignore の無い環境もあるので、置く前に `git check-ignore -q mise.local.toml` で除外されていることを確かめる。
 
 ## 学び
 
