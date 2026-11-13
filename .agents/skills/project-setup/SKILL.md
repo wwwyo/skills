@@ -30,6 +30,8 @@ upstream を維持するだけで自分では開発しない fork（mirror・参
 
 ### 1. リポジトリ作成
 
+home repo の依頼なら、このステップの前にステップ 2 で種別を確定し、[home repo の手順](references/home-repo.md) の棚卸しと計画の合意を済ませる。合意前はこのステップのコマンドも実行しない。
+
 ghq 管理下に repo を作り、`git init`・CLAUDE.md・最小の `.gitignore` まで置く。既存の dir・file は変更しない。owner の既定は `wwwyo` で、`owner/repo` 形式ならそちらを使う。以降は出力 JSON の `path` を cwd にする。
 
 ```bash
@@ -54,7 +56,7 @@ CLAUDE.md は `read @AGENTS.md` の 1 行だけを持つ。起動時 index は `
 
 - **product**: 1 つのプロダクトを育てる repo。以降は各ステップの既定どおり
 - **playground**: API・model・ライブラリを試す PoC を複数置く repo。ステップ 7 で [playground の場合](#playground-の場合) の規約を入れる
-- **home**: 他の repo への pointer と共有 doc を持ち、agent session の起点にする repo。[home repo の手順](references/home-repo.md) を読み、その棚卸しと計画の合意を済ませてから以降のステップに入る。個人の home は既存の `wwwyo/me` なので、新しく作るのはチーム・org の home だけ
+- **home**: 他の repo への pointer・共有 doc・memory（LLM wiki）を持ち、agent session の起点にする repo。[home repo の手順](references/home-repo.md) を読み、その棚卸しと計画の合意を済ませてから以降のステップに入る。個人の home は既存の `wwwyo/me` なので、新しく作るのはチーム・org の home だけ
 
 ### 3. mise.toml 生成
 
@@ -161,13 +163,13 @@ lockfile を commit する JS/TS の package manager（bun / npm / pnpm / yarn�
 
 ### 12. wiki に PJ domain を作成（継続して育てる PJ の場合のみ）
 
-立ち上げた PJ は `wwwyo/me` の wiki に記憶を持たせる。**setup の必須完了項目**として抜けずに実施し、失敗したまま終わらせない。規約の SSOT は `~/src/github.com/wwwyo/me/wiki/AGENTS.md`（「PJ ページのメンテナンス規約」「プロジェクト記憶も wiki で管理する」の項）。これは wiki skill の書き込み条件（議論で到達した理解のみ）に対する例外で、PJ の台帳としての状態同期にあたる。単発 task・playground 内の使い捨て PoC は PJ ではないので作らない — playground repo 自体を継続運用するなら repo 単位で 1 domain を作る。**対象は個人 PJ のみ** — ステップ 1 で確定した owner が `wwwyo` 以外（仕事の org repo 等）ならこの手順は対象外。
+立ち上げた PJ は `wwwyo/me` の wiki に記憶を持たせる。**setup の必須完了項目**として抜けずに実施し、失敗したまま終わらせない。規約の SSOT は `~/src/github.com/wwwyo/me/wiki/AGENTS.md`（「PJ ページのメンテナンス規約」「プロジェクト記憶も wiki で管理する」の項）。これは wiki skill の書き込み条件（議論で到達した理解のみ）に対する例外で、PJ の台帳としての状態同期にあたる。単発 task・playground 内の使い捨て PoC は PJ ではないので作らない — playground repo 自体を継続運用するなら repo 単位で 1 domain を作る。**対象は個人 PJ のみ** — ステップ 1 で確定した owner が `wwwyo` 以外（仕事の org repo 等）ならこの手順は対象外。その場合でもチームの home があれば、その home の「他 repo」節に 1 行足す（[home repo](references/home-repo.md#新しい-pj-を立てたとき)）。
 
 - `~/src/github.com/wwwyo/me/wiki/<pj>/` に dir + `index.md` + hub ページ `<pj>.md` を作る。OKF frontmatter は **hub ページだけ**に付ける（`tags` 先頭は PJ domain 名。`index.md` は予約 meta で frontmatter を持たず、付けても無視される）。`<pj>/index.md` には `* [title](<pj>.md) - description` 形式で hub のエントリを置き、hub ページには repo リンク・Phase・「何であるか」の1段落を書く
 - `~/src/github.com/wwwyo/me/.agents/skills/wiki-lint/tools/okf_check.py` の `ALLOWED_DOMAINS` に PJ domain を追記
 - `wiki/index.md` の Map に domain index への link を足す
 - `wiki/life/project-focus.md` の PJ 一覧・フォーカスに反映する
-- hub ページの repo link は、`wwwyo/me` を home として使うときの pointer を兼ねる。チームの home がある PJ の扱いは [home repo](references/home-repo.md#新しい-pj-を立てたとき) を見る
+- hub ページの repo link は、`wwwyo/me` を home として使うときの pointer を兼ねる
 - `wiki` skill に従って検証し、`wwwyo/me` の `AGENTS.md` の checkout 規約に従って、この PJ 登録で変更したファイルだけを stage・commit・push する。push の成功までをステップ 12 の完了条件とする
 
 ### 13. 最初の PRD へ handoff
