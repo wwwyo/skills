@@ -1,6 +1,6 @@
 ---
 name: project-setup
-description: "新しいプロジェクトやリポジトリの作成・初期化を依頼されたときに使う。「project setup」「プロジェクトを作って」「新しいリポジトリを作成」など。"
+description: "新しいプロジェクトやリポジトリの作成・初期化、複数 repo を束ねる home repo の構築を依頼されたときに使う。「project setup」「プロジェクトを作って」「新しいリポジトリを作成」「home repo を作って」など。"
 argument-hint: <project-name>
 ---
 # Project Setup
@@ -54,6 +54,7 @@ CLAUDE.md は `read @AGENTS.md` の 1 行だけを持つ。起動時 index は `
 
 - **product**: 1 つのプロダクトを育てる repo。以降は各ステップの既定どおり
 - **playground**: API・model・ライブラリを試す PoC を複数置く repo。ステップ 7 で [playground の場合](#playground-の場合) の規約を入れる
+- **home**: 他の repo への pointer と共有 doc を持ち、agent session の起点にする repo。[home repo の手順](references/home-repo.md) を読み、その棚卸しと計画の合意を済ませてから以降のステップに入る。個人の home は既存の `wwwyo/me` なので、新しく作るのはチーム・org の home だけ
 
 ### 3. mise.toml 生成
 
@@ -166,6 +167,7 @@ lockfile を commit する JS/TS の package manager（bun / npm / pnpm / yarn�
 - `~/src/github.com/wwwyo/me/.agents/skills/wiki-lint/tools/okf_check.py` の `ALLOWED_DOMAINS` に PJ domain を追記
 - `wiki/index.md` の Map に domain index への link を足す
 - `wiki/life/project-focus.md` の PJ 一覧・フォーカスに反映する
+- hub ページの repo link は、`wwwyo/me` を home として使うときの pointer を兼ねる。チームの home がある PJ の扱いは [home repo](references/home-repo.md#新しい-pj-を立てたとき) を見る
 - `wiki` skill に従って検証し、`wwwyo/me` の `AGENTS.md` の checkout 規約に従って、この PJ 登録で変更したファイルだけを stage・commit・push する。push の成功までをステップ 12 の完了条件とする
 
 ### 13. 最初の PRD へ handoff
