@@ -157,13 +157,17 @@ package ごとに PR を分けると、同じ lockfile の更新が merge のた
 
 lockfile を commit する JS/TS の package manager（bun / npm / pnpm / yarn）を使う場合は、Dependabot が lockfile 未追従の PR を作ったときに自動修復する workflow も生成する。背景・`pull_request_target` が必要な理由・雛形は [references/dependabot-lockfile.md](references/dependabot-lockfile.md) に従う。
 
+#### 10.2. home への登録
+
+この repo を扱うチームの home があれば、owner や継続性に関わらず、その home の「他 repo」節に pointer を 1 行足す（[home repo](references/home-repo.md#新しい-pj-を立てたとき)）。個人 PJ の pointer はステップ 12 の hub ページが兼ねる。
+
 ### 11. Pullfrog 導入（yes の場合のみ）
 
 ステップ 2 で導入を選んだ場合は、repo 作成・visibility 確定後に [導入手順](references/pullfrog.md) を読む。App・workflow・repo-level config を設定し、実際の PR で動作確認して commit・push する。 完了条件には Pullfrog 実効値の監査（`pullfrog config list --repo` と `--org` の両方で継承込みの値を確認）と直近レビュー言語の確認を含める。
 
 ### 12. wiki に PJ domain を作成（継続して育てる PJ の場合のみ）
 
-立ち上げた PJ は `wwwyo/me` の wiki に記憶を持たせる。**setup の必須完了項目**として抜けずに実施し、失敗したまま終わらせない。規約の SSOT は `~/src/github.com/wwwyo/me/wiki/AGENTS.md`（「PJ ページのメンテナンス規約」「プロジェクト記憶も wiki で管理する」の項）。これは wiki skill の書き込み条件（議論で到達した理解のみ）に対する例外で、PJ の台帳としての状態同期にあたる。単発 task・playground 内の使い捨て PoC は PJ ではないので作らない — playground repo 自体を継続運用するなら repo 単位で 1 domain を作る。**対象は個人 PJ のみ** — ステップ 1 で確定した owner が `wwwyo` 以外（仕事の org repo 等）ならこの手順は対象外。その場合でもチームの home があれば、その home の「他 repo」節に 1 行足す（[home repo](references/home-repo.md#新しい-pj-を立てたとき)）。
+立ち上げた PJ は `wwwyo/me` の wiki に記憶を持たせる。**setup の必須完了項目**として抜けずに実施し、失敗したまま終わらせない。規約の SSOT は `~/src/github.com/wwwyo/me/wiki/AGENTS.md`（「PJ ページのメンテナンス規約」「プロジェクト記憶も wiki で管理する」の項）。これは wiki skill の書き込み条件（議論で到達した理解のみ）に対する例外で、PJ の台帳としての状態同期にあたる。単発 task・playground 内の使い捨て PoC は PJ ではないので作らない — playground repo 自体を継続運用するなら repo 単位で 1 domain を作る。**対象は個人 PJ のみ** — ステップ 1 で確定した owner が `wwwyo` 以外（仕事の org repo 等）ならこの手順は対象外。
 
 - `~/src/github.com/wwwyo/me/wiki/<pj>/` に dir + `index.md` + hub ページ `<pj>.md` を作る。OKF frontmatter は **hub ページだけ**に付ける（`tags` 先頭は PJ domain 名。`index.md` は予約 meta で frontmatter を持たず、付けても無視される）。`<pj>/index.md` には `* [title](<pj>.md) - description` 形式で hub のエントリを置き、hub ページには repo リンク・Phase・「何であるか」の1段落を書く
 - `~/src/github.com/wwwyo/me/.agents/skills/wiki-lint/tools/okf_check.py` の `ALLOWED_DOMAINS` に PJ domain を追記
