@@ -43,7 +43,14 @@ jobs:
           toolchain = config['tools']['go']
           if not isinstance(toolchain, str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', toolchain):
               raise ValueError('trusted go toolchain must be an exact pin')
-          lines = ['[tools]', '"go:github.com/wwwyo/skillctrl" = ' + json.dumps(pin), 'go = ' + json.dumps(toolchain), '', '[settings]']
+          tools = [('go:github.com/wwwyo/skillctrl', pin), ('go', toolchain)]
+          # tests/home-wiki.test.sh が使う bun。trusted source に pin が無ければ入れない（test 側が skip する）
+          bun = config['tools'].get('bun')
+          if bun is not None:
+              if not isinstance(bun, str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', bun):
+                  raise ValueError('trusted bun version must be an exact pin')
+              tools.append(('bun', bun))
+          lines = ['[tools]'] + [(json.dumps(t) if ':' in t else t) + ' = ' + json.dumps(v) for t, v in tools] + ['', '[settings]']
           for name in ['pin', 'minimum_release_age']:
               lines.append(name + ' = ' + json.dumps(config['settings'][name]))
           Path('/tmp/gh-aw/skillctrl-cli/mise.toml').write_text('\n'.join(lines) + '\n')
@@ -54,7 +61,7 @@ jobs:
           Path('/tmp/gh-aw/skillctrl-cli/pi.txt').write_text(str(pi))
           lock_text = subprocess.check_output(['git', 'show', source + ':mise.lock'], text=True)
           selected_blocks = []
-          for tool, version in [('go:github.com/wwwyo/skillctrl', pin), ('go', toolchain)]:
+          for tool, version in tools:
               name = json.dumps(tool) if ':' in tool else tool
               blocks = re.findall(r'(?ms)^\[\[tools\.' + re.escape(name) + r'\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)
               matching = [block for block in blocks if tomllib.loads(block)['tools'][tool][0]['version'] == version]
@@ -84,6 +91,7 @@ jobs:
           binary="$(mise which skillctrl)"
           echo "SKILLCTRL_BIN=$binary" >> "$GITHUB_ENV"
           echo "binary=$binary" >> "$GITHUB_OUTPUT"
+          if bun="$(mise which bun 2>/dev/null)"; then dirname "$bun" >> "$GITHUB_PATH"; fi
       - name: Run tests
         run: |
           set -euo pipefail
