@@ -213,6 +213,24 @@
       "sourceUrl": "https://github.com/emilkowalski/skills.git",
       "updatedAt": "2026-11-15T05:22:20.195Z"
     },
+    "find-animation-opportunities": {
+      "computedHash": "06efa7916c6c6996b5a8162d1ce1be7b3006f1de0c0a372aa065a57b19a0de7d",
+      "installedAt": "2026-11-15T05:31:21.619Z",
+      "native": {
+        "computedHash": "06efa7916c6c6996b5a8162d1ce1be7b3006f1de0c0a372aa065a57b19a0de7d",
+        "skillPath": "skills/find-animation-opportunities/SKILL.md",
+        "source": "emilkowalski/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/emilkowalski/skills.git"
+      },
+      "skillFolderHash": "4a44e78f996f1e1877ab6d2c82596c64c36e8bb9",
+      "skillPath": "skills/find-animation-opportunities/SKILL.md",
+      "source": "emilkowalski/skills",
+      "sourceCommit": "0f2e23b32bb1265e84cff8d3e75785fec953fb1b",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/emilkowalski/skills.git",
+      "updatedAt": "2026-11-15T05:31:21.619Z"
+    },
     "gestures": {
       "computedHash": "ae5942f635cf231c0be31025eb8b568da362c9704e9a1cf85350ea5f2be499d8",
       "installedAt": "2026-11-15T05:22:19.020Z",

@@ -78,6 +78,13 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
+    "find-animation-opportunities": {
+      "computedHash": "06efa7916c6c6996b5a8162d1ce1be7b3006f1de0c0a372aa065a57b19a0de7d",
+      "skillPath": "skills/find-animation-opportunities/SKILL.md",
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/emilkowalski/skills.git"
+    },
     "gestures": {
       "computedHash": "ae5942f635cf231c0be31025eb8b568da362c9704e9a1cf85350ea5f2be499d8",
       "skillPath": "skills/gestures/SKILL.md",
