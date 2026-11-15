@@ -1,0 +1,27 @@
+{
+  "name": "design",
+  "version": "0.1.0",
+  "description": "UI の見た目・動き・モバイルの挙動を扱う skill（unslop・design-md・emilkowalski/skills）。claude.ai アカウントと local の両方で使う",
+  "author": {
+    "name": "wwwyo",
+    "url": "https://github.com/wwwyo"
+  },
+  "repository": "https://github.com/wwwyo/skills",
+  "skills": [
+    "./animate",
+    "./animation-performance",
+    "./apple-design",
+    "./break-ui",
+    "./choreograph",
+    "./design-md",
+    "./emil-design-eng",
+    "./find-animation-opportunities",
+    "./gestures",
+    "./improve-animations",
+    "./mobile-native",
+    "./pick-ui-library",
+    "./remove-animations",
+    "./review-animations",
+    "./unslop"
+  ]
+}

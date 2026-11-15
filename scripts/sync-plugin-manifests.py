@@ -9,7 +9,8 @@ usage: scripts/sync-plugin-manifests.py [--check]
   ちょうど 1 回載り、載っている skill は SKILL.md の name と dir 名が一致すること
 
 Codex は local plugin を ~/.codex/plugins/cache へコピーし、その際に symlink を落とす。
-そのため plugin root は実ファイルを含む dir にし（core = repo root、local = .agents）、
+そのため plugin root は実ファイルを含む dir にし（core = repo root、design = .agents/skills、
+local = .agents）、
 skills は root からの相対 path で 1 つずつ列挙する。
 
 --check は差分・検査違反があれば stderr に理由を出して exit 1。書き込まない。
@@ -28,7 +29,7 @@ SKILLS = ROOT / ".agents/skills"
 CLAUDE = ROOT / ".claude-plugin/marketplace.json"
 CODEX_MARKETPLACE = ROOT / ".agents/plugins/marketplace.json"
 # plugin 名 → Codex の plugin root（repo root からの相対）
-CODEX_ROOTS = {"core": ".", "local": ".agents"}
+CODEX_ROOTS = {"core": ".", "design": ".agents/skills", "local": ".agents"}
 VERSION = "0.1.0"
 
 

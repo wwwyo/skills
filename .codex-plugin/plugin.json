@@ -10,7 +10,6 @@
   "skills": [
     "./.agents/skills/agent-friendly-cli",
     "./.agents/skills/ce-simplify-code",
-    "./.agents/skills/design-md",
     "./.agents/skills/document",
     "./.agents/skills/domain-modeling",
     "./.agents/skills/e2e",
@@ -25,7 +24,6 @@
     "./.agents/skills/project-setup",
     "./.agents/skills/prototype",
     "./.agents/skills/skill-structure",
-    "./.agents/skills/solo-product",
-    "./.agents/skills/unslop"
+    "./.agents/skills/solo-product"
   ]
 }
