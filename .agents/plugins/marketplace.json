@@ -17,6 +17,18 @@
       "category": "Productivity"
     },
     {
+      "name": "design",
+      "source": {
+        "source": "local",
+        "path": "./.agents/skills"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
       "name": "local",
       "source": {
         "source": "local",
