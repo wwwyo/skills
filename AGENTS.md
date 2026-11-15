@@ -1,6 +1,6 @@
 # skills
 
-wwwyo の共有 agent skill の正本。Claude Code・Codex・pi へは plugin / package として配り、claude.ai（cloud）には core plugin だけを届ける。開発環境の設定（各 tool への登録・hooks・chezmoi）は [wwwyo/dotfiles](https://github.com/wwwyo/dotfiles) が持つ。
+wwwyo の共有 agent skill の正本。Claude Code・Codex・pi へは plugin / package として配り、claude.ai（cloud）には core・design plugin だけを届ける。開発環境の設定（各 tool への登録・hooks・chezmoi）は [wwwyo/dotfiles](https://github.com/wwwyo/dotfiles) が持つ。
 
 ## ディレクトリ構造
 
