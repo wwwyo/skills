@@ -81,4 +81,42 @@ python3 page-check.py <design.md> <page.html> [--layout <measurements.json>] [--
 
 headless Chrome をこの skill に同梱しない理由は、環境依存で起動しないケースがあり、計測はどのブラウザでも同じ JS で済むため。
 
-共有の解析基盤（`Finding`・`line_of`・`format_human`・fence 抽出・`spec_text`）は `check_common.py` に置く。両 check はこれを import する — 同じロジックを各 script にコピーしない。
+## アプリの lint 設定の生成（lint-setup）
+
+`design-md-check.py` は design.md 自体を見る。アプリのコードが design.md の token を守っているかは、design.md から生成した oxlint 設定をアプリに入れて毎回止めさせる。agent が居ない編集でも editor と CI で効く。lint は oxlint だけに対応する。
+
+```bash
+python3 lint-setup.py <design.md> [--out DIR] [--component-glob GLOB ...] [--tailwind --tailwind-entry PATH] [--check] [--dry-run] [--json]
+```
+
+| 生成物 | 条件 | 中身 |
+| --- | --- | --- |
+| `oxlint.design-md.json` | 常に | アプリの `.oxlintrc.json` から `extends` する設定。下の plugin と rule、component の除外を持つ |
+| `oxlint-plugin-design-md.mjs` | 常に | oxlint の JS plugin。rule `design-md/no-raw-style` が JSX の `style={{ ... }}` を見て、色・font・size・line-height・letter-spacing・余白・radius・shadow・easing・duration の property は design.md の token の `var()` と最小限の keyword だけを許す。それ以外の property でも色（hex・`rgb()`/`oklch()` 等）の直書きは弾く |
+| `design-md.theme.css` | `--tailwind` | Tailwind v4 の `@theme inline reference`。design.md の token を utility にする（`bg-primary`・`p-sm`・`text-body`）。既定の theme は消さない |
+
+`--tailwind` 時は `oxlint.design-md.json` に `eslint-plugin-better-tailwindcss`（oxlint の JS plugin として読む）の 2 rule を足す:
+
+- `no-restricted-classes`: 任意値（`bg-[#fff]`・`p-[13px]` 等の色・余白・文字・radius）と、design.md に token がある category の Tailwind 既定値（`bg-red-500`・`text-white`・`p-4`・`text-sm`・`rounded-lg`・`shadow-md`・`font-sans`・`leading-6` 等）を禁止する。token と同名の値（token に `--shadow-sm` があれば `shadow-sm`）は許す
+- `no-unknown-classes`: theme に無い class（typo 等）
+
+規則:
+
+- **component は対象外**。`--component-glob`（既定 `**/components/**`）に当たるファイルでは `no-raw-style` と `no-restricted-classes` を切る（`no-unknown-classes` だけ残す）。Tailwind の既定 theme を消さないのは、component が既定値を使えるようにするため
+- token の分類は名前（`font-size`・`space`・`radius` 等の語）を優先し、決まらなければ値（色・長さ・時間）で判定する。`--font-weight-*` のように分類できない token は lint の対象外
+- `style` の `borderRadius`・余白は 1〜4 値、`boxShadow`・timing・duration は comma 区切りの重ね書きを許す（各値は token か keyword）。式を含む値（`` `${x}px` `` や変数）は静的に判定できないので見ない
+- CSS ファイルは見ない（oxlint は JS/TS だけを lint する）。CSS に値を直書きする app では、design.md の外れは `design-md-check.py <design.md> <scan paths>` で拾う
+- `--out` は oxlint を実行する dir（通常 repo root）にする。`--tailwind-entry` は rule の `entryPoint` にそのまま書かれ、実行時の cwd から解決される。oxlint は `extends` 先の `settings` を JS plugin に渡さないので、`entryPoint` は rule の option で渡している
+- 生成物の 1 行目に marker を書く。marker の無い同名ファイルは上書きせず `skipped-not-generated` で exit 1
+- `--check` は書き込まずに生成物が design.md と一致するかだけを見る（ずれていれば `stale` で exit 1）。design.md の `## Tokens` を変えたら再生成する
+- 出力は 1 ファイル 1 行（`<action> <file>`）と token 数のサマリ。`--json` で JSONL
+
+アプリ側への入れ方（パッケージはその repo の pin・cooldown 規約で入れる）:
+
+- `oxlint` を入れ、`.oxlintrc.json` に `"extends": ["./oxlint.design-md.json"]` を足す
+- Tailwind: `eslint-plugin-better-tailwindcss` も入れ、entry CSS で `@import "tailwindcss";` の後に `@import "./design-md.theme.css";`
+- CI と editor で oxlint が走れば、それで強制される。lint-setup 自体を CI で回す必要はない
+
+確認済みの組み合わせ（2026-11）: oxlint 1.92（JS plugin は alpha）、Tailwind CSS 4（`@tailwindcss/cli`）、eslint-plugin-better-tailwindcss 4.10。
+
+共有の解析基盤（`Finding`・`line_of`・`format_human`・fence 抽出・`spec_text`・`strip_comments`）は `check_common.py` に置く。各 script はこれを import する — 同じロジックを各 script にコピーしない。

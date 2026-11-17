@@ -11,6 +11,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+CUSTOM_PROP_DEF_RE = re.compile(r"(--[a-zA-Z0-9_-]+)\s*:\s*([^;{}]+);")
+COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
 FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")  # CommonMark: fence は3スペースまでのインデント。4+ は code block
 
 
@@ -80,3 +82,13 @@ def spec_text(path: Path) -> str:
     if path.suffix == ".md":
         return md_to_css(text)
     return text
+
+
+def strip_comments(css: str) -> str:
+    """CSS コメントを解析前に除去する（コメント内の var/property 定義を誤検出しないため）。
+
+    改行は保持して行番号を保つ。
+    """
+    def replace_comment(m):
+        return "\n" * m.group(0).count("\n")
+    return COMMENT_RE.sub(replace_comment, css)

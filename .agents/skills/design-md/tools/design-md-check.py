@@ -19,29 +19,17 @@ import re
 import sys
 from pathlib import Path
 
-from check_common import Finding, format_human, line_of, spec_text
+from check_common import CUSTOM_PROP_DEF_RE, Finding, format_human, line_of, spec_text, strip_comments
 
 SCAN_EXTENSIONS = {".css", ".html", ".tsx", ".jsx", ".vue", ".svelte"}
 
-CUSTOM_PROP_DEF_RE = re.compile(r"(--[a-zA-Z0-9_-]+)\s*:\s*([^;{}]+);")
 VAR_REF_RE = re.compile(r"var\(\s*(--[a-zA-Z0-9_-]+)\s*(?:,\s*((?:[^()]|\([^()]*\))*))?\)")
-COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
 
 HEX_RE = re.compile(r"^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 RGB_RE = re.compile(
     r"^rgba?\(\s*([\d.]+)(%?)\s*[,\s]\s*([\d.]+)(%?)\s*[,\s]\s*([\d.]+)(%?)"
     r"(?:\s*[,/]\s*([\d.]+)(%?))?[\s]*\)$"
 )
-
-
-def strip_comments(css: str) -> str:
-    """CSS コメントを解析前に除去する（コメント内の var/property 定義を誤検出しないため）。
-
-    改行は保持して行番号を保つ。
-    """
-    def replace_comment(m):
-        return "\n" * m.group(0).count("\n")
-    return COMMENT_RE.sub(replace_comment, css)
 
 
 def parse_rules_from_blocks(css: str, base: int = 0) -> list[tuple[str, str, int, int]]:
