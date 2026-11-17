@@ -1,7 +1,7 @@
 {
   "name": "design",
   "version": "0.1.0",
-  "description": "UI の見た目・動き・モバイルの挙動を扱う skill（unslop・design-md・emilkowalski/skills）。claude.ai アカウントと local の両方で使う",
+  "description": "UI の見た目・動き・モバイルの挙動を扱う skill（unslop・design-md・emilkowalski/skills）。claude.ai アカウントと local の両方で使う。Codex では 3d plugin の skill も同梱する",
   "author": {
     "name": "wwwyo",
     "url": "https://github.com/wwwyo"
@@ -22,6 +22,19 @@
     "./pick-ui-library",
     "./remove-animations",
     "./review-animations",
-    "./unslop"
+    "./unslop",
+    "./threejs-animation",
+    "./threejs-asset-pipeline",
+    "./threejs-fundamentals",
+    "./threejs-geometry",
+    "./threejs-interaction",
+    "./threejs-lighting",
+    "./threejs-loaders",
+    "./threejs-materials",
+    "./threejs-performance",
+    "./threejs-postprocessing",
+    "./threejs-react-three-fiber",
+    "./threejs-shaders",
+    "./threejs-textures"
   ]
 }

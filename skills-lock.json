@@ -170,6 +170,97 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/wwwyo/skillctrl.git"
     },
+    "threejs-animation": {
+      "computedHash": "52acf24ba76b47b094e5734622947fcc85deebf2469bb5c8ef77a1f1dcfc3e5c",
+      "skillPath": "skills/threejs-animation/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-asset-pipeline": {
+      "computedHash": "be5c2bbda841382229d99182f88e94eba8974474bd065b994e881bb9cc2058d8",
+      "skillPath": "skills/threejs-asset-pipeline/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-fundamentals": {
+      "computedHash": "c0293a5eaf5168cdbeb1e9bfc5d5b7aa24396f604a8695b26a72d833c2352108",
+      "skillPath": "skills/threejs-fundamentals/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-geometry": {
+      "computedHash": "cae4d8f02ffe449edbc33a2a9ba79020dcb415e7c187d48ed8ffc166207d2e77",
+      "skillPath": "skills/threejs-geometry/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-interaction": {
+      "computedHash": "3a9d60c473947217f2bd9fbdfb12084e55ae2f240aa6fc718f61c55a73d6fb34",
+      "skillPath": "skills/threejs-interaction/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-lighting": {
+      "computedHash": "231a7aec3b2d6aa061026397b5453b22518ac9391eb0f31164bfd06dd4bcacd6",
+      "skillPath": "skills/threejs-lighting/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-loaders": {
+      "computedHash": "f43a0994b7bead131c51361ff347ea7b2db48ec64994a8ee263171c692beac88",
+      "skillPath": "skills/threejs-loaders/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-materials": {
+      "computedHash": "8dbeb3cc26e0825e0bb6857bcdab04d997a31d8a2d685d850cdfce98df4c875d",
+      "skillPath": "skills/threejs-materials/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-performance": {
+      "computedHash": "5aa6eb8103c8f882f86a48c65245f1e8f1c48e83abc888e0d7a37833e7d9188b",
+      "skillPath": "skills/threejs-performance/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-postprocessing": {
+      "computedHash": "21ba7ee7155d7ad8643bafc0a832d29bf87a37b24acd5e4201a0b7c01470ab09",
+      "skillPath": "skills/threejs-postprocessing/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-react-three-fiber": {
+      "computedHash": "c584eb40814c9dba186a555adb9fa4acba84f4c40d47fd5b30fc90415f8ca53a",
+      "skillPath": "skills/threejs-react-three-fiber/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-shaders": {
+      "computedHash": "af0a4cdfc80390b30a898bb5a3fe30e4f61b304776a9aebbdb7451b0fc1c2c0f",
+      "skillPath": "skills/threejs-shaders/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
+    "threejs-textures": {
+      "computedHash": "73544dc3606b38270ddd909d57fd8a5df8291c3bae432417cf3f797ab1ca1fd3",
+      "skillPath": "skills/threejs-textures/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+    },
     "typesafe-ai": {
       "computedHash": "15e077333436b1e63e526c7c7559202816f4848dabefd3aa3d4c91988fd181b5",
       "skillPath": "skills/typesafe-ai/SKILL.md",
