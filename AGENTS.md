@@ -1,6 +1,6 @@
 # skills
 
-wwwyo の共有 agent skill の正本。Claude Code・Codex・pi へは plugin / package として配り、claude.ai（cloud）には core・design・3d plugin だけを届ける。開発環境の設定（各 tool への登録・hooks・chezmoi）は [wwwyo/dotfiles](https://github.com/wwwyo/dotfiles) が持つ。
+wwwyo の共有 agent skill の正本。Claude Code・Codex・pi へは plugin / package として配り、claude.ai（cloud）には core・design・motion-graphics plugin だけを届ける。開発環境の設定（各 tool への登録・hooks・chezmoi）は [wwwyo/dotfiles](https://github.com/wwwyo/dotfiles) が持つ。
 
 ## ディレクトリ構造
 
@@ -10,7 +10,7 @@ skills/
 │   ├── skills/<name>/          skill 本体（skillctrl が固定で使う場所）
 │   ├── skillctrl/              upstream provenance・受理 hash・intent・評価
 │   ├── .codex-plugin/          Codex の local plugin（root = .agents）。生成物
-│   ├── skills/.codex-plugin/   Codex の design plugin（root = .agents/skills。3d を同梱）。生成物
+│   ├── skills/.codex-plugin/   Codex の design plugin（root = .agents/skills。motion-graphics を同梱）。生成物
 │   └── plugins/marketplace.json  Codex の marketplace。生成物
 ├── .claude-plugin/marketplace.json  Claude の marketplace。plugin と skill の対応の正本
 ├── .codex-plugin/plugin.json   Codex の core plugin（root = repo root）。生成物
@@ -23,11 +23,12 @@ skills/
 
 ## plugin の配布
 
-plugin は `core`（cloud と local の両方。環境に依存しない汎用 skill）、`design`（cloud と local の両方。UI の見た目・動き・モバイルの挙動を扱う skill。unslop・design-md と emilkowalski/skills 由来の skill）、`3d`（cloud と local の両方。three.js・React Three Fiber の skill。CloudAI-X/threejs-skills 由来）、`local`（Orca・dotfiles・mise・ローカル CLI を前提にする skill）の 4 つ。marketplace 名は Claude・Codex とも `wwwyo`。
+plugin は `core`（cloud と local の両方。環境に依存しない汎用 skill）、`design`（cloud と local の両方。UI の見た目・動き・モバイルの挙動を扱う skill。unslop・design-md と emilkowalski/skills 由来の skill）、`motion-graphics`（cloud と local の両方。three.js・React Three Fiber の skill。CloudAI-X/threejs-skills 由来）、`local`（Orca・dotfiles・mise・ローカル CLI を前提にする skill）の 4 つ。marketplace 名は Claude・Codex とも `wwwyo`。
 
 - skill を足す・plugin を移すときは `.claude-plugin/marketplace.json` の `skills` を編集し、`scripts/sync-plugin-manifests.py` で Codex の定義を再生成する。`tests/plugin-manifests.test.sh` が、全 skill がちょうど 1 つの plugin に載っていることと生成物の一致を検査する
-- cloud に載せてよいかで core・design・3d / local を決める。UI デザインの skill は design、3D 表現の skill は 3d、それ以外の汎用 skill は core に置く。手元の path・CLI・secret を前提にする skill は local
-- Codex は local plugin を cache へコピーし、symlink を落とす。plugin root に skill を symlink で集めず、root からの相対 path で列挙する（core = repo root、design = `.agents/skills`、local = `.agents`）。root にできる dir はこの 3 つで尽きるため、3d は Codex では design に同梱する（`scripts/sync-plugin-manifests.py` の `CODEX_BUNDLED`）
+- cloud に載せてよいかで core・design・motion-graphics / local を決める。UI デザインの skill は design、3D・モーショングラフィックスの skill は motion-graphics、それ以外の汎用 skill は core に置く。手元の path・CLI・secret を前提にする skill は local
+- Codex は local plugin を cache へコピーし、symlink を落とす。plugin root に skill を symlink で集めず、root からの相対 path で列挙する（core = repo root、design = `.agents/skills`、local = `.agents`）。root にできる dir はこの 3 つで尽きるため、motion-graphics は Codex では design に同梱する（`scripts/sync-plugin-manifests.py` の `CODEX_BUNDLED`）
+- 手元でしか動かない MCP（`blender`）は、Claude の marketplace の local entry に `mcpServers` で inline に書く。全 plugin が source `./` を共有しているため、repo root に `.mcp.json` を置くと cloud に届く core・design・motion-graphics にも載ってしまう。運用は dev-env の skill-plugins を参照する
 - tool が自分で配って自動更新する skill（Orca の `orca-cli`・`orchestration`・`orca-computer-use` 等）はこの repo に置かない（dotfiles の `.agents/skills` で追跡する）。plugin に入れると、tool が書く `~/.agents/skills` の copy と二重に読まれ、tool の更新にも追従しなくなる。手元の方針は dev-env の reference に置く
 - skill から同梱の tools を呼ぶ手順は SKILL.md の dir からの相対 path で書く。`~/.agents/skills/...` は存在しない。scheduled task・hook など agent 以外の呼び出し元は canonical checkout（`~/src/github.com/wwwyo/skills`）を指す
 - **main への merge は即本番**。手元の pi・Devin と Claude Code の local はこの repo の canonical checkout を直接読む。Codex は `codex plugin add` で cache を更新するまで古い copy を読み、Claude Code の core と claude.ai は marketplace の自動同期で取り込んだ copy を読む（tool ごとの反映は dev-env の skill-plugins を参照）。skill の rename・削除は、それを読む consumer（dotfiles の scheduled task・hook、他 repo の orca.yaml）の切替と同じタイミングで merge する

@@ -1,7 +1,7 @@
 {
   "name": "design",
   "version": "0.1.0",
-  "description": "UI の見た目・動き・モバイルの挙動を扱う skill（unslop・design-md・emilkowalski/skills）。claude.ai アカウントと local の両方で使う。Codex では 3d plugin の skill も同梱する",
+  "description": "UI の見た目・動き・モバイルの挙動を扱う skill（unslop・design-md・emilkowalski/skills）。claude.ai アカウントと local の両方で使う。Codex では motion-graphics plugin の skill も同梱する",
   "author": {
     "name": "wwwyo",
     "url": "https://github.com/wwwyo"

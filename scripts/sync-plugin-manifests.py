@@ -12,7 +12,7 @@ Codex は local plugin を ~/.codex/plugins/cache へコピーし、その際に
 そのため plugin root は実ファイルを含む dir にし（core = repo root、design = .agents/skills、
 local = .agents）、
 skills は root からの相対 path で 1 つずつ列挙する。root にできる dir はこの 3 つで尽きるため、
-Claude の 3d plugin は Codex では design plugin に同梱する（CODEX_BUNDLED）。
+Claude の motion-graphics plugin は Codex では design plugin に同梱する（CODEX_BUNDLED）。
 
 --check は差分・検査違反があれば stderr に理由を出して exit 1。書き込まない。
 stdout には 1 行の JSON（{"changed": [...], "ok": bool}）を出す。
@@ -32,7 +32,7 @@ CODEX_MARKETPLACE = ROOT / ".agents/plugins/marketplace.json"
 # plugin 名 → Codex の plugin root（repo root からの相対）
 CODEX_ROOTS = {"core": ".", "design": ".agents/skills", "local": ".agents"}
 # Codex で別 plugin に同梱する Claude の plugin 名 → 同梱先の plugin 名
-CODEX_BUNDLED = {"3d": "design"}
+CODEX_BUNDLED = {"motion-graphics": "design"}
 VERSION = "0.1.0"
 
 
