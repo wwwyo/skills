@@ -97,15 +97,16 @@ python3 lint-setup.py <design.md> [--out DIR] [--component-glob GLOB ...] [--tai
 
 `--tailwind` 時は `oxlint.design-md.json` に `eslint-plugin-better-tailwindcss`（oxlint の JS plugin として読む）の 2 rule を足す:
 
-- `no-restricted-classes`: 任意値（`bg-[#fff]`・`p-[13px]` 等の色・余白・文字・radius）と、design.md に token がある category の Tailwind 既定値（`bg-red-500`・`text-white`・`p-4`・`text-sm`・`rounded-lg`・`shadow-md`・`font-sans`・`leading-6` 等）を禁止する。token と同名の値（token に `--shadow-sm` があれば `shadow-sm`）は許す
+- `no-restricted-classes`: 任意値（`bg-[#fff]`・`p-[13px]` 等の色・余白・文字・radius）、任意プロパティ（`[color:#fff]`・`[padding:13px]`）と、design.md に token がある category の Tailwind 既定値（`bg-red-500`・`text-white`・`p-4`・`text-sm`・`rounded-lg`・`shadow-md`・`font-sans`・`leading-6` 等）を禁止する。token と同名の値（token に `--shadow-sm` があれば `shadow-sm`）は許す
 - `no-unknown-classes`: theme に無い class（typo 等）
 
 規則:
 
 - **component は対象外**。`--component-glob`（既定 `**/components/**`）に当たるファイルでは `no-raw-style` と `no-restricted-classes` を切る（`no-unknown-classes` だけ残す）。Tailwind の既定 theme を消さないのは、component が既定値を使えるようにするため
-- token の分類は名前（`font-size`・`space`・`radius` 等の語）を優先し、決まらなければ値（色・長さ・時間）で判定する。`--font-weight-*` のように分類できない token は lint の対象外
+- token の分類は、別 token の別名（`--text-muted: var(--muted)`）なら参照先に従い、それ以外は名前（`font-size`・`space`・`radius` 等の語）を優先し、決まらなければ値（色・長さ・時間）で判定する。token が 1 つも無い category の property も検査し、keyword（`0`・`auto`・`inherit` 等）だけを許す。`--font-weight-*` のように分類できない token は lint の対象外
 - `style` の `borderRadius`・余白は 1〜4 値、`boxShadow`・timing・duration は comma 区切りの重ね書きを許す（各値は token か keyword）。式を含む値（`` `${x}px` `` や変数）は静的に判定できないので見ない
 - CSS ファイルは見ない（oxlint は JS/TS だけを lint する）。CSS に値を直書きする app では、design.md の外れは `design-md-check.py <design.md> <scan paths>` で拾う
+- `--tailwind` には `--tailwind-entry`（`@import "tailwindcss"` を含む app の entry CSS）が要る。theme の断片だけでは breakpoint 等が無く、`sm:bg-primary` が不明な class になるため。別の token が同じ Tailwind 変数に重なる（`--primary` と `--color-primary`）と exit 2 で止める
 - `--out` は oxlint を実行する dir（通常 repo root）にする。`--tailwind-entry` は rule の `entryPoint` にそのまま書かれ、実行時の cwd から解決される。oxlint は `extends` 先の `settings` を JS plugin に渡さないので、`entryPoint` は rule の option で渡している
 - 生成物の 1 行目に marker を書く。marker の無い同名ファイルは上書きせず `skipped-not-generated` で exit 1
 - `--check` は書き込まずに生成物が design.md と一致するかだけを見る（ずれていれば `stale` で exit 1）。design.md の `## Tokens` を変えたら再生成する
