@@ -13,8 +13,6 @@ Codex は local plugin を ~/.codex/plugins/cache へコピーし、その際に
 local = .agents）、
 skills は root からの相対 path で 1 つずつ列挙する。root にできる dir はこの 3 つで尽きるため、
 Claude の motion-graphics plugin は Codex では design plugin に同梱する（CODEX_BUNDLED）。
-upstream の repo をそのまま配る外部 plugin（EXTERNAL）は Claude だけに載せ、skills を列挙しない。
-source は github で、commit を sha で pin する。
 
 --check は差分・検査違反があれば stderr に理由を出して exit 1。書き込まない。
 stdout には 1 行の JSON（{"changed": [...], "ok": bool}）を出す。
@@ -35,8 +33,6 @@ CODEX_MARKETPLACE = ROOT / ".agents/plugins/marketplace.json"
 CODEX_ROOTS = {"core": ".", "design": ".agents/skills", "local": ".agents"}
 # Codex で別 plugin に同梱する Claude の plugin 名 → 同梱先の plugin 名
 CODEX_BUNDLED = {"motion-graphics": "design"}
-# Claude だけで配る外部 plugin（upstream の repo を sha で pin する。この repo に skill 本体を置かない）
-EXTERNAL = {"video-shotcraft"}
 VERSION = "0.1.0"
 
 
@@ -60,17 +56,11 @@ def main() -> int:
     marketplace = json.loads(CLAUDE.read_text(encoding="utf-8"))
     plugins = marketplace["plugins"]
     names = [p["name"] for p in plugins]
-    if sorted(names) != sorted([*CODEX_ROOTS, *CODEX_BUNDLED, *EXTERNAL]):
-        errors.append(f"plugins {names} must match CODEX_ROOTS, CODEX_BUNDLED and EXTERNAL")
+    if sorted(names) != sorted([*CODEX_ROOTS, *CODEX_BUNDLED]):
+        errors.append(f"plugins {names} must match CODEX_ROOTS and CODEX_BUNDLED")
 
     seen: dict[str, str] = {}
     for plugin in plugins:
-        if plugin["name"] in EXTERNAL:
-            source = plugin.get("source")
-            if not (isinstance(source, dict) and source.get("source") == "github"
-                    and re.fullmatch(r"[0-9a-f]{40}", source.get("sha", ""))) or "skills" in plugin:
-                errors.append(f"{plugin['name']}: external plugin needs a github source pinned by 40-char sha and no skills")
-            continue
         if plugin.get("source") != "./" or plugin.get("strict") is not False:
             errors.append(f"{plugin['name']}: source must be './' and strict false")
         for entry in plugin["skills"]:

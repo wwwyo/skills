@@ -15,7 +15,6 @@ metadata:
 | 読み上げ音声・ナレーションの生成 | **Audio** — Fish Audio（[references/audio-generation.md](references/audio-generation.md)） |
 | テキスト→動画、実写真を基準にした短いカット、必要時の実写編集 | **Video A** — 生成AI（[references/video-generation.md](references/video-generation.md)） |
 | demo / product launch / motion graphic、図・字幕・数値、再現できる編集・合成 | **Video B** — HyperFrames（下節） |
-| 実ページのキャプチャから作る製品プロモーション動画（Remotion・ショットカード・効果音） | **Video C** — video-shotcraft（下節） |
 | 生成したカットを1本に組み立てる | **併用** — A で撮影単位を作り、B で組み立てる |
 
 必要な key は経路ごとに異なる（値は表示しない。登録済みの key は global mise に age 暗号化で入っている）:
@@ -24,7 +23,7 @@ metadata:
 - Audio = [音声生成手順](references/audio-generation.md) の認証設定を使う
 - Video A / fal = `FAL_KEY`（登録済み）、Video A / Google Veo API = `GEMINI_API_KEY`（登録済み）
 - Video A / WaveSpeed = `WAVESPEED_API_KEY`（**未登録**。WaveSpeed を選んだときに [secret-env](../secret-env/SKILL.md) の手順で `mise set --age-encrypt` して登録する）
-- Video B・C = key 不要
+- Video B = key 不要
 
 ## Image
 
@@ -82,17 +81,9 @@ demo・product launch・motion graphic、図・字幕・数値、再現できる
 2. 入口 skill のルーティング表に従って適切な workflow を選ぶ
 3. 既存プロジェクトの inspect / preview / render も同じ入口
 
+製品プロモーション動画の動き・構成の参考には [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) のショットカード（`references/shots/`）と [ギャラリー](https://vincentwei1021.github.io/video-shotcraft/) を見る。実装は Remotion なので、HyperFrames で書き直して使う。
+
 HyperFrames の実装・workflow の中身をこの skill に複製しない。必要な手順は都度 plugin 側で読む。plugin が入っていなければ、入れるようユーザーに伝える。
-
-## Video C — video-shotcraft
-
-Web・デスクトップ製品のプロモーション動画を、実ページのキャプチャと 124 枚のショットカード（動きのレシピ）から Remotion で作るときはこちら。HyperFrames より製品宣伝の演出（ビート同期・効果音・Ink Press テンプレート）に寄っている。
-
-1. wwwyo marketplace の plugin `video-shotcraft@wwwyo`（upstream `Vincentwei1021/video-shotcraft` を commit pin）の skill `/video-shotcraft:video-shotcraft` から入る。本文は中国語で、モード選択（テンプレート・自主制作・共同制作）から始まる
-2. 使う動きは https://vincentwei1021.github.io/video-shotcraft/ のギャラリーで選べる
-3. Remotion は個人・小規模チームは無料、会社での利用は有料ライセンスが要ることがある。仕事で使う前に Remotion のライセンスを確認する
-
-video-shotcraft の手順をこの skill に複製しない。plugin が入っていなければ、入れるようユーザーに伝える。
 
 ## 併用
 
