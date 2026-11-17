@@ -81,6 +81,8 @@ demo・product launch・motion graphic、図・字幕・数値、再現できる
 2. 入口 skill のルーティング表に従って適切な workflow を選ぶ
 3. 既存プロジェクトの inspect / preview / render も同じ入口
 
+製品プロモーション動画の動き・構成の参考には [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) のショットカード（`references/shots/`）と [ギャラリー](https://vincentwei1021.github.io/video-shotcraft/) を見る。実装は Remotion なので、HyperFrames で書き直して使う。
+
 HyperFrames の実装・workflow の中身をこの skill に複製しない。必要な手順は都度 plugin 側で読む。plugin が入っていなければ、入れるようユーザーに伝える。
 
 ## 併用
