@@ -1,7 +1,7 @@
 {
   "name": "local",
   "version": "0.1.0",
-  "description": "手元の開発環境（Orca・dotfiles・mise・ローカル CLI）を前提にする skill。Claude Code では手元の Blender を操作する MCP も載せる。local 専用",
+  "description": "手元の開発環境（Orca・dotfiles・mise・ローカル CLI）を前提にする skill。Claude Code では手元の Blender・OpenScreen を操作する MCP も載せる。local 専用",
   "author": {
     "name": "wwwyo",
     "url": "https://github.com/wwwyo"
