@@ -1692,17 +1692,24 @@ def pi_worker_command():
     raise ApiError("delegate worker/personal has no available pi candidate")
 
 
-def spawn_worktree(repo, number, head_ref):
-    """専用 worktree に pi を起動し (handle, path, wtid) を返す。
-    pi は ready 前の prompt を保持しないので起動後に wait/send する。
-    head branch は agent 起動前に作成した worktree 内で checkout する。"""
-    command = pi_worker_command()
-    name = f"pr{number}-review"
-    repo_name = repo.split("/")[-1]
+def repo_inventory():
+    """Orca に登録済みの repo 一覧。切り詰め・取得不能は ApiError（fail-closed）。"""
     inventory = orca_json(["repo", "list"])
     if inventory.get("truncated"):
         raise ApiError("Orca repo inventory incomplete")
-    candidates = [Path(r["path"]) for r in inventory.get("repos", [])
+    return inventory.get("repos") or []
+
+
+def canonical_checkout(repo, repos):
+    """spawn の前提になる canonical checkout を1つに定める。
+
+    gate と dispatch が同じ解決を使う — gate がここで失敗する repo に
+    dispatch を出すと、spawn が毎 tick 失敗して head ごとに上限到達の
+    escalate コメントが積まれる（ローカル環境の不足を PR の障害として
+    扱ってしまう）。
+    """
+    repo_name = repo.split("/")[-1]
+    candidates = [Path(r["path"]) for r in repos
                   if r.get("path") and r.get("executionHostId", "local") == "local"
                   and (r.get("displayName") == repo_name or
                        (r.get("gitRemoteIdentity") or {}).get("canonicalKey") ==
@@ -1733,7 +1740,28 @@ def spawn_worktree(repo, number, head_ref):
     if len(matching) != 1:
         detail = f"; candidate errors: {'; '.join(unavailable)}" if unavailable else ""
         raise ApiError(f"canonical checkout ambiguous or unavailable for {repo}{detail}")
-    canonical = matching[0]
+    return matching[0]
+
+
+def dispatch_checkout_reason(repo, repos):
+    """spawn 経路の dispatch を出してよいか。出せないときは hold 理由を返す。
+
+    repo 単位で毎 tick 見直すので、checkout を置けば次 tick から dispatch に戻る。
+    """
+    try:
+        canonical_checkout(repo, repos)
+    except ApiError as e:
+        return str(e)
+    return None
+
+
+def spawn_worktree(repo, number, head_ref):
+    """専用 worktree に pi を起動し (handle, path, wtid) を返す。
+    pi は ready 前の prompt を保持しないので起動後に wait/send する。
+    head branch は agent 起動前に作成した worktree 内で checkout する。"""
+    command = pi_worker_command()
+    name = f"pr{number}-review"
+    canonical = canonical_checkout(repo, repo_inventory())
     try:
         res = orca_json(["worktree", "create", "--repo", f"path:{canonical}",
                          "--name", name, "--no-parent"], timeout=300)
@@ -2212,6 +2240,50 @@ def prune_state(st, days=30):
             st["prs"].pop(k)
 
 
+def _block_spawn_without_checkout(plan_entries, st):
+    """spawn 経路の dispatch を、canonical checkout が定まる repo にだけ出す。
+
+    checkout が無い・一意でない repo へ dispatch を出すと、spawn が毎 tick
+    失敗し、head ごとに上限到達の escalate コメントが積まれる — ローカル
+    環境の不足が PR 側の障害として記録され、report の Hold も原因を
+    表さない。repo 単位で判定して hold にし、checkout が置かれれば次 tick
+    から自動で dispatch に戻す（state の記録もそこで消す）。
+    """
+    repos_needed = sorted({e["repo"] for e in plan_entries
+                           for a in e["actions"]
+                           if a["type"] == "dispatch"
+                           and a.get("route") == "spawn"})
+    if not repos_needed:
+        return
+    try:
+        repos = repo_inventory()
+    except ApiError as e:
+        # inventory を読めない間は spawn を出さない（fail-closed）。
+        # 次 tick に再確認するので、復旧すれば dispatch に戻る
+        reasons = {r: f"repo inventory unavailable: {e}" for r in repos_needed}
+    else:
+        reasons = {r: dispatch_checkout_reason(r, repos) for r in repos_needed}
+    blocked = st.setdefault("dispatch_unavailable", {})
+    for repo in repos_needed:
+        reason = reasons[repo]
+        if not reason:
+            blocked.pop(repo, None)
+            continue
+        if (blocked.get(repo) or {}).get("reason") != reason:
+            append_event("dispatch_unavailable", repo=repo, reason=reason)
+        blocked[repo] = {"reason": reason, "at": _iso(_now())}
+    if not blocked:
+        st.pop("dispatch_unavailable", None)
+    for entry in plan_entries:
+        reason = reasons.get(entry["repo"])
+        if not reason:
+            continue
+        entry["actions"] = [
+            {"type": "hold", "reason": reason}
+            if (a["type"] == "dispatch" and a.get("route") == "spawn") else a
+            for a in entry["actions"]]
+
+
 def _gate(a, st, run_id):
     # intent reconcile: 前回 crash 等で record が欠落した merge を拾い直す。
     # merge 発行前に intent を書いているので、API が受理した直後に
@@ -2249,6 +2321,7 @@ def _gate(a, st, run_id):
 
     plan_entries = [compute_pr_decision(p, facts, worktrees, terms_cache, st)
                     for p, facts in entries]
+    _block_spawn_without_checkout(plan_entries, st)
 
     sweeps = sweep_candidates(st, worktrees)
     has_work = sweeps or any(

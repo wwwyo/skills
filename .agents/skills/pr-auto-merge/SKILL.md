@@ -223,12 +223,17 @@ script が構造化エラーで弾く。
   ```
 
   `sweep` はこの tick の sweep 出力の `removed` 件数の合計で、呼び出し回数ではない。
+  `dispatch`・`escalate`・`judge`・`merge`・`hold` は plan のその action 件数。
   jsonl で照合する場合は `ts >= plan.generated_at` の `worktree_rm` に絞り、
   この実行の sweep 出力と worktree を照合する（同時刻の手動 sweep を混ぜない）。
   sweep 実施済みでも `removed=[]` なら 0 とし、実施・残存理由は jsonl の note を参照する。
   `hold` は plan の hold action 件数。`judge_ok`・`judge_ng`・`judge_repair` は
   `event == "judge"` かつ `ts >= plan.generated_at` の event だけを数える — 当日の
   jsonl には前 tick の judge event も入るため、時刻で絞らないと件数が膨らむ。
+  ただし `judge_ok` は ok を登録した回数で、最終 verdict ではない（blocked で
+  merge に至らなかった ok も 1 と数える）。並行して走った別 run の event も同じ
+  時刻窓に入りうるので、tick-summary は自分の plan の action と実行結果で数え、
+  時刻窓だけで他 run の実績を切り分けない。
   `blocked` は同じ絞り込んだ judge event の `blocked`（judge-result が ok でも hard
   gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
   （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い
@@ -356,6 +361,13 @@ pullfrog-approval を免除する。
 - archive 済み repo の open PR は列挙段階（`list_open_prs`）で除外する。
   archive 済み repo は read-only で push も merge もできないため、judge・hold
   の対象にも報告にも載せない（毎 tick 判断待ちに積み続けない）
+- spawn を要する dispatch は、対象 repo の canonical checkout（Orca の repo
+  一覧と `~/src/github.com/<owner>/<repo>` から1つに定まるもの）があるときだけ
+  gate が出す。無い・一意でない repo は dispatch ではなく hold
+  （`canonical checkout ambiguous or unavailable for <repo>`）になり、PR への
+  コメントも spawn の試行も起きない — ローカル環境の不足を PR 側の障害として
+  escalate しない。`ghq get <owner>/<repo>` で checkout を置けば次 tick から
+  spawn に戻る。gate が jsonl に残す `dispatch_unavailable` がその記録になる。
 - `gh` はネットワーク/認証が要るので sandbox 外で実行する
 - `pullfrog-approval` が absent・fail でも直ちに異常としない。bot の
   manifest・lock・workflow だけの PR は script の依存自動 ok または

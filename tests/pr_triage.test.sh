@@ -1745,6 +1745,126 @@ st = {"prs": {"wwwyo/me#7": {"dispatches": [], "rounds": []}}}
 pt.save_state(st)
 assert pt.load_state() == st
 
+# ============================ spawn 前提の canonical checkout ============================
+# gate は spawn を出す前に、対象 repo の canonical checkout が一意に定まるかを
+# 見る。無い repo へ dispatch を出すと spawn が毎 tick 失敗し、head ごとに上限
+# 到達の escalate コメントが積まれる（ローカル環境の不足を PR の障害にしない）。
+def make_checkout(dirname, remote):
+    path = Path.home() / "src" / "github.com" / dirname
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "-C", str(path), "init", "-q"], check=True)
+    subprocess.run(["git", "-C", str(path), "remote", "add", "origin",
+                    f"https://github.com/{remote}.git"], check=True)
+    return path
+
+fixture_co = make_checkout("wwwyo/fixture", "wwwyo/fixture")
+assert pt.canonical_checkout("wwwyo/fixture", []) == fixture_co
+assert pt.canonical_checkout(
+    "wwwyo/fixture", [{"path": str(fixture_co), "displayName": "fixture",
+                       "executionHostId": "local"}]) == fixture_co
+assert pt.dispatch_checkout_reason("wwwyo/fixture", []) is None
+missing_reason = pt.dispatch_checkout_reason("wwwyo/missing", [])
+assert missing_reason.startswith(
+    "canonical checkout ambiguous or unavailable for wwwyo/missing"), missing_reason
+try:
+    pt.canonical_checkout("wwwyo/missing", [])
+    raise AssertionError("missing checkout accepted")
+except pt.ApiError:
+    pass
+
+# 候補が2つ（inventory 登録 + default の場所）なら spawn 先を決められない。
+second_co = make_checkout("wwwyo/fixture2", "wwwyo/fixture")
+inv_two = [{"path": str(second_co), "displayName": "fixture",
+            "executionHostId": "local"}]
+try:
+    pt.canonical_checkout("wwwyo/fixture", inv_two)
+    raise AssertionError("ambiguous checkout accepted")
+except pt.ApiError as e:
+    assert "ambiguous or unavailable for wwwyo/fixture" in str(e)
+
+def spawn_entries():
+    return [
+        {"repo": "wwwyo/fixture", "number": 1,
+         "actions": [{"type": "dispatch", "route": "spawn", "sig": "s"},
+                     {"type": "dispatch", "route": "revive"}]},
+        {"repo": "wwwyo/fixture", "number": 2,
+         "actions": [{"type": "dispatch", "route": "spawn", "sig": "t"}]},
+        {"repo": "wwwyo/other", "number": 3,
+         "actions": [{"type": "hold", "reason": "r"}]},
+    ]
+
+events = []
+spawn_state = {}
+with mock.patch.object(pt, "repo_inventory", return_value=inv_two), \
+        mock.patch.object(pt, "append_event",
+                          side_effect=lambda *a, **kw: events.append((a, kw))):
+    entries = spawn_entries()
+    pt._block_spawn_without_checkout(entries, spawn_state)
+    assert [x["type"] for x in entries[0]["actions"]] == ["hold", "dispatch"]
+    assert entries[1]["actions"][0]["type"] == "hold"
+    assert entries[2]["actions"][0]["type"] == "hold"
+    assert [c[0][0] for c in events] == ["dispatch_unavailable"]
+    assert spawn_state["dispatch_unavailable"]["wwwyo/fixture"][
+        "reason"].startswith("canonical checkout ambiguous or unavailable")
+    # 同じ理由が続く tick では event を重複記録しない
+    events.clear()
+    pt._block_spawn_without_checkout(spawn_entries(), spawn_state)
+    assert not events
+    # inventory が読めない間は spawn を出さない（fail-closed）
+    with mock.patch.object(pt, "repo_inventory",
+                           side_effect=pt.ApiError("boom")):
+        entries = spawn_entries()
+        pt._block_spawn_without_checkout(entries, {})
+    assert entries[0]["actions"][0]["type"] == "hold"
+    assert "repo inventory unavailable" in entries[0]["actions"][0]["reason"]
+    # checkout が一意に定まれば dispatch に戻し、repo の block 記録も消す
+    events.clear()
+    fresh = spawn_entries()
+    with mock.patch.object(pt, "repo_inventory", return_value=[]):
+        pt._block_spawn_without_checkout(fresh, spawn_state)
+    assert fresh[0]["actions"][0]["type"] == "dispatch"
+    assert fresh[0]["actions"][1]["type"] == "dispatch"
+    assert "dispatch_unavailable" not in spawn_state
+    # spawn の dispatch が1つも無い tick は inventory を読まない
+    with mock.patch.object(pt, "repo_inventory", boom := mock.Mock(
+            side_effect=AssertionError("must not read inventory"))):
+        pt._block_spawn_without_checkout(
+            [{"repo": "wwwyo/other", "number": 3,
+              "actions": [{"type": "hold", "reason": "r"}]}], spawn_state)
+    boom.assert_not_called()
+
+# gate は spawn を選んだ tick で、canonical checkout の無い repo の action を
+# hold に落とし、session を起こさない（dispatch を出さない）。
+gate_entry = {"repo": "wwwyo/missing", "number": 9, "title": "t",
+              "url": "u", "head": "sha1", "author": "wwwyo",
+              "actions": [{"type": "dispatch", "route": "spawn", "sig": "s"}]}
+gate_state = {}
+with mock.patch.object(pt, "list_open_prs",
+                       return_value=[{"repo": "wwwyo/missing", "number": 9}]), \
+        mock.patch.object(pt, "worktree_ps", return_value=[]), \
+        mock.patch.object(pt, "pr_facts", return_value={}), \
+        mock.patch.object(pt, "local_session_audit", return_value={}), \
+        mock.patch.object(pt, "compute_pr_decision", return_value=gate_entry), \
+        mock.patch.object(pt, "repo_inventory", return_value=[]), \
+        mock.patch.object(pt, "save_state"), \
+        mock.patch.object(pt, "append_event") as gate_events, \
+        mock.patch.object(pt, "_lock_release") as gate_release, \
+        mock.patch.object(pt, "emit"):
+    try:
+        pt._gate(SimpleNamespace(), gate_state, "run1")
+        raise AssertionError("spawn without checkout did not stop the tick")
+    except SystemExit as e:
+        assert e.code == 1
+    gate_release.assert_called_once_with("run1")
+    assert any(c.args[0] == "dispatch_unavailable"
+               for c in gate_events.call_args_list)
+assert gate_entry["actions"][0]["type"] == "hold"
+assert "canonical checkout ambiguous or unavailable for wwwyo/missing" in \
+    gate_entry["actions"][0]["reason"]
+plan = json.loads(pt.PLAN_FILE.read_text())
+assert plan["prs"][0]["actions"][0]["type"] == "hold"
+assert gate_state["dispatch_unavailable"]["wwwyo/missing"]["reason"]
+
 print("ok")
 EOF
 

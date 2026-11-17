@@ -72,6 +72,18 @@ lane への推薦で、merge の発行は script が hard gate の再検証後�
   差分を含む（`bot_dep_only` が立たない）と check は永久に付かない — billing を
   疑う前に `@pullfrog` でレビューを依頼するか人間が merge するまで hold が続く
   （script は理由にその旨を書く）。
+  check-run が在って `FAILURE` のままなのが pullfrog の provider 側の 429・
+  credit 切れなら、これも PR 側の欠陥ではない — `repair` にも `ng` にもせず、
+  `pullfrog-approval not success (FAILURE)` の blocked のまま hold を維持する。
+  この状態では ok を登録しても approval は届かないので merge 0 が正常で、
+  待機や再実行で tick を消費しない。同じ repo の複数 PR が同時に止まっている
+  なら per-PR の hold を積み増さず、その旨を report の Error 節と note に tick で
+  1 回書き、人手 merge キューに渡す。
+- `state is MERGED (...)`・`head moved: ...` — merge 直前に別のアクターが
+  merge した、または head が動いた race。判定の誤りでも規約違反でもないので
+  `ng` / `repair` を登録しない。MERGED を観測した PR は Hold から外して
+  Merge 節にも載せず（当日の routine の merge 実績は jsonl で数える）、head が
+  動いた PR は新しい head を次 tick で判定し直す。verdict 未登録のままでよい。
 - `draft (author ready 待ち)` — draft は author が未完成と明示した PR で、
   plan の hold と hard gate の両方が弾く。draft のまま pullfrog が承認を
   保留すると pullfrog-approval が FAILURE になり、lane は author に代わって
@@ -125,6 +137,11 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   bump した action の outputs・token の永続化・trigger/permissions の差分有無、その action の id を
   workflow が参照しているか、既存成果物の sha・代表値の一致、revert 手順で影響を判定できる。
   何を確認して何が非該当かを `--reason` に列挙する
+- **検証が未了のまま判定しない**: 差分を検証する check（required でない
+  refresh・統合 test を含む）がまだ実行中のときは `ok` にしない。理由の先頭に
+  `未了:` を付け（`未了: refresh-check running`）、差分・根拠の不足による `ng`
+  と区別する — `ng` は同じ head の判定材料が変わるまで hold に固定されるので、
+  「待てば判定できる」状態を「差分が不十分」と同じ文言で残さない。
 - **差分から影響範囲を確定する**: 共有コード（変換器・共通設定）を変える PR は、
   変更が「どの key / 関数に限定されたか」を列挙し、影響しないはずの側の差分が
   指紋・整形のみであることを機械走査する。独立な集計値（合計・件数）は base と

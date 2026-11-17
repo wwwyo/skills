@@ -129,6 +129,24 @@ skip されていない）ことを確かめた後だけ。停止理由は check
 API 応答・status page で裏付け、無ければ理由を未取得として書く
 （切り分けは [judge](judge.md) の「CI と検証の根拠が取れないとき」）。
 
+### repo 外・共有インフラの失敗
+
+同じ repo の複数 PR で、同時刻に同じ check だけが落ち、PR 側に共通の差分が
+無いなら、repo の build 基盤・token・外部サービスを先に疑う。修正 commit を
+積む前に次を揃える:
+
+- 失敗した build の所要時間（数秒で終わっていれば build 自体が走っていない）と
+  `cf builds logs get` の行数（0 行は step 未実行の傍証。`skipped` と混同しない）
+- 同時刻に同じ check で落ちた他 PR の一覧 — 2 本目以降の調査を繰り返さないため、
+  hold コメントにも必ず載せる
+- 直近で同じ check が成功した日時と head
+- Cloudflare Workers Builds なら `cf builds workers get` の build token・
+  GitHub App 連携（参照 ID・作成日）— どちらも repo の workflow では変えられない
+
+build command 未実行・同時刻の複数 PR で同じ check だけが失敗、が揃うなら
+repo の差分が原因ではない。同一 head をローカルで build して無関係を示し、
+修正 commit を積まずに hold と人間の対応（token 更新・App 再連携）を PR に書く。
+
 ### preview deploy のみ失敗（beta snapshot の env rename）
 
 `@cloudflare/vite-plugin` 等の beta snapshot bump で、preview build の判定 env 名が
