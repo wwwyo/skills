@@ -83,11 +83,14 @@ class GenerateTest(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def test_stylelint_only_by_default(self):
+    def test_no_tailwind_by_default(self):
         code, out, _ = run([str(self.design)])
         self.assertEqual(code, 0)
         self.assertTrue((self.dir / lint.STYLELINT_FILE).exists())
         self.assertFalse((self.dir / lint.THEME_FILE).exists())
+        eslint = (self.dir / lint.ESLINT_FILE).read_text(encoding="utf-8")
+        self.assertIn("JSXAttribute[name.name='style']", eslint)
+        self.assertNotIn("better-tailwindcss", eslint)
         js = (self.dir / lint.STYLELINT_FILE).read_text(encoding="utf-8")
         self.assertIn(lint.MARKER, js.splitlines()[0])
         self.assertIn(r"var\(--(?:background|foreground|primary|primary-foreground|ring)\)", js)
@@ -119,6 +122,15 @@ class GenerateTest(unittest.TestCase):
             self.assertTrue(pat.match(cls), cls)
         for cls in ("bg-primary", "p-sm", "grid-cols-[1fr_2fr]", "w-[320px]"):
             self.assertFalse(pat.match(cls), cls)
+
+    def test_jsx_style_color_regex(self):
+        import re
+        sel = lint.jsx_style_rules()[0]["selector"]
+        color = re.compile(re.search(r"value=/(.+)/\]$", sel).group(1))
+        for v in ("#fff", "1px solid #1b6e5c", "rgb(0 0 0)", "oklch(50% 0.1 160)"):
+            self.assertTrue(color.search(v), v)
+        for v in ("var(--primary)", "#main", "transparent"):
+            self.assertFalse(color.search(v), v)
 
     def test_check_detects_drift(self):
         run([str(self.design)])

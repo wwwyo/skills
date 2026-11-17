@@ -7,7 +7,7 @@ lint-setup.py <design.md> [--out DIR] [--tailwind] [--tailwind-entry PATH]
 生成物（--out、既定は design.md と同じ dir）:
 - stylelint.design-md.mjs: token 以外の色・font・size・radius・余白の直書きを禁止する stylelint 設定
 - --tailwind 時のみ design-md.theme.css: Tailwind v4 の theme を design.md の token だけに絞る `@theme`
-- --tailwind 時のみ eslint.design-md.mjs: 未登録 class と任意値（`bg-[#fff]` 等）を禁止する ESLint 設定
+- eslint.design-md.mjs: JSX の style 属性の直書きを禁止する ESLint 設定。--tailwind 時は未登録 class と任意値（`bg-[#fff]` 等）も禁止する
 
 生成物は design.md の派生物（format の `## Exports`）。冒頭の marker 行が無い既存ファイルは上書きしない。
 --check は生成物が design.md と一致しているかだけを見て、ずれていれば exit 1 を返す。
@@ -207,23 +207,54 @@ ARBITRARY_PATTERN = (
 )
 
 
-def eslint_js(entry: str) -> str:
-    restrict = {"pattern": ARBITRARY_PATTERN, "message": "$0: 任意値の class は design.md の token を迂回する。design.md に token を足して utility を使う"}
-    return "\n".join([
-        'import betterTailwindcss from "eslint-plugin-better-tailwindcss";',
-        "",
-        "// eslint.config の配列に `...designMd` で足す。files は既存の設定に合わせて絞ってよい",
+def camel(prop: str) -> str:
+    return re.sub(r"-(\w)", lambda m: m.group(1).upper(), prop)
+
+
+def jsx_style_rules() -> list[dict]:
+    """JSX の `style={{ ... }}` の直書きを止める no-restricted-syntax の selector。
+
+    stylelint は CSS しか見ないので、React の inline style は ESLint 側で止める。
+    """
+    color = r"#[0-9a-fA-F]{3,8}\b|\b(?:%s)\(" % "|".join(COLOR_FUNCS)
+    props = sorted({camel(p) for p in [*PROPERTY_CATEGORIES, *SPACE_PROPERTIES]})
+    style = "JSXAttribute[name.name='style']"
+    token_message = "style 属性は design.md の token を var(--name) で使う（無い値は design.md に token を足してから）"
+    return [
+        {"selector": f"{style} Literal[value=/{color}/]", "message": "style 属性に色を直書きしない。" + token_message},
+        {"selector": f"{style} TemplateElement[value.raw=/{color}/]", "message": "style 属性に色を直書きしない。" + token_message},
+        {"selector": f"{style} Property[key.name=/^({'|'.join(props)})$/] > Literal:not([value=/^var\\(--[\\w-]+\\)$/])", "message": token_message},
+    ]
+
+
+def eslint_js(entry: str | None) -> str:
+    style_rules = json.dumps(["error", *jsx_style_rules()], ensure_ascii=False)
+    lines = []
+    if entry:
+        lines += ['import betterTailwindcss from "eslint-plugin-better-tailwindcss";', ""]
+    lines += [
+        "// eslint.config の配列に `...designMd` で足す。files は既存の設定に合わせて絞ってよい。",
+        "// no-restricted-syntax は後の設定で上書きされると消える。既存の設定でも使っていたら selector を合わせて 1 つにする",
         "export default [",
         "  {",
-        '    plugins: { "better-tailwindcss": betterTailwindcss },',
-        f'    settings: {{ "better-tailwindcss": {{ entryPoint: {json.dumps(entry)} }} }},',
-        "    rules: {",
-        '      "better-tailwindcss/no-unknown-classes": "error",',
-        f'      "better-tailwindcss/no-restricted-classes": ["error", {{ restrict: [{json.dumps(restrict, ensure_ascii=False)}] }}],',
-        "    },",
+        '    files: ["**/*.{js,jsx,ts,tsx,mjs,cjs}"],',
+        f'    rules: {{ "no-restricted-syntax": {style_rules} }},',
         "  },",
-        "];",
-    ])
+    ]
+    if entry:
+        restrict = {"pattern": ARBITRARY_PATTERN, "message": "$0: 任意値の class は design.md の token を迂回する。design.md に token を足して utility を使う"}
+        lines += [
+            "  {",
+            '    plugins: { "better-tailwindcss": betterTailwindcss },',
+            f'    settings: {{ "better-tailwindcss": {{ entryPoint: {json.dumps(entry)} }} }},',
+            "    rules: {",
+            '      "better-tailwindcss/no-unknown-classes": "error",',
+            f'      "better-tailwindcss/no-restricted-classes": ["error", {{ restrict: [{json.dumps(restrict, ensure_ascii=False)}] }}],',
+            "    },",
+            "  },",
+        ]
+    lines.append("];")
+    return "\n".join(lines)
 
 
 def render_js(header: str, body: str) -> str:
@@ -239,7 +270,7 @@ def build_outputs(design_md: Path, out: Path, tailwind: bool, entry: str | None,
     files[out / STYLELINT_FILE] = render_js(header, stylelint_js(groups, token_files))
     if tailwind:
         files[out / THEME_FILE] = theme_css(groups, header)
-        files[out / ESLINT_FILE] = render_js(header, eslint_js(entry or THEME_FILE))
+    files[out / ESLINT_FILE] = render_js(header, eslint_js((entry or THEME_FILE) if tailwind else None))
     return files, groups
 
 

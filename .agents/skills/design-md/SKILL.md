@@ -91,7 +91,7 @@ python3 <この skill>/tools/design-md-check.py <repo root>/design.md
 
 ## アプリの lint に setup する
 
-design.md を書いた・token を変えたら、対象 repo のアプリの lint に design.md を守らせる。skill を呼んだときだけ効く check ではなく、editor と CI の lint で毎回止まる状態にするのが目的。同梱の [`tools/lint-setup.py`](tools/lint-setup.py) で設定を生成し、その repo の stylelint（Tailwind なら ESLint も）に組み込む。生成物は design.md の Exports なので手で直さず、`## Tokens` を変えた編集で再生成する。
+design.md を書いた・token を変えたら、対象 repo のアプリの lint に design.md を守らせる。skill を呼んだときだけ効く check ではなく、editor と CI の lint で毎回止まる状態にするのが目的。同梱の [`tools/lint-setup.py`](tools/lint-setup.py) で設定を生成し、その repo の stylelint と ESLint（JSX の style 属性、Tailwind なら class も）に組み込む。生成物は design.md の Exports なので手で直さず、`## Tokens` を変えた編集で再生成する。
 
 ```bash
 python3 <この skill>/tools/lint-setup.py <repo root>/design.md --token-file <token を定義する CSS> [--tailwind --tailwind-entry <entry CSS>]

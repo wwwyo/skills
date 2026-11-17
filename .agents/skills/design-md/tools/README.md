@@ -93,7 +93,7 @@ python3 lint-setup.py <design.md> [--out DIR] [--token-file PATH ...] [--tailwin
 | --- | --- | --- |
 | `stylelint.design-md.mjs` | 常に | 色の直書き（hex・named・`rgb()`/`oklch()` 等）を禁止し、色・font・size・line-height・letter-spacing・余白・radius・shadow・easing・duration の property は design.md の token の `var()` と最小限の keyword だけを許す。未定義の token 名も弾く |
 | `design-md.theme.css` | `--tailwind` | Tailwind v4 の `@theme inline reference`。token のある namespace（color・font・text・leading・tracking・spacing・radius・shadow・ease）を `initial` で消し、design.md の token だけを utility にする（`bg-red-500`・`p-4` が存在しなくなる） |
-| `eslint.design-md.mjs` | `--tailwind` | `eslint-plugin-better-tailwindcss` の `no-unknown-classes`（上の theme に無い class）と `no-restricted-classes`（`bg-[#fff]`・`p-[13px]` 等の色・余白・文字・radius の任意値）を error にする |
+| `eslint.design-md.mjs` | 常に | JSX の `style={{ ... }}` で色（hex・`rgb()` 等）の直書きと、色・余白・文字・radius 等の property に `var(--token)` 以外の値を書くことを built-in の `no-restricted-syntax` で禁止する。`--tailwind` 時は `eslint-plugin-better-tailwindcss` の `no-unknown-classes`（上の theme に無い class）と `no-restricted-classes`（`bg-[#fff]`・`p-[13px]` 等の色・余白・文字・radius の任意値）も error にする |
 
 - token の分類は名前（`font-size`・`space`・`radius` 等の語）を優先し、決まらなければ値（色・長さ・時間）で判定する。`--font-weight-*` のように分類できない token は lint の対象外
 - `--token-file` に token を定義する CSS（`globals.css` の `:root` 等の Exports）を渡すと、そのファイルだけ stylelint の直書き禁止を外す。path は `--out` からの相対
@@ -104,7 +104,8 @@ python3 lint-setup.py <design.md> [--out DIR] [--token-file PATH ...] [--tailwin
 アプリ側への入れ方（パッケージはその repo の pin・cooldown 規約で入れる）:
 
 - stylelint: `stylelint` を入れ、`stylelint.config.mjs` に `extends: ["./stylelint.design-md.mjs"]`
-- Tailwind: entry CSS で `@import "tailwindcss";` の後に `@import "./design-md.theme.css";`。`eslint-plugin-better-tailwindcss` を入れ、`eslint.config.mjs` で `import designMd from "./eslint.design-md.mjs"` を配列に `...designMd` で足す（`.tsx` 等の parser 設定は既存のものを使う）
+- ESLint（JSX を書く app）: `eslint.config.mjs` で `import designMd from "./eslint.design-md.mjs"` を配列に `...designMd` で足す（`.tsx` 等の parser 設定は既存のものを使う）。`no-restricted-syntax` は後の設定が同じ rule を書くと丸ごと置き換わるので、既存でも使っていたら selector を 1 つの設定にまとめる
+- Tailwind: entry CSS で `@import "tailwindcss";` の後に `@import "./design-md.theme.css";`。`eslint-plugin-better-tailwindcss` を入れ、上の ESLint と同じく `...designMd` で足す
 - CI と editor で既存の lint script が走れば、それで強制される。lint-setup 自体を CI で回す必要はない
 
 確認済みの組み合わせ（2026-11）: stylelint 17.16、Tailwind CSS 4（`@tailwindcss/cli`）、ESLint 9 + eslint-plugin-better-tailwindcss 4.10。
