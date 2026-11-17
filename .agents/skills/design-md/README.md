@@ -14,7 +14,7 @@
 design-md/
 ├── SKILL.md           — Core instructions & workflow
 ├── examples/          — design.md の実例（日本語UI）
-├── tools/             — design-md-check.py / page-check.py 等、design.md の決定論チェック（正本）と、アプリの lint 設定を生成する lint-setup.py
+├── tools/             — design-md-check.py / page-check.py 等、design.md の決定論チェック（正本）と、アプリの oxlint 設定を生成する lint-setup.py
 └── README.md          — This file
 ```
 
@@ -25,5 +25,5 @@ design-md/
 3. Extraction mode: ライブURL・ローカルのコード・Figma を明示指定されたときだけ、既存プロダクトから実数値を抽出して同じ design.md に落とす（目測禁止・出所を Notes に記録）
 4. Synthesis: 対象 repo の root に `design.md`（System + Tokens + Components + Icons + Logo + Motion + Exports）を生成する。既存の design.md がある場合は上書きせず、format が持つ節だけを更新する。語彙は shadcn/ui 規約の `-foreground` ペア
 5. Validate: `tools/design-md-check.py`（この skill 同梱 — consumer はコピーせずここを参照して実行する）で検証し、error 0 を確認してから提示
-6. Lint: `tools/lint-setup.py` で design.md の token から stylelint と ESLint（JSX の style 属性。Tailwind なら theme と class も）の設定を生成し、対象アプリの lint に組み込む。agent が居なくても editor と CI で design.md 準拠を強制する
+6. Lint: `tools/lint-setup.py` で design.md の token から oxlint の設定（JSX の style 属性。Tailwind なら theme と class も）を生成し、対象アプリの lint に組み込む。component は対象外。agent が居なくても editor と CI で design.md 準拠を強制する
 7. 出力先: repo root 固定。product-design skill や unslop など複数の reader が同じ正本を読むため — 配置規約は [skill-structure/templates/product-design.md](../skill-structure/templates/product-design.md) の「値の層」節を参照

@@ -1,6 +1,6 @@
 ---
 name: design-md
-description: "repo root の design.md に色・文字・余白・component・icon・logo・motion を定義する。新しい視覚システムの設計、明示指定されたサイト・コード・Figma からの値の抽出、design.md の token をアプリの lint（stylelint・Tailwind + ESLint）に setup するときに使う。"
+description: "repo root の design.md に色・文字・余白・component・icon・logo・motion を定義する。新しい視覚システムの設計、明示指定されたサイト・コード・Figma からの値の抽出、design.md の token をアプリの lint（oxlint）に setup するときに使う。"
 ---
 
 # design-md Skill
@@ -91,10 +91,10 @@ python3 <この skill>/tools/design-md-check.py <repo root>/design.md
 
 ## アプリの lint に setup する
 
-design.md を書いた・token を変えたら、対象 repo のアプリの lint に design.md を守らせる。skill を呼んだときだけ効く check ではなく、editor と CI の lint で毎回止まる状態にするのが目的。同梱の [`tools/lint-setup.py`](tools/lint-setup.py) で設定を生成し、その repo の stylelint と ESLint（JSX の style 属性、Tailwind なら class も）に組み込む。生成物は design.md の Exports なので手で直さず、`## Tokens` を変えた編集で再生成する。
+design.md を書いた・token を変えたら、対象 repo のアプリの lint に design.md を守らせる。skill を呼んだときだけ効く check ではなく、editor と CI の lint で毎回止まる状態にするのが目的。同梱の [`tools/lint-setup.py`](tools/lint-setup.py) で oxlint の設定（JSX の style 属性、Tailwind なら class も）を生成し、その repo の `.oxlintrc.json` から extends する。lint は oxlint だけに対応する。component（既定 `**/components/**`）は制約の対象外。生成物は design.md の Exports なので手で直さず、`## Tokens` を変えた編集で再生成する。
 
 ```bash
-python3 <この skill>/tools/lint-setup.py <repo root>/design.md --token-file <token を定義する CSS> [--tailwind --tailwind-entry <entry CSS>]
+python3 <この skill>/tools/lint-setup.py <repo root>/design.md [--component-glob <glob>] [--tailwind --tailwind-entry <entry CSS>]
 ```
 
 - 生成物・アプリへの組み込み方・分類の規則は [tools/README.md](tools/README.md) の「アプリの lint 設定の生成」

@@ -1,7 +1,9 @@
-"""lint-setup.py の unittest。生成した設定が stylelint / ESLint で動くかは README の手順で確かめる。"""
+"""lint-setup.py の unittest。生成した設定が oxlint で動くかは README の手順で確かめる。"""
 
 import importlib.util
 import io
+import json
+import re
 import sys
 import tempfile
 import unittest
@@ -83,54 +85,58 @@ class GenerateTest(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def config(self):
+        text = (self.dir / lint.CONFIG_FILE).read_text(encoding="utf-8")
+        self.assertIn(lint.MARKER, text.splitlines()[0])
+        return json.loads(text.split("\n", 1)[1])
+
     def test_no_tailwind_by_default(self):
-        code, out, _ = run([str(self.design)])
+        code, _, _ = run([str(self.design)])
         self.assertEqual(code, 0)
-        self.assertTrue((self.dir / lint.STYLELINT_FILE).exists())
         self.assertFalse((self.dir / lint.THEME_FILE).exists())
-        eslint = (self.dir / lint.ESLINT_FILE).read_text(encoding="utf-8")
-        self.assertIn("JSXAttribute[name.name='style']", eslint)
-        self.assertNotIn("better-tailwindcss", eslint)
-        js = (self.dir / lint.STYLELINT_FILE).read_text(encoding="utf-8")
-        self.assertIn(lint.MARKER, js.splitlines()[0])
-        self.assertIn(r"var\(--(?:background|foreground|primary|primary-foreground|ring)\)", js)
-        self.assertIn('"padding": [space]', js)
+        cfg = self.config()
+        self.assertEqual(cfg["jsPlugins"], ["./" + lint.PLUGIN_FILE])
+        self.assertEqual(cfg["rules"], {"design-md/no-raw-style": "error"})
+        plugin = (self.dir / lint.PLUGIN_FILE).read_text(encoding="utf-8")
+        self.assertIn('"paddingTop": "space"', plugin)
+        self.assertIn('"primary-foreground"', plugin)
 
-    def test_token_file_override(self):
-        run([str(self.design), "--token-file", "src/tokens.css"])
-        js = (self.dir / lint.STYLELINT_FILE).read_text(encoding="utf-8")
-        self.assertIn('overrides: [{ files: ["src/tokens.css"]', js)
+    def test_components_are_exempt(self):
+        run([str(self.design), "--tailwind"])
+        override = self.config()["overrides"][0]
+        self.assertEqual(override["files"], ["**/components/**"])
+        self.assertEqual(override["rules"]["design-md/no-raw-style"], "off")
+        self.assertEqual(override["rules"]["better-tailwindcss/no-restricted-classes"], "off")
+        # typo の検出は component でも残す
+        self.assertNotIn("better-tailwindcss/no-unknown-classes", override["rules"])
 
-    def test_tailwind_theme_resets_namespaces(self):
+    def test_custom_component_glob(self):
+        run([str(self.design), "--component-glob", "src/ui/**"])
+        self.assertEqual(self.config()["overrides"][0]["files"], ["src/ui/**"])
+
+    def test_tailwind_theme_maps_tokens_without_reset(self):
         run([str(self.design), "--tailwind", "--tailwind-entry", "src/app.css"])
         css = (self.dir / lint.THEME_FILE).read_text(encoding="utf-8")
         self.assertIn("@theme inline reference {", css)
-        self.assertIn("--color-*: initial;", css)
+        self.assertNotIn("initial", css.split("{", 1)[1])
         self.assertIn("--color-primary: var(--primary);", css)
         self.assertIn("--font-jp: var(--font-family-jp);", css)
         self.assertIn("--text-body: var(--font-size-body);", css)
-        self.assertIn("--spacing: initial;", css)
         self.assertIn("--spacing-sm: var(--space-sm);", css)
         self.assertIn("--radius: var(--radius);", css)
-        eslint = (self.dir / lint.ESLINT_FILE).read_text(encoding="utf-8")
-        self.assertIn('entryPoint: "src/app.css"', eslint)
+        rules = self.config()["rules"]
+        self.assertEqual(rules["better-tailwindcss/no-unknown-classes"], ["error", {"entryPoint": "src/app.css"}])
 
-    def test_arbitrary_pattern(self):
-        import re
-        pat = re.compile(lint.ARBITRARY_PATTERN)
-        for cls in ("bg-[#fff]", "md:p-[13px]", "hover:text-[var(--x)]", "rounded-t-[3px]", "-mt-[2px]"):
-            self.assertTrue(pat.match(cls), cls)
-        for cls in ("bg-primary", "p-sm", "grid-cols-[1fr_2fr]", "w-[320px]"):
-            self.assertFalse(pat.match(cls), cls)
-
-    def test_jsx_style_color_regex(self):
-        import re
-        sel = lint.jsx_style_rules()[0]["selector"]
-        color = re.compile(re.search(r"value=/(.+)/\]$", sel).group(1))
-        for v in ("#fff", "1px solid #1b6e5c", "rgb(0 0 0)", "oklch(50% 0.1 160)"):
-            self.assertTrue(color.search(v), v)
-        for v in ("var(--primary)", "#main", "transparent"):
-            self.assertFalse(color.search(v), v)
+    def test_restricted_class_patterns(self):
+        groups = lint.group_tokens(lint.parse_tokens(self.design))
+        pats = [re.compile(r["pattern"]) for r in lint.restricted_class_patterns(groups)]
+        hit = lambda c: any(p.match(c) for p in pats)
+        for cls in ("bg-[#fff]", "md:p-[13px]", "hover:text-[var(--x)]", "-mt-[2px]", "bg-red-500", "text-white/50",
+                    "p-4", "gap-x-2", "text-sm", "rounded-lg", "rounded-t-md", "shadow-md", "font-sans", "leading-6", "tracking-wide"):
+            self.assertTrue(hit(cls), cls)
+        for cls in ("bg-primary", "p-sm", "text-body", "text-center", "shadow-sm", "rounded-full", "rounded-card",
+                    "font-jp", "font-bold", "grid-cols-[1fr_2fr]", "w-[320px]", "bg-transparent", "flex"):
+            self.assertFalse(hit(cls), cls)
 
     def test_check_detects_drift(self):
         run([str(self.design)])
@@ -144,18 +150,18 @@ class GenerateTest(unittest.TestCase):
         code, out, _ = run([str(self.design), "--dry-run"])
         self.assertEqual(code, 0)
         self.assertIn("would-write", out)
-        self.assertFalse((self.dir / lint.STYLELINT_FILE).exists())
+        self.assertFalse((self.dir / lint.CONFIG_FILE).exists())
 
     def test_does_not_overwrite_hand_written_file(self):
-        target = self.dir / lint.STYLELINT_FILE
-        target.write_text("export default {};\n", encoding="utf-8")
+        target = self.dir / lint.CONFIG_FILE
+        target.write_text("{}\n", encoding="utf-8")
         code, out, _ = run([str(self.design)])
         self.assertEqual(code, 1)
         self.assertIn("skipped-not-generated", out)
-        self.assertEqual(target.read_text(encoding="utf-8"), "export default {};\n")
+        self.assertEqual(target.read_text(encoding="utf-8"), "{}\n")
 
     def test_rejects_paths_outside_out(self):
-        code, _, err = run([str(self.design), "--token-file", "../x.css"])
+        code, _, err = run([str(self.design), "--component-glob", "../x/**"])
         self.assertEqual(code, 2)
         self.assertIn("相対 path", err)
 

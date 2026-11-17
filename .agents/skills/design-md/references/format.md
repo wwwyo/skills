@@ -54,7 +54,7 @@ shadcn/ui の語彙で `--background` / `--foreground`、card・popover・primar
 - `tokens.css` / Tailwind `@theme` / globals.css の :root 等の派生物は本ファイルから
   生成する。直接編集禁止。`## Tokens` を変えた編集は、同じ編集で Exports も再生成する
   （check は Exports 節を読まない — 古いまま残っても機械検知されない）。
-- lint 設定（`stylelint.design-md.mjs` 等）も Exports。`tools/lint-setup.py` で生成し、`--check` で鮮度を確かめる。
+- lint 設定（`oxlint.design-md.json` 等）も Exports。`tools/lint-setup.py` で生成し、`--check` で鮮度を確かめる。
 
 ## Notes（optional）
 - 選定の理由・却下した案の「何が嫌か」。抽出で作った場合は出所（URL / ツール / 日付）
