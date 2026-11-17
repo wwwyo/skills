@@ -4,6 +4,7 @@ wwwyo が日々の開発で使う agent skill 集です。Claude Code・Codex・
 
 - `core`: 環境に依存しない汎用 skill（PRD・実装・PR・ドキュメント・設計など）。claude.ai でも使えます
 - `design`: UI の見た目・動き・モバイルの挙動を扱う skill（unslop・design-md・emilkowalski/skills 由来）。claude.ai でも使えます
+- `3d`: three.js・React Three Fiber で 3D を作る skill（CloudAI-X/threejs-skills 由来）。claude.ai でも使えます。Codex では `design` に同梱します
 - `local`: Orca・mise・ローカル CLI など、作者の開発環境を前提にする skill
 
 skill の一覧は [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json) にあります。third-party の skill を含み、取得元は [skills-lock.json](skills-lock.json) に記録しています。
@@ -16,9 +17,10 @@ Claude Code:
 claude plugin marketplace add wwwyo/skills
 claude plugin install core@wwwyo
 claude plugin install design@wwwyo
+claude plugin install 3d@wwwyo
 ```
 
-claude.ai では Customize > Plugins から marketplace に `wwwyo/skills` を追加し、`core`・`design` を有効にします。
+claude.ai では Customize > Plugins から marketplace に `wwwyo/skills` を追加し、`core`・`design`・`3d` を有効にします。
 
 Codex:
 

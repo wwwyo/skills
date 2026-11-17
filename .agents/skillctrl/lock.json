@@ -461,6 +461,240 @@
       "sourceUrl": "https://github.com/wwwyo/skillctrl.git",
       "updatedAt": "2026-10-25T06:05:49.152Z"
     },
+    "threejs-animation": {
+      "computedHash": "52acf24ba76b47b094e5734622947fcc85deebf2469bb5c8ef77a1f1dcfc3e5c",
+      "installedAt": "2026-11-17T05:28:01.703Z",
+      "native": {
+        "computedHash": "52acf24ba76b47b094e5734622947fcc85deebf2469bb5c8ef77a1f1dcfc3e5c",
+        "skillPath": "skills/threejs-animation/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "cbb1071d4c33a16eb269bd00924b443b438704c1",
+      "skillPath": "skills/threejs-animation/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.703Z"
+    },
+    "threejs-asset-pipeline": {
+      "computedHash": "be5c2bbda841382229d99182f88e94eba8974474bd065b994e881bb9cc2058d8",
+      "installedAt": "2026-11-17T05:28:01.709Z",
+      "native": {
+        "computedHash": "be5c2bbda841382229d99182f88e94eba8974474bd065b994e881bb9cc2058d8",
+        "skillPath": "skills/threejs-asset-pipeline/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "4c532c9ff52ff06817729f99af85c325b8db5042",
+      "skillPath": "skills/threejs-asset-pipeline/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.709Z"
+    },
+    "threejs-fundamentals": {
+      "computedHash": "c0293a5eaf5168cdbeb1e9bfc5d5b7aa24396f604a8695b26a72d833c2352108",
+      "installedAt": "2026-11-17T05:28:01.715Z",
+      "native": {
+        "computedHash": "c0293a5eaf5168cdbeb1e9bfc5d5b7aa24396f604a8695b26a72d833c2352108",
+        "skillPath": "skills/threejs-fundamentals/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "a213c58da3646df463dabdd83dc819e60222bc07",
+      "skillPath": "skills/threejs-fundamentals/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.715Z"
+    },
+    "threejs-geometry": {
+      "computedHash": "cae4d8f02ffe449edbc33a2a9ba79020dcb415e7c187d48ed8ffc166207d2e77",
+      "installedAt": "2026-11-17T05:28:01.721Z",
+      "native": {
+        "computedHash": "cae4d8f02ffe449edbc33a2a9ba79020dcb415e7c187d48ed8ffc166207d2e77",
+        "skillPath": "skills/threejs-geometry/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "bf0da0221ec3ce7cf0c029b9b039fea02a02223f",
+      "skillPath": "skills/threejs-geometry/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.721Z"
+    },
+    "threejs-interaction": {
+      "computedHash": "3a9d60c473947217f2bd9fbdfb12084e55ae2f240aa6fc718f61c55a73d6fb34",
+      "installedAt": "2026-11-17T05:28:01.728Z",
+      "native": {
+        "computedHash": "3a9d60c473947217f2bd9fbdfb12084e55ae2f240aa6fc718f61c55a73d6fb34",
+        "skillPath": "skills/threejs-interaction/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "fbd64eda1f65040a8abf25986bfb2afd46cb33e7",
+      "skillPath": "skills/threejs-interaction/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.728Z"
+    },
+    "threejs-lighting": {
+      "computedHash": "231a7aec3b2d6aa061026397b5453b22518ac9391eb0f31164bfd06dd4bcacd6",
+      "installedAt": "2026-11-17T05:28:01.735Z",
+      "native": {
+        "computedHash": "231a7aec3b2d6aa061026397b5453b22518ac9391eb0f31164bfd06dd4bcacd6",
+        "skillPath": "skills/threejs-lighting/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "fb544ae7f004908c6f8e9672b05f3160fc8d7863",
+      "skillPath": "skills/threejs-lighting/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.735Z"
+    },
+    "threejs-loaders": {
+      "computedHash": "f43a0994b7bead131c51361ff347ea7b2db48ec64994a8ee263171c692beac88",
+      "installedAt": "2026-11-17T05:28:01.740Z",
+      "native": {
+        "computedHash": "f43a0994b7bead131c51361ff347ea7b2db48ec64994a8ee263171c692beac88",
+        "skillPath": "skills/threejs-loaders/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "b29c77d7204d8f9d031b2eca4d8e47cb10348c91",
+      "skillPath": "skills/threejs-loaders/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.740Z"
+    },
+    "threejs-materials": {
+      "computedHash": "8dbeb3cc26e0825e0bb6857bcdab04d997a31d8a2d685d850cdfce98df4c875d",
+      "installedAt": "2026-11-17T05:28:01.745Z",
+      "native": {
+        "computedHash": "8dbeb3cc26e0825e0bb6857bcdab04d997a31d8a2d685d850cdfce98df4c875d",
+        "skillPath": "skills/threejs-materials/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "1b1c5184a42e3feb28c4748292cb641f6b3b2e0c",
+      "skillPath": "skills/threejs-materials/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.745Z"
+    },
+    "threejs-performance": {
+      "computedHash": "5aa6eb8103c8f882f86a48c65245f1e8f1c48e83abc888e0d7a37833e7d9188b",
+      "installedAt": "2026-11-17T05:28:01.751Z",
+      "native": {
+        "computedHash": "5aa6eb8103c8f882f86a48c65245f1e8f1c48e83abc888e0d7a37833e7d9188b",
+        "skillPath": "skills/threejs-performance/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "8110ce022149af0179344c39de096f57a1da94e9",
+      "skillPath": "skills/threejs-performance/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.751Z"
+    },
+    "threejs-postprocessing": {
+      "computedHash": "21ba7ee7155d7ad8643bafc0a832d29bf87a37b24acd5e4201a0b7c01470ab09",
+      "installedAt": "2026-11-17T05:28:01.756Z",
+      "native": {
+        "computedHash": "21ba7ee7155d7ad8643bafc0a832d29bf87a37b24acd5e4201a0b7c01470ab09",
+        "skillPath": "skills/threejs-postprocessing/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "6c3086cc84c817aa7b9ae5f5772831d7f817e63f",
+      "skillPath": "skills/threejs-postprocessing/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.756Z"
+    },
+    "threejs-react-three-fiber": {
+      "computedHash": "c584eb40814c9dba186a555adb9fa4acba84f4c40d47fd5b30fc90415f8ca53a",
+      "installedAt": "2026-11-17T05:28:01.762Z",
+      "native": {
+        "computedHash": "c584eb40814c9dba186a555adb9fa4acba84f4c40d47fd5b30fc90415f8ca53a",
+        "skillPath": "skills/threejs-react-three-fiber/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "72055a3060aefbd98dd0f40732f36505c1b4eab6",
+      "skillPath": "skills/threejs-react-three-fiber/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.762Z"
+    },
+    "threejs-shaders": {
+      "computedHash": "af0a4cdfc80390b30a898bb5a3fe30e4f61b304776a9aebbdb7451b0fc1c2c0f",
+      "installedAt": "2026-11-17T05:28:01.767Z",
+      "native": {
+        "computedHash": "af0a4cdfc80390b30a898bb5a3fe30e4f61b304776a9aebbdb7451b0fc1c2c0f",
+        "skillPath": "skills/threejs-shaders/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "218c683a0d871e7087193ff42dcaf99ca93a4637",
+      "skillPath": "skills/threejs-shaders/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.767Z"
+    },
+    "threejs-textures": {
+      "computedHash": "73544dc3606b38270ddd909d57fd8a5df8291c3bae432417cf3f797ab1ca1fd3",
+      "installedAt": "2026-11-17T05:28:01.773Z",
+      "native": {
+        "computedHash": "73544dc3606b38270ddd909d57fd8a5df8291c3bae432417cf3f797ab1ca1fd3",
+        "skillPath": "skills/threejs-textures/SKILL.md",
+        "source": "CloudAI-X/threejs-skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git"
+      },
+      "skillFolderHash": "bcc26a9abfe09e8e87571d7f141441373dac163d",
+      "skillPath": "skills/threejs-textures/SKILL.md",
+      "source": "CloudAI-X/threejs-skills",
+      "sourceCommit": "0e181866f095b5f06d005133876e926515390d95",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/CloudAI-X/threejs-skills.git",
+      "updatedAt": "2026-11-17T05:28:01.773Z"
+    },
     "typesafe-ai": {
       "computedHash": "15e077333436b1e63e526c7c7559202816f4848dabefd3aa3d4c91988fd181b5",
       "installedAt": "2026-10-12T05:17:02.702Z",
