@@ -15,6 +15,7 @@
       "skills": [
         "./.agents/skills/agent-friendly-cli",
         "./.agents/skills/ce-simplify-code",
+        "./.agents/skills/database-design",
         "./.agents/skills/document",
         "./.agents/skills/domain-modeling",
         "./.agents/skills/e2e",
