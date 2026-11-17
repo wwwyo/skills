@@ -55,6 +55,7 @@ PROPERTY_CATEGORIES = {
 SPACE_PROPERTIES = ("margin", "margin-top", "margin-right", "margin-bottom", "margin-left", "margin-inline", "margin-block",
                     "padding", "padding-top", "padding-right", "padding-bottom", "padding-left", "padding-inline", "padding-block",
                     "gap", "row-gap", "column-gap")
+REPEATABLE = {"radius": "space", "shadow": "comma", "ease": "comma", "duration": "comma"}
 ALLOWED_MESSAGE = "design.md の token を var() で使う（無い値は design.md に token を足してから）"
 GLOBAL_KEYWORDS = ("inherit", "initial", "unset", "revert")
 CATEGORY_KEYWORDS = {
@@ -123,7 +124,7 @@ def group_tokens(tokens: dict[str, str]) -> dict[str, list[str]]:
     return groups
 
 
-def value_regex(names: list[str], keywords: tuple[str, ...], repeat: bool = False) -> str:
+def value_regex(names: list[str], keywords: tuple[str, ...], sep: str | None = None) -> str:
     """`declaration-property-value-allowed-list` に渡す JS の regex literal。
 
     token は `var(--name)` の完全一致だけを許す。名前に使える文字は [\\w-] なので escape は不要。
@@ -133,8 +134,10 @@ def value_regex(names: list[str], keywords: tuple[str, ...], repeat: bool = Fals
         alts.append(r"var\(--(?:%s)\)" % "|".join(n[2:] for n in names))
     alts += [re.escape(k) for k in keywords + GLOBAL_KEYWORDS]
     one = "(?:%s)" % "|".join(alts)
-    if repeat:
+    if sep == "space":  # margin・padding・border-radius の 1〜4 値の shorthand
         return "/^%s(?:\\s+%s){0,3}$/" % (one, one)
+    if sep == "comma":  # box-shadow 等の重ね書き
+        return "/^%s(?:\\s*,\\s*%s)*$/" % (one, one)
     return "/^%s$/" % one
 
 
@@ -146,10 +149,10 @@ def stylelint_js(groups: dict[str, list[str]], token_files: list[str]) -> str:
             continue
         var = re.sub(r"-(\w)", lambda m: m.group(1).upper(), cat)
         if cat == "space":
-            consts.append(f"const {var} = {value_regex(groups[cat], ('0', 'auto'), repeat=True)};")
+            consts.append(f"const {var} = {value_regex(groups[cat], ('0', 'auto'), sep="space")};")
             props += [f'    "{p}": [{var}],' for p in SPACE_PROPERTIES]
         else:
-            consts.append(f"const {var} = {value_regex(groups[cat], CATEGORY_KEYWORDS.get(cat, ()))};")
+            consts.append(f"const {var} = {value_regex(groups[cat], CATEGORY_KEYWORDS.get(cat, ()), REPEATABLE.get(cat))};")
             props += [f'    "{p}": [{var}],' for p, c in PROPERTY_CATEGORIES.items() if c == cat]
     rules = {
         "color-no-hex": True,

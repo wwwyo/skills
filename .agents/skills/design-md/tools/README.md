@@ -96,6 +96,8 @@ python3 lint-setup.py <design.md> [--out DIR] [--token-file PATH ...] [--tailwin
 | `eslint.design-md.mjs` | 常に | JSX の `style={{ ... }}` で色（hex・`rgb()` 等）の直書きと、色・余白・文字・radius 等の property に `var(--token)` 以外の値を書くことを built-in の `no-restricted-syntax` で禁止する。`--tailwind` 時は `eslint-plugin-better-tailwindcss` の `no-unknown-classes`（上の theme に無い class）と `no-restricted-classes`（`bg-[#fff]`・`p-[13px]` 等の色・余白・文字・radius の任意値）も error にする |
 
 - token の分類は名前（`font-size`・`space`・`radius` 等の語）を優先し、決まらなければ値（色・長さ・時間）で判定する。`--font-weight-*` のように分類できない token は lint の対象外
+- `border-radius` は 1〜4 値、`box-shadow`・timing・duration は comma 区切りの重ね書きを許す（各値は token か keyword）
+- `--out` は lint を実行する dir（通常 repo root）にする。`--tailwind-entry` は ESLint plugin の `entryPoint` にそのまま書かれ、実行時の cwd から解決される
 - `--token-file` に token を定義する CSS（`globals.css` の `:root` 等の Exports）を渡すと、そのファイルだけ stylelint の直書き禁止を外す。path は `--out` からの相対
 - 生成物の 1 行目に marker を書く。marker の無い同名ファイルは上書きせず `skipped-not-generated` で exit 1
 - `--check` は書き込まずに生成物が design.md と一致するかだけを見る（ずれていれば `stale` で exit 1）。design.md の `## Tokens` を変えたら再生成する
