@@ -79,6 +79,10 @@ logomark と wordmark をセットで設計しても、同じ文字でも用途�
 - 主役のブランド色・主要CTAは `--primary`。`--accent` は shadcn では hover/selected 用の subtle surface で意味が違う — 混同しない
 - `-foreground` ペアで名付けると、同梱の `design-md-check.py` がコントラストを自動で拾える（`--<name>-foreground` / `--<name>` のペアを WCAG AA で判定するため）
 
+## アプリの lint へ setup する
+
+design.md を持つアプリには、agent がいなくても editor と CI で準拠を強制する lint を入れる。[`tools/lint-setup.py`](tools/lint-setup.py) が design.md の token から stylelint（色リテラル禁止・property ごとの許可値）と ESLint（JSX の style 属性、Tailwind の任意値・既定 palette）の設定を生成する。design.md を書いた・token を変えたときに生成し直し、生成物を `## Exports` に載せる。CI には `--check`（生成物のずれで exit 1）と lint の実行を足す。setup 手順・許可値の決め方・範囲外は [tools/README.md](tools/README.md) の「アプリの lint 設定生成」に従う。
+
 ## 出力
 
 - `design.md` は**対象 repo の root** に書く（product-design skill 配下ではない。unslop・他 agent など skill 外の reader も同じ正本を読むため、置き場は repo root 固定）

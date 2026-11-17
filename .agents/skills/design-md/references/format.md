@@ -51,8 +51,8 @@ shadcn/ui の語彙で `--background` / `--foreground`、card・popover・primar
 - <stance（silent / 1〜2 primitives / motion-cut 等）と reduced-motion fallback>
 
 ## Exports
-- `tokens.css` / Tailwind `@theme` / globals.css の :root 等の派生物は本ファイルから
-  生成する。直接編集禁止。`## Tokens` を変えた編集は、同じ編集で Exports も再生成する
+- `tokens.css` / Tailwind `@theme` / globals.css の :root / lint 設定（`design-md.stylelint.mjs`・
+  `design-md.eslint.mjs`）等の派生物は本ファイルから生成する。直接編集禁止。`## Tokens` を変えた編集は、同じ編集で Exports も再生成する
   （check は Exports 節を読まない — 古いまま残っても機械検知されない）。
 
 ## Notes（optional）

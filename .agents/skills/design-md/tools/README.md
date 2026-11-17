@@ -48,6 +48,44 @@ design.md だけを正本として厳密にチェックしたい場合は scan p
 
 半透明の色（rgba や hex 8 桁 alpha）はコントラスト判定の対象外。
 
+## アプリの lint 設定生成（lint-setup）
+
+`design-md-check.py` と `page-check.py` は agent が回す check で、agent のいない編集（人の手修正・別ツールの生成）は止められない。`lint-setup.py` は design.md の token からアプリ側の stylelint / ESLint 設定を生成し、editor と CI で design.md 準拠を強制する。
+
+```bash
+python3 lint-setup.py <design.md> [--out <dir>] [--exports <glob>]... [--tailwind-entry <css>] \
+  [--targets stylelint,eslint] [--check] [--dry-run] [--json]
+```
+
+生成物（`--out`、既定は design.md と同じ dir）:
+
+| file | 中身 | 依存 |
+| --- | --- | --- |
+| `design-md.stylelint.mjs` | 色リテラル禁止（`color-no-hex`・`color-named`・`function-disallowed-list`）と、property group ごとの許可値（`declaration-property-value-allowed-list`）。transition・animation・font の shorthand のリテラルは `declaration-property-value-disallowed-list` で禁止する | stylelint（built-in rule のみ） |
+| `design-md.eslint.mjs` | JSX の `style` 属性に書いた色・寸法・書体のリテラルを `no-restricted-syntax` で禁止する。`--tailwind-entry` 指定時は任意値（`bg-[#fff]`）・design.md に無い既定 palette（`text-red-500`）・未知の class を禁止する | ESLint。Tailwind 時は `eslint-plugin-better-tailwindcss` |
+
+許可値の決め方:
+
+- token は custom property の名前で分類する（`--space*` → spacing、`--radius*` → radius、`--font-size*`・`--text-*` → font-size、`--font*` → font-family、`--duration*`・`--ease*` → motion、色の値か shadcn の色の名前 → color）。値が色なら名前に関係なく color。分類できない token（`--sidebar-width` 等）は色以外の全 group で許可し、出力の `uncategorized` に並べる
+- design.md の `## Components` に書かれたリテラル（`padding: 10px 20px` 等）は、その property group で承認済みの値として許可する。font-family は token 経由だけを許可する
+- `calc()` は token と単位なしの数だけで組んだものを許可する（`calc(var(--space-md) * -1)` は可、`calc(13px + …)` は不可）
+- design.md に token が1つも無い分類は縛らない
+- `--exports` に渡した file（token の実値を書く `tokens.css` 等）と `--tailwind-entry` の CSS（`@theme`）は stylelint の対象外にする
+
+アプリへの setup 手順:
+
+1. `python3 <この skill>/tools/lint-setup.py design.md --exports src/styles/tokens.css [--tailwind-entry src/global.css]` で生成し、生成物を commit する
+2. アプリの `stylelint.config.mjs` で `export { default } from "./design-md.stylelint.mjs";`（既存設定があれば `rules` に spread する）。`eslint.config.mjs` では `...designMd` を config 配列の末尾に足す。ESLint の rule 設定は後勝ちで置き換わるため、アプリ側に既存の `no-restricted-syntax` があれば両方の selector を1つの設定にまとめる
+3. 依存を入れる: `stylelint`、Tailwind を使うなら `eslint-plugin-better-tailwindcss`（repo の pin・cooldown 規約に従う）
+4. CI に `python3 <skill>/tools/lint-setup.py design.md <生成時と同じ引数> --check` と `stylelint` / `eslint` の実行を足す。`--check` は生成物が design.md とずれていると exit 1 になる。CI から skill の checkout を参照できない repo では、この step を省いて design.md の変更時に手元で再生成する
+5. editor は各 repo の stylelint / ESLint 拡張がこの設定を読むので、追加の設定は要らない
+
+design.md を変えたら同じ引数で再実行する。生成物は design.md の `## Exports` に列挙し、手で編集しない。
+
+範囲の外: Tailwind の数値 scale（`p-4`・`text-sm`）は token 名と対応づけられないため縛らない。design.md の token を `@theme` に `--spacing-md` 等で出し、既定 scale を `--spacing-*: initial` 等で消すと `no-unknown-classes` が拾う。CSS-in-JS の tagged template と、CSS の cascade（`.dark` の上書きが正しいか）は見ない — 未定義 var 参照とコントラストは `design-md-check.py` に scan paths を渡して確かめる。
+
+検証: 生成した設定を実際の stylelint 16 / ESLint 9 + better-tailwindcss 4 で、許可すべき値が通り、色リテラル・scale 外の値・任意値・既定 palette が落ちることを確かめてある。`test_lint_setup.py` は分類・許可値の正規表現・`--check` を node 無しで確かめる。
+
 ## ページ check（page-check）
 
 `design-md-check.py` は design.md 自体（未定義 var 参照・コントラスト比）しか見ておらず、CSS を当てた後の生成ページの構図崩れ（テーブルが使える幅を使わない等）は拾えない。headless Chrome がこの環境で動かないため、レイアウト計測はブラウザ内 JS に分離し、Python は静的ルールと計測 JSON の判定だけを担当する。
@@ -81,4 +119,4 @@ python3 page-check.py <design.md> <page.html> [--layout <measurements.json>] [--
 
 headless Chrome をこの skill に同梱しない理由は、環境依存で起動しないケースがあり、計測はどのブラウザでも同じ JS で済むため。
 
-共有の解析基盤（`Finding`・`line_of`・`format_human`・fence 抽出・`spec_text`）は `check_common.py` に置く。両 check はこれを import する — 同じロジックを各 script にコピーしない。
+共有の解析基盤（`Finding`・`line_of`・`format_human`・fence 抽出・`spec_text`）は `check_common.py` に置く。各 script はこれを import する — 同じロジックを各 script にコピーしない。
