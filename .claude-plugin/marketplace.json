@@ -110,6 +110,21 @@
           "env": {
             "DISABLE_TELEMETRY": "true"
           }
+        },
+        "openscreen": {
+          "type": "http",
+          "url": "http://127.0.0.1:47821/mcp",
+          "headers": {
+            "Authorization": "Bearer ${user_config.openscreen_token}"
+          }
+        }
+      },
+      "userConfig": {
+        "openscreen_token": {
+          "type": "string",
+          "title": "OpenScreen MCP token",
+          "description": "OpenScreen の Settings → MCP Server に表示される bearer token。Keychain に保存される",
+          "sensitive": true
         }
       }
     }
