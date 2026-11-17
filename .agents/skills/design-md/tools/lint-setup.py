@@ -90,6 +90,12 @@ def classify(name: str, value: str, tokens: dict[str, str], _seen: frozenset[str
     """token を category に振り分ける。名前で決まるものは名前、決まらなければ値で判定する。"""
     bare = name[2:]
     v = value.strip()
+    # 別 token の別名（`--text-muted: var(--muted)`）は参照先の category に従う。名前の推定より確か
+    m = VAR_ONLY_RE.match(v)
+    if m and m.group(1) in tokens and m.group(1) not in _seen:
+        ref = classify(m.group(1), tokens[m.group(1)], tokens, _seen | {name})
+        if ref:
+            return ref
     if re.search(r"(^|-)(font-size|text)(-|$)", bare) and not COLOR_VALUE_RE.match(v):
         return "font-size"
     if re.search(r"(^|-)(line-height|leading)(-|$)", bare):
@@ -110,9 +116,6 @@ def classify(name: str, value: str, tokens: dict[str, str], _seen: frozenset[str
         return "space"
     if bare in SHADCN_COLORS or COLOR_VALUE_RE.match(v):
         return "color"
-    m = VAR_ONLY_RE.match(v)
-    if m and m.group(1) in tokens and m.group(1) not in _seen:
-        return classify(m.group(1), tokens[m.group(1)], tokens, _seen | {name})
     return None
 
 
@@ -133,6 +136,21 @@ def tailwind_name(name: str) -> str:
     return bare
 
 
+def theme_mappings(groups: dict[str, list[str]]) -> list[tuple[str, str]]:
+    """(Tailwind の theme 変数, design.md の token) の対応。別の token が同じ変数に重なれば止める。"""
+    seen: dict[str, str] = {}
+    pairs = []
+    for cat, ns in TAILWIND_NAMESPACES.items():
+        for n in groups[cat]:
+            short = tailwind_name(n)
+            var = f"--{ns}" if cat == "radius" and short == "radius" else f"--{ns}-{short}"
+            if var in seen:
+                raise ValueError(f"{seen[var]} と {n} が Tailwind の {var} に重なる。design.md でどちらかの token 名を変える")
+            seen[var] = n
+            pairs.append((var, n))
+    return pairs
+
+
 def theme_css(groups: dict[str, list[str]], header: str) -> str:
     lines = [
         f"/* {header} */",
@@ -140,20 +158,18 @@ def theme_css(groups: dict[str, list[str]], header: str) -> str:
         "   既定の theme は残す（component は既定の値を使ってよい）。component 以外での既定値の使用は oxlint が止める */",
         "@theme inline reference {",
     ]
-    for cat, ns in TAILWIND_NAMESPACES.items():
-        for n in groups[cat]:
-            short = tailwind_name(n)
-            lines.append(f"  --{ns}: var({n});" if cat == "radius" and short == "radius" else f"  --{ns}-{short}: var({n});")
+    lines += [f"  {var}: var({n});" for var, n in theme_mappings(groups)]
     lines.append("}")
     return "\n".join(lines) + "\n"
 
 
+# variant は `md:`・`hover:` に加え `data-[state=open]:`・`[&>svg]:` のような角括弧付きも取る
+VARIANTS = r"^(?:(?:[^\s:\[\]]|\[[^\]]*\])+:)*!?-?"
 ARBITRARY_PATTERN = (
-    r"^(?:[\w-]+:)*!?-?(?:bg|text|border(?:-[trblxyse])?|ring|outline|fill|stroke|from|via|to|shadow|decoration|accent|caret|divide|placeholder"
+    VARIANTS + r"(?:bg|text|border(?:-[trblxyse])?|ring|outline|fill|stroke|from|via|to|shadow|decoration|accent|caret|divide|placeholder"
     r"|p[trblxyse]?|m[trblxyse]?|gap(?:-[xy])?|space-[xy]|inset(?:-[xy])?|top|right|bottom|left|rounded(?:-[\w]+)?|font|leading|tracking"
     r"|duration|ease|delay)-\[.+\]!?$"
 )
-VARIANTS = r"^(?:[\w-]+:)*!?-?"
 COLOR_UTILS = r"(?:bg|text|border(?:-[trblxyse])?|ring|ring-offset|outline|fill|stroke|from|via|to|shadow|decoration|accent|caret|divide|placeholder|inset-shadow|inset-ring)"
 TAILWIND_PALETTE = ("red", "orange", "amber", "yellow", "lime", "green", "emerald", "teal", "cyan", "sky", "blue", "indigo",
                     "violet", "purple", "fuchsia", "pink", "rose", "slate", "gray", "zinc", "neutral", "stone", "mauve",
@@ -173,7 +189,11 @@ TOKEN_MESSAGE = "design.md の token を使う（無い値は design.md に toke
 
 
 def restricted_class_patterns(groups: dict[str, list[str]]) -> list[dict]:
-    restrict = [{"pattern": ARBITRARY_PATTERN, "message": "$0: 任意値の class は使わない。" + TOKEN_MESSAGE}]
+    props = sorted({*PROPERTY_CATEGORIES, *SPACE_PROPERTIES, "background"}, key=len, reverse=True)
+    restrict = [
+        {"pattern": ARBITRARY_PATTERN, "message": "$0: 任意値の class は使わない。" + TOKEN_MESSAGE},
+        {"pattern": VARIANTS + r"\[(?:%s):.+\]!?$" % "|".join(props), "message": "$0: 任意プロパティの class は使わない。" + TOKEN_MESSAGE},
+    ]
     if groups["color"]:
         tokens = {tailwind_name(n) for n in groups["color"]}
         palette = [c for c in TAILWIND_PALETTE if c not in tokens]
@@ -200,10 +220,10 @@ def camel(prop: str) -> str:
 def plugin_js(groups: dict[str, list[str]]) -> str:
     """JSX の style 属性を検査する oxlint の JS plugin（ESLint 互換の rule API）。"""
     allowed = {cat: {"tokens": [n[2:] for n in groups[cat]], "keywords": list(CATEGORY_KEYWORDS.get(cat, ()) + (("0", "auto") if cat == "space" else ())), "multi": REPEATABLE.get(cat, "space" if cat == "space" else None)}
-               for cat in CATEGORIES if groups[cat]}
-    props = {camel(p): c for p, c in PROPERTY_CATEGORIES.items() if groups[c]}
-    if groups["space"]:
-        props.update({camel(p): "space" for p in SPACE_PROPERTIES})
+               for cat in CATEGORIES}
+    # token の無い category の property も検査する（keyword だけを許す）。外すと token が無いだけで直書きが通る
+    props = {camel(p): c for p, c in PROPERTY_CATEGORIES.items()}
+    props.update({camel(p): "space" for p in SPACE_PROPERTIES})
     color = r"#[0-9a-fA-F]{3,8}\b|\b(?:%s)\(" % "|".join(COLOR_FUNCS)
     return f"""const ALLOWED = {json.dumps(allowed, indent=2)};
 const PROPS = {json.dumps(props, indent=2)};
@@ -219,6 +239,7 @@ function propName(key) {{
 
 function staticValue(node) {{
   if (node.type === "Literal") return String(node.value);
+  if (node.type === "UnaryExpression" && node.operator === "-" && node.argument.type === "Literal") return `-${{node.argument.value}}`;
   if (node.type === "TemplateLiteral" && node.expressions.length === 0) return node.quasis[0].value.cooked;
   return null;
 }}
@@ -262,7 +283,7 @@ def oxlint_config(groups: dict[str, list[str]], tailwind: bool, entry: str | Non
     if tailwind:
         config["jsPlugins"].append("eslint-plugin-better-tailwindcss")
         # oxlint は extends 先の settings を JS plugin に渡さないので、entryPoint は rule ごとの option で渡す
-        tw = {"entryPoint": entry or THEME_FILE}
+        tw = {"entryPoint": entry}
         rules["better-tailwindcss/no-unknown-classes"] = ["error", tw]
         rules["better-tailwindcss/no-restricted-classes"] = ["error", {**tw, "restrict": restricted_class_patterns(groups)}]
     config["rules"] = rules
@@ -304,13 +325,20 @@ def main(argv: list[str]) -> int:
     if not out.is_dir():
         print(f"error: --out {out} が dir でない", file=sys.stderr)
         return 2
+    if args.tailwind and not args.tailwind_entry:
+        print("error: --tailwind には --tailwind-entry（@import \"tailwindcss\" を含む app の entry CSS）が要る", file=sys.stderr)
+        return 2
     component_globs = args.component_glob or DEFAULT_COMPONENT_GLOBS
     for p in component_globs + ([args.tailwind_entry] if args.tailwind_entry else []):
         if Path(p).is_absolute() or ".." in Path(p).parts:
             print(f"error: {p} は --out からの相対 path で渡す", file=sys.stderr)
             return 2
 
-    files, groups = build_outputs(args.design_md, out, args.tailwind, args.tailwind_entry, component_globs)
+    try:
+        files, groups = build_outputs(args.design_md, out, args.tailwind, args.tailwind_entry, component_globs)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
     if not any(groups.values()):
         print("error: design.md の css block に token が見つからない", file=sys.stderr)
         return 2

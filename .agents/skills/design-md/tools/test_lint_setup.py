@@ -68,6 +68,11 @@ class ClassifyTest(unittest.TestCase):
         self.assertEqual(g["shadow"], ["--shadow-sm"])
         self.assertEqual(g["duration"], ["--duration-fast"])
 
+    def test_text_alias_follows_referenced_token(self):
+        tokens = {"--muted": "#888888", "--text-muted": "var(--muted)", "--text-body": "15px"}
+        self.assertEqual(lint.classify("--text-muted", "var(--muted)", tokens), "color")
+        self.assertEqual(lint.classify("--text-body", "15px", tokens), "font-size")
+
     def test_font_weight_is_not_a_family(self):
         self.assertNotIn("--font-weight-bold", sum(self.groups.values(), []))
 
@@ -102,7 +107,7 @@ class GenerateTest(unittest.TestCase):
         self.assertIn('"primary-foreground"', plugin)
 
     def test_components_are_exempt(self):
-        run([str(self.design), "--tailwind"])
+        run([str(self.design), "--tailwind", "--tailwind-entry", "app.css"])
         override = self.config()["overrides"][0]
         self.assertEqual(override["files"], ["**/components/**"])
         self.assertEqual(override["rules"]["design-md/no-raw-style"], "off")
@@ -131,12 +136,29 @@ class GenerateTest(unittest.TestCase):
         groups = lint.group_tokens(lint.parse_tokens(self.design))
         pats = [re.compile(r["pattern"]) for r in lint.restricted_class_patterns(groups)]
         hit = lambda c: any(p.match(c) for p in pats)
-        for cls in ("bg-[#fff]", "md:p-[13px]", "hover:text-[var(--x)]", "-mt-[2px]", "bg-red-500", "text-white/50",
+        for cls in ("bg-[#fff]", "md:p-[13px]", "data-[state=open]:bg-[#fff]", "[&>svg]:p-4", "[color:#fff]", "hover:[padding:13px]", "hover:text-[var(--x)]", "-mt-[2px]", "bg-red-500", "text-white/50",
                     "p-4", "gap-x-2", "text-sm", "rounded-lg", "rounded-t-md", "shadow-md", "font-sans", "leading-6", "tracking-wide"):
             self.assertTrue(hit(cls), cls)
         for cls in ("bg-primary", "p-sm", "text-body", "text-center", "shadow-sm", "rounded-full", "rounded-card",
-                    "font-jp", "font-bold", "grid-cols-[1fr_2fr]", "w-[320px]", "bg-transparent", "flex"):
+                    "font-jp", "font-bold", "grid-cols-[1fr_2fr]", "w-[320px]", "bg-transparent", "flex", "data-[state=open]:bg-primary", "[mask-type:luminance]"):
             self.assertFalse(hit(cls), cls)
+
+    def test_tailwind_requires_entry(self):
+        code, _, err = run([str(self.design), "--tailwind"])
+        self.assertEqual(code, 2)
+        self.assertIn("--tailwind-entry", err)
+
+    def test_tailwind_name_collision_is_error(self):
+        self.design.write_text(DESIGN.replace("--ring: var(--primary);", "--color-primary: #000000;"), encoding="utf-8")
+        code, _, err = run([str(self.design), "--tailwind", "--tailwind-entry", "app.css"])
+        self.assertEqual(code, 2)
+        self.assertIn("--color-primary", err)
+
+    def test_empty_category_is_still_checked(self):
+        self.design.write_text("# Design\n\n```css\n:root { --primary: #123456; }\n```\n", encoding="utf-8")
+        run([str(self.design)])
+        plugin = (self.dir / lint.PLUGIN_FILE).read_text(encoding="utf-8")
+        self.assertIn('"padding": "space"', plugin)
 
     def test_check_detects_drift(self):
         run([str(self.design)])
