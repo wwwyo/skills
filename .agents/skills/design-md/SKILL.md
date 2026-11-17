@@ -1,6 +1,6 @@
 ---
 name: design-md
-description: "repo root の design.md に色・文字・余白・component・icon・logo・motion を定義する。新しい視覚システムの設計、または明示指定されたサイト・コード・Figma からの値の抽出で使う。"
+description: "repo root の design.md に色・文字・余白・component・icon・logo・motion を定義する。新しい視覚システムの設計、明示指定されたサイト・コード・Figma からの値の抽出、design.md の token をアプリの lint（stylelint・Tailwind + ESLint）に setup するときに使う。"
 ---
 
 # design-md Skill
@@ -27,7 +27,8 @@ prototype は大枠の UI/UX（構図・密度・雰囲気）を人間に選ば�
 4. **re-skin**: 選ばれた prototype を設計済みの値で上書きして人間に見せ、合意を取る。「構造は選んだもの・値は設計したもの」の状態で承認してもらう — 承認した見た目と ship される値のズレをここで潰す
 5. **監査**: re-skin 済みの案に `unslop` の監査（signs の洗い出し）を1回当て、生成 AI っぽさを潰す。案同士が見かけほど違わないときはここで気づく
 6. **執筆**: 下のフォーマットで `design.md` を repo root に書き、`design-md-check.py` で error 0 を確認する。design.md が既にあるなら丸ごと書き直さない — 先に読み、この skill が持つ節（System / Tokens / Components / Icons / Logo / Motion）だけを更新し、他 producer 由来の節（`## Exports`・`## Provenance`・`## Macrostructure family` 等）は触らない。token 名を変える（語彙の rename）場合はその節が変わることを人間に伝えて同意を取る
-7. **loop**: design.md と references の種ができたら、product-design template の「固定シナリオの始め方」に渡す。逸脱の判定と振り分けは人間が決め、承認前に encode や commit へ進まない。この skill の担当は値までで、判断を育てる loop は product-design 型 skill 側で回す
+7. **lint**: 対象 repo にアプリのコードがあれば、後述「アプリの lint に setup する」で design.md の token を lint に入れる
+8. **loop**: design.md と references の種ができたら、product-design template の「固定シナリオの始め方」に渡す。逸脱の判定と振り分けは人間が決め、承認前に encode や commit へ進まない。この skill の担当は値までで、判断を育てる loop は product-design 型 skill 側で回す
 
 ### Logo の作成フロー（symbol → wordmark → 字間調整）
 
@@ -87,3 +88,14 @@ logomark と wordmark をセットで設計しても、同じ文字でも用途�
 ```bash
 python3 <この skill>/tools/design-md-check.py <repo root>/design.md
 ```
+
+## アプリの lint に setup する
+
+design.md を書いた・token を変えたら、対象 repo のアプリの lint に design.md を守らせる。skill を呼んだときだけ効く check ではなく、editor と CI の lint で毎回止まる状態にするのが目的。同梱の [`tools/lint-setup.py`](tools/lint-setup.py) で設定を生成し、その repo の stylelint（Tailwind なら ESLint も）に組み込む。生成物は design.md の Exports なので手で直さず、`## Tokens` を変えた編集で再生成する。
+
+```bash
+python3 <この skill>/tools/lint-setup.py <repo root>/design.md --token-file <token を定義する CSS> [--tailwind --tailwind-entry <entry CSS>]
+```
+
+- 生成物・アプリへの組み込み方・分類の規則は [tools/README.md](tools/README.md) の「アプリの lint 設定の生成」
+- 組み込んだら既存コードに lint を当て、出た違反を人間に見せる。違反を一括で token に置換する・ルールを緩めるのは、人間が決めてから行う（design.md に token が足りないのか、コードが外れているのかは値ごとに判断が要る）

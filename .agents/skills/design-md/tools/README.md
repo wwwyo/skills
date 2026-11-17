@@ -81,4 +81,32 @@ python3 page-check.py <design.md> <page.html> [--layout <measurements.json>] [--
 
 headless Chrome をこの skill に同梱しない理由は、環境依存で起動しないケースがあり、計測はどのブラウザでも同じ JS で済むため。
 
-共有の解析基盤（`Finding`・`line_of`・`format_human`・fence 抽出・`spec_text`）は `check_common.py` に置く。両 check はこれを import する — 同じロジックを各 script にコピーしない。
+## アプリの lint 設定の生成（lint-setup）
+
+`design-md-check.py` は design.md 自体を見る。アプリのコードが design.md の token を守っているかは、design.md から生成した lint 設定をアプリに入れて、その repo の stylelint / ESLint に毎回止めさせる。agent が居ない編集でも editor と CI で効く。
+
+```bash
+python3 lint-setup.py <design.md> [--out DIR] [--token-file PATH ...] [--tailwind --tailwind-entry PATH] [--check] [--dry-run] [--json]
+```
+
+| 生成物 | 条件 | 中身 |
+| --- | --- | --- |
+| `stylelint.design-md.mjs` | 常に | 色の直書き（hex・named・`rgb()`/`oklch()` 等）を禁止し、色・font・size・line-height・letter-spacing・余白・radius・shadow・easing・duration の property は design.md の token の `var()` と最小限の keyword だけを許す。未定義の token 名も弾く |
+| `design-md.theme.css` | `--tailwind` | Tailwind v4 の `@theme inline reference`。token のある namespace（color・font・text・leading・tracking・spacing・radius・shadow・ease）を `initial` で消し、design.md の token だけを utility にする（`bg-red-500`・`p-4` が存在しなくなる） |
+| `eslint.design-md.mjs` | `--tailwind` | `eslint-plugin-better-tailwindcss` の `no-unknown-classes`（上の theme に無い class）と `no-restricted-classes`（`bg-[#fff]`・`p-[13px]` 等の色・余白・文字・radius の任意値）を error にする |
+
+- token の分類は名前（`font-size`・`space`・`radius` 等の語）を優先し、決まらなければ値（色・長さ・時間）で判定する。`--font-weight-*` のように分類できない token は lint の対象外
+- `--token-file` に token を定義する CSS（`globals.css` の `:root` 等の Exports）を渡すと、そのファイルだけ stylelint の直書き禁止を外す。path は `--out` からの相対
+- 生成物の 1 行目に marker を書く。marker の無い同名ファイルは上書きせず `skipped-not-generated` で exit 1
+- `--check` は書き込まずに生成物が design.md と一致するかだけを見る（ずれていれば `stale` で exit 1）。design.md の `## Tokens` を変えたら再生成する
+- 出力は 1 ファイル 1 行（`<action> <file>`）と token 数のサマリ。`--json` で JSONL
+
+アプリ側への入れ方（パッケージはその repo の pin・cooldown 規約で入れる）:
+
+- stylelint: `stylelint` を入れ、`stylelint.config.mjs` に `extends: ["./stylelint.design-md.mjs"]`
+- Tailwind: entry CSS で `@import "tailwindcss";` の後に `@import "./design-md.theme.css";`。`eslint-plugin-better-tailwindcss` を入れ、`eslint.config.mjs` で `import designMd from "./eslint.design-md.mjs"` を配列に `...designMd` で足す（`.tsx` 等の parser 設定は既存のものを使う）
+- CI と editor で既存の lint script が走れば、それで強制される。lint-setup 自体を CI で回す必要はない
+
+確認済みの組み合わせ（2026-11）: stylelint 17.16、Tailwind CSS 4（`@tailwindcss/cli`）、ESLint 9 + eslint-plugin-better-tailwindcss 4.10。
+
+共有の解析基盤（`Finding`・`line_of`・`format_human`・fence 抽出・`spec_text`・`strip_comments`）は `check_common.py` に置く。各 script はこれを import する — 同じロジックを各 script にコピーしない。
