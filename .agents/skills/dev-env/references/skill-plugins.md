@@ -4,7 +4,7 @@
 
 | tool | 登録 | 読む場所 | 編集の反映 |
 | --- | --- | --- | --- |
-| Claude Code | core・design・3d は claude.ai のアカウントに入れたもの（`core@synced`・`design@synced`・`3d@synced`）。local は `extraKnownMarketplaces` の directory source から `local@wwwyo`。`enabledPlugins` で `*@synced` を有効、`core@wwwyo`・`design@wwwyo`・`3d@wwwyo` を無効にする | core・design は `~/.claude/plugins/synced/<bucket>/<plugin>/` の copy。local は元フォルダを直接読む（`claude plugin list --json` の `readFromFolder`） | core・design は main への merge → claude.ai の同期 → Claude Code 側の同期（session 開始時）を経て届く。local は次の session 開始か `/reload-plugins` |
+| Claude Code | core・design・3d は claude.ai のアカウントに入れたもの（`core@synced`・`design@synced`・`3d@synced`）。local は `extraKnownMarketplaces` の directory source から `local@wwwyo`。`enabledPlugins` で `*@synced` を有効、`core@wwwyo`・`design@wwwyo`・`3d@wwwyo` を無効にする | core・design・3d は `~/.claude/plugins/synced/<bucket>/<plugin>/` の copy。local は元フォルダを直接読む（`claude plugin list --json` の `readFromFolder`） | core・design・3d は main への merge → claude.ai の同期 → Claude Code 側の同期（session 開始時）を経て届く。local は次の session 開始か `/reload-plugins` |
 | Codex | `[marketplaces.wwwyo]`（local source）と `[plugins."core@wwwyo"]` 等 | `~/.codex/plugins/cache/wwwyo/<plugin>/<version>/` の copy | `codex plugin add <plugin>@wwwyo` を再実行するまで反映されない（同じ version でも上書きされる）。CLI の起動（`codex debug prompt-input`）では cache は更新されなかった。desktop app の再起動で更新されるかは未確認 |
 | pi | `settings.json` の `packages` にローカルパス | その場で読む（copy しない）。未 commit の編集も見える | `/reload` か次の起動 |
 | Devin | plugin を使わず `~/.config/devin/skills` を `.agents/skills` へ dir link | link 先を直接読む | 次の起動 |
