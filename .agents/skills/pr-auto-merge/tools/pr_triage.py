@@ -95,6 +95,9 @@ SWEEP_MAX_TRIES = 6         # sweep が永続的理由で skip し続ける回�
 # 永続的理由として数える — 数えないと毎 tick session が起きる
 SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live",
                            "removal verification unavailable")
+# plan の action 種別。tick-summary と plan_generated event が同じ語彙を使う
+PLAN_ACTION_TYPES = ("dispatch", "escalate", "judge", "merge", "hold")
+PLAN_WORK_ACTIONS = ("dispatch", "escalate", "judge", "merge")
 THREADS_PAGE = 50           # reviewThreads の page size
 MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
@@ -2284,6 +2287,17 @@ def _block_spawn_without_checkout(plan_entries, st):
             for a in entry["actions"]]
 
 
+def action_counts(plan_entries):
+    """plan の action 種別件数。既知の種別は 0 でも入れて、tick-summary の
+    各項と plan_generated の記録をそのまま突き合わせられるようにする。"""
+    counts = {t: 0 for t in PLAN_ACTION_TYPES}
+    for entry in plan_entries:
+        for action in entry.get("actions") or []:
+            t = action.get("type")
+            counts[t] = counts.get(t, 0) + 1
+    return counts
+
+
 def _gate(a, st, run_id):
     # intent reconcile: 前回 crash 等で record が欠落した merge を拾い直す。
     # merge 発行前に intent を書いているので、API が受理した直後に
@@ -2324,9 +2338,9 @@ def _gate(a, st, run_id):
     _block_spawn_without_checkout(plan_entries, st)
 
     sweeps = sweep_candidates(st, worktrees)
+    counts = action_counts(plan_entries)
     has_work = sweeps or any(
-        x["type"] in ("dispatch", "merge", "judge", "escalate")
-        for e in plan_entries for x in e["actions"])
+        counts[t] for t in PLAN_WORK_ACTIONS)
 
     plan = {"generated_at": _iso(_now()), "date": _today_jst(),
             "run_id": run_id,
@@ -2338,14 +2352,17 @@ def _gate(a, st, run_id):
                          encoding="utf-8")
     # plan artifact は次 tick で上書きされるため、tick 単位の復元・窓確定の
     # 監査用に jsonl へ plan 生成の記録を残す（evaluator は plan の generated_at
-    # と次 tick の generated_at で窓を確定する）。
+    # と次 tick の generated_at で窓を確定する）。action 種別の件数も残す —
+    # tick-summary の dispatch/judge/hold 等は plan の action 件数であり、
+    # plan が上書きされた後に照合できるのはこの event だけになる。
     try:
         append_event("plan_generated",
                      run_id=run_id,
                      generated_at=plan["generated_at"],
                      date=plan["date"],
                      pr_count=len(plan_entries),
-                     action_count=sum(len(e["actions"]) for e in plan_entries),
+                     action_count=sum(counts.values()),
+                     actions_by_type=counts,
                      sweep_count=len(sweeps),
                      has_work=has_work)
     except Exception as e:
@@ -2359,7 +2376,8 @@ def _gate(a, st, run_id):
               "prs": len(prs)})
         sys.exit(1)
     emit({"ok": True, "run": True, "plan": str(PLAN_FILE), "run_id": run_id,
-          "actions": sum(len(e["actions"]) for e in plan_entries),
+          "actions": sum(counts.values()),
+          "actions_by_type": counts,
           "sweep": len(sweeps)})
 
 
@@ -2834,6 +2852,17 @@ def _cmd_sweep(a):
         verify_removal(m["pending_removal"])
     if not a.dry_run:
         save_state(st)
+        # 実施の有無と件数を jsonl で照合できるようにする — removed=0 の
+        # sweep は worktree_rm を残さないため、この event が無いと
+        # tick-summary の sweep= を後から確認できない。run_id は tick の
+        # lock 所有者。記録できなくても sweep 自体は成立する（報告と監査の
+        # 欠落として stderr にだけ残す）。
+        try:
+            append_event("sweep", run_id=_lock_info().get("run_id"),
+                         removed=len(removed), skipped=len(skipped))
+        except Exception as e:
+            print(f"pr_triage: sweep event append failed: {e}",
+                  file=sys.stderr)
     emit({"ok": True, "local_sessions": audit, "removed": removed, "skipped": skipped})
 
 
@@ -3045,7 +3074,7 @@ def cmd_events(a):
 
 
 SCHEMA = {
-    "gate": {"out": "{run, plan?, reason?}", "exit":
+    "gate": {"out": "{run, plan?, reason?, actions_by_type?}", "exit":
              "0=session必要 1=skip(変化なし/locked) 2=API失敗(fail-closed)"},
     "plan": {"out": "current tick plan"},
     "dispatch": {"args": "--repo R --number N",
@@ -3061,7 +3090,9 @@ SCHEMA = {
     "merge": {"args": "--repo R --number N [--via lane] [--sha S]",
               "out": "{merged, blocked?}"},
     "sweep": {"args": "[--dry-run] [--only worktreeId]",
-              "out": "{removed[], skipped[]}"},
+              "out": "{removed[], skipped[]}",
+              "effect": "append sweep event (run_id/removed/skipped); "
+                        "dry-run は記録しない"},
     "lock": {"args": "acquire|release [--run-id S]|status",
              "out": "{acquired, run_id?} | {released}"},
     "log": {"args": "--input JSON_FILE | --message S [--repo R] [--pr N] "

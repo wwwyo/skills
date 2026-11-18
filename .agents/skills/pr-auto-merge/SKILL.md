@@ -51,6 +51,12 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    ```
 
    gate は plan 書き出し時に `plan_generated` event を当日の jsonl に追記する。
+   plan artifact は次 tick で上書きされるので、tick ごとの action 種別件数を
+   事後に知る手段はこの event だけになる — `plan_generated` は `pr_count`・
+   `action_count`・`sweep_count` に加えて `actions_by_type` を残す。
+   tick を二重に起動した疑いがあるときは、`plan.run_id` と `lock status` の
+   `holder.run_id` を比べる。違う（または lock が無い）なら gate が新しい plan を
+   書いているので、`plan` を取り直して新しい `run_id` で続ける。
    前 tick の lock が TTL を超過しても解放されなかった場合、次の gate が
    stale lock を回収して `tick_abandoned` event（previous_run_id / previous_ts /
    age_seconds / reason）を記録する — この event が示すのは lock が TTL 内に
@@ -94,14 +100,17 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    workspaceStatus を completed に変えたり、force 削除したりしない。
    sweep の実施と削除成功は区別する。`removed` は Orca の登録とディレクトリの消失を確認した件数で、削除受付後も残っていれば `skipped` の `removal pending` になる。受付済みの削除は state に保存して登録消失後も確認し、残存が続けば既存の skip 上限で give up する。観測に失敗した回は `removal verification unavailable` として上限を消費せず、削除要求も繰り返さない。
    jsonl には `worktree_rm` と `sweep_skipped` が残るが、同一 worktree・理由の連続 skip は
-   重複記録されない。呼び出した事実・削除件数・エラーは `pr_triage.py log` の note に
-   記録する。残存理由が出力にない場合は、`orca worktree ps --json` と必要に応じ
+   重複記録されない。sweep を呼んだ事実と件数は script が `sweep` event
+   （`run_id` / `removed` / `skipped`、dry-run は記録しない）に残すので、削除0件の
+   tick でも実施と `sweep=` を jsonl で照合できる。残存理由が出力にない場合は、
+   `orca worktree ps --json` と必要に応じ
    `orca terminal list --worktree id:<worktreeId> --json` で merge した PR の worktree を
    再確認し、active・作業中・live terminal があり未 completed 等の理由を note に補う。
    確認できなければ未確認と書き、削除成功に数えない。sweep / log と状態確認の Orca コマンドは、Orca socket・
    GitHub・state dir（`~/.local/state/pr-watch`）・jsonl 保存先へアクセスできる環境で実行する。sandbox に阻まれる場合は
    `gh` と同じく sandbox 外で実行し、権限設定を一律に緩めない。
-   sweep 失敗で merge 成功を取り消さず、代替実装もしない。log も失敗したら報告に残す。
+   sweep 失敗で merge 成功を取り消さず、代替実装もしない。error と note の記録も
+   失敗したら報告に残す。
 4. report を書く（下記）
 5. 最後に必ず `pr_triage.py lock release --run-id <plan.run_id>`。
    `gate` が保持したまま渡した run lock を executor session が引き継ぐ
@@ -205,8 +214,9 @@ python3 ~/src/github.com/wwwyo/skills/.agents/skills/pr-auto-merge/tools/pr_tria
 "repo":"wwwyo/example","pr":1,"sha":"確認した head",
 "sources":["https://github.com/wwwyo/example/pull/1"]}`。
 `note` は補足ログであり action・verdict・送信成功・merge 実績を変更しない。
-merge 後 sweep の実施結果は削除0件でも note に残す。それ以外の空振りや
-tick ごとの件数を重複記録せず、次回に必要な情報だけ補足する。
+merge 後 sweep の実施と件数は script が `sweep` event に残すので、同じ内容を
+note に書き直さない。空振りや tick ごとの件数を重複記録せず、次回に必要な
+情報（残存理由・判断の根拠）だけ補足する。
 既存 `pr-watch-log.md` の移行時は、原文と元ファイルの日付・path を `note` に
 保持して読み戻しを確認してから旧ファイルを削除する。過去の実績 event として再生成しない。
 **note の JSON を組む独自 helper を書かない** — キーを取り違えた helper は
@@ -223,11 +233,14 @@ script が構造化エラーで弾く。
   ```
 
   `sweep` はこの tick の sweep 出力の `removed` 件数の合計で、呼び出し回数ではない。
-  `dispatch`・`escalate`・`judge`・`merge`・`hold` は plan のその action 件数。
-  jsonl で照合する場合は `ts >= plan.generated_at` の `worktree_rm` に絞り、
-  この実行の sweep 出力と worktree を照合する（同時刻の手動 sweep を混ぜない）。
-  sweep 実施済みでも `removed=[]` なら 0 とし、実施・残存理由は jsonl の note を参照する。
-  `hold` は plan の hold action 件数。`judge_ok`・`judge_ng`・`judge_repair` は
+  jsonl で照合するときは `run_id == plan.run_id` の `sweep` event（`removed` /
+  `skipped`）を数え、worktree 単位は同じ窓の `worktree_rm` と照合する（同時刻の
+  手動 sweep を混ぜない）。実施済みで 0 件なら 0 とし、残存理由は `sweep_skipped`
+  と note を参照する。
+  `dispatch`・`escalate`・`judge`・`merge`・`hold` は plan のその action 件数で、
+  同じ値が `plan_generated` の `actions_by_type` に残る — plan は次 tick で
+  上書きされるので、事後に照合できるのはこの event になる。`judge_ok`・
+  `judge_ng`・`judge_repair` は
   `event == "judge"` かつ `ts >= plan.generated_at` の event だけを数える — 当日の
   jsonl には前 tick の judge event も入るため、時刻で絞らないと件数が膨らむ。
   ただし `judge_ok` は ok を登録した回数で、最終 verdict ではない（blocked で
@@ -238,11 +251,12 @@ script が構造化エラーで弾く。
   gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
   （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い
   field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
-  `pr-watch.md` の件数見出しは**当日累計**（当日 jsonl 全体）、tick-summary は
-  **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
+  `pr-watch.md` の件数見出しは**当日累計**（merge・error は当日 jsonl 全体、hold は
+  Hold 表の行数）、tick-summary は **per-tick** — 両者が一致しなくても不整合と
+  読まない（後続 tick が同じ日次 file に追記する）。
   同じ理由で、md は後続 tick が Hold 行を書き換える（MERGED・他アクターの merge を外す）ため、
   ある時点の md に行が無いことを「未実施」の証拠にしない — 実施の有無は jsonl の
-  action・note で確認する。
+  `plan_generated`・action・`note` で確認する。
 
 dispatch ガードの延期も Hold に載せ、恒久的な保留と区別して日本語で理由を書く。
 以下の表は dispatch ガード延期の `reason` だけを対象とし、返された理由以上の原因を
@@ -269,6 +283,8 @@ dispatch は修正依頼を送った中間状態で、PR の決着ではない�
 # PR Watch — YYYY-MM-DD
 
 当日累計: merge N 件 / hold K 件 / error E 件
+（merge・error は当日 jsonl の merge / tick_error・失敗から数え、hold K は
+ 下の Hold 表の行数 — plan や前 tick の見出しの数字を写さない）
 
 ## Hold
 （merge されなかった open PR を 時刻（JST）|repo|PR|理由 の表で。always-hold path・

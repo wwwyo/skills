@@ -1179,7 +1179,9 @@ with tempfile.TemporaryDirectory() as tmp:
         events.reset_mock()
         pt._cmd_sweep(SimpleNamespace(only=None, dry_run=False))
         assert not output.call_args.args[0]['removed']
-        events.assert_not_called()
+        # 削除0件でも実施は sweep event に残る（それ以外は記録しない）
+        assert [c.args[0] for c in events.call_args_list] == ['sweep']
+        assert events.call_args.kwargs['removed'] == 0
         remove.assert_not_called()
         git.assert_not_called()
 
@@ -1201,17 +1203,22 @@ def run_sweep(sh_outs, dry_run=False):
             mock.patch.object(pt, 'save_state'), mock.patch.object(pt, 'emit'), \
             mock.patch.object(pt, 'append_event') as ev:
         pt._cmd_sweep(SimpleNamespace(only=None, dry_run=dry_run))
-        return [(c.args[0], c.kwargs.get('reason'))
-                for c in ev.call_args_list]
+        return [(c.args[0], c.kwargs) for c in ev.call_args_list]
 
-assert run_sweep([' M f']) == [('sweep_skipped', 'dirty worktree')]
-assert run_sweep([' M f']) == []                    # 同じ理由は再記録しない
-assert run_sweep(['', 'abc', 'other']) == \
-    [('sweep_skipped', 'branch changed')]
-# 永続的 skip が上限に達すると sweep_giveup も残る
+assert [n for n, _ in run_sweep([' M f'])] == ['sweep_skipped', 'sweep']
+# 同じ理由は再記録しない（sweep の実施だけは毎回残る）
+assert [n for n, _ in run_sweep([' M f'])] == ['sweep']
+assert [n for n, _ in run_sweep(['', 'abc', 'other'])] == \
+    ['sweep_skipped', 'sweep']
+# sweep event は実施と件数を残す（removed=0 でも実施が分かる）
+skipped_ev, sweep_ev = run_sweep([' M f'])
+assert skipped_ev[1].get('reason') == 'dirty worktree', skipped_ev
+assert sweep_ev[1]['removed'] == 0 and sweep_ev[1]['skipped'] == 1, sweep_ev
+assert 'run_id' in sweep_ev[1], sweep_ev
+# 永続的 skip が上限に達すると sweep_giveup も残る（同じ worktree+理由の
+# sweep_skipped は直前に記録済みなので再記録しない）
 sweep_st["merged"]["wwwyo/me#8"]["sweep_skips"] = pt.SWEEP_MAX_TRIES - 1
-assert run_sweep([' M f']) == [('sweep_skipped', 'dirty worktree'),
-                              ('sweep_giveup', 'dirty worktree')]
+assert [n for n, _ in run_sweep([' M f'])] == ['sweep_giveup', 'sweep']
 # dry-run はイベントを記録しない
 sweep_st["merged"]["wwwyo/me#8"]["sweep_skips"] = 0
 assert run_sweep([' M f'], dry_run=True) == []
@@ -1781,6 +1788,17 @@ try:
     raise AssertionError("ambiguous checkout accepted")
 except pt.ApiError as e:
     assert "ambiguous or unavailable for wwwyo/fixture" in str(e)
+
+# plan の action 種別件数は tick-summary と同じ語彙で、既知の種別は 0 でも入る。
+# plan.json は次 tick で上書きされるので、この件数を plan_generated event に
+# 残しておかないと tick ごとの dispatch/judge/hold を後から照合できない。
+assert pt.action_counts([
+    {"actions": [{"type": "dispatch"}, {"type": "hold"}]},
+    {"actions": [{"type": "judge"}, {"type": "dispatch"}, {"type": "future"}]},
+    {"actions": []},
+]) == {"dispatch": 2, "escalate": 0, "judge": 1, "merge": 0,
+      "hold": 1, "future": 1}
+assert pt.action_counts([]) == {t: 0 for t in pt.PLAN_ACTION_TYPES}
 
 def spawn_entries():
     return [
