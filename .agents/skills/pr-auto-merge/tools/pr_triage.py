@@ -648,7 +648,7 @@ def _suffix(base):
 def classify_path(path):
     """1 file path の3分類。戻り値は "hold" | "judge" | "standard"。
     standard は path による追加制限がなく、通常のゲート（CI・review・
-    approval）だけで merge される分類。
+    judge）だけで merge される分類。
     未知の拡張子・basename は "judge"（分類不能は安全側）。"""
     if not path or "\x00" in path:
         return "judge"
@@ -782,8 +782,7 @@ def classify_pr(files, meta, diff, renamed_from=()):
         judges = ["<breaking signal>"]
 
     # github-actions ecosystem の更新先（.github/workflows/）も依存置き場
-    # として whitelist に含める — pullfrog は bot PR を review しないので
-    # 含めないと judge ok 後も approval 不在で永久に止まる
+    # として whitelist に含める（bot 依存更新として judge する）
     bot_dep_only = _is_bot(meta.get("author")) and bool(touched) and all(
         is_dependency_file(f) or is_actions_workflow(f) for f in touched)
     if bot_dep_only and not judges:
@@ -1166,17 +1165,6 @@ def check_rollup(pr):
     return checks
 
 
-def pullfrog_approval(checks):
-    """pullfrog-approval が現在 head で success か。（check が無い・
-    pending・failure は全て False）"""
-    for c in checks:
-        if c["name"] == "pullfrog-approval":
-            return (c["status"] == "COMPLETED" and
-                    c["conclusion"] == "SUCCESS"), \
-                c["conclusion"] or c["status"]
-    return False, None
-
-
 def required_check_state(checks, required):
     """required context の状態集約。missing = protection にあるのに
     head に check が無い（pending 相当=安全側）。nonrequired_failing は
@@ -1222,7 +1210,7 @@ def hard_gate(facts, judge=None, via="lane", expect_sha=None):
             "threads": [...], "required": [...],
             "diff": str|None}
     judge: {"sha":..,"verdict":..}|None — state に記録された judge 判定
-    via: "lane" のみ。pullfrog-approval + path 分類 + judge verdict を要求。
+    via: "lane" のみ。path 分類 + judge verdict を要求。
 
     戻り値: (ok, reasons)。reasons は NG 理由（ok 時は空）。"""
     if via != "lane":
@@ -1233,8 +1221,7 @@ def hard_gate(facts, judge=None, via="lane", expect_sha=None):
         return False, [f"state is {pr.get('state')}"]
     # draft は author が未完成と明示した PR。plan の hold だけに頼らず、
     # merge 直前のこの gate でも弾く — plan 後に author が draft 化した場合や
-    # judge-result の同一実行 merge の race でも merge しない。bot 依存の
-    # approval 免除経路（pullfrog-approval が防波堤にならない）も draft は通さない。
+    # judge-result の同一実行 merge の race でも merge しない。
     if pr.get("isDraft"):
         return False, ["draft (author ready 待ち)"]
     head = pr.get("headRefOid")
@@ -1300,28 +1287,10 @@ def hard_gate(facts, judge=None, via="lane", expect_sha=None):
                              "changed since judge-input (re-judge required)")
             else:
                 r.append("no judge ok bound to current head and evidence")
-        # bot 依存更新・確認済み追従の whitelist 経路は pullfrog-approval を要求しない
-        # （pullfrog は非 collaborator の bot PR を review しないため check が
-        # 付かない）。script 自動 ok と有効な judge ok の両方で免除が効く。
-        # それ以外の lane merge は全て approval 必須。
-        need_app = not ((cls["bot_dep_only"] or
-                         cls.get("dependency_repair")) and (jok or auto_ok))
-        ok_app, app_state = pullfrog_approval(roll)
-        if need_app and not ok_app:
-            r.append(approval_block_reason(app_state, pr))
+        # pullfrog-approval は merge 条件にしない。Pullfrog の自動レビューは
+        # PR ごとに初回だけなので、追加 push 後の head には approval が付かない。
+        # review bot の指摘は unaddressed reviews・CHANGES_REQUESTED で止める。
     return (not r), r
-
-
-def approval_block_reason(app_state, view):
-    """pullfrog-approval 不足の理由。bot author の PR は pullfrog の review
-    対象外なので、依存以外の差分を含むと（`bot_dep_only` が立たず）check が
-    永久に付かない — `absent` を billing や workflow 障害と読み違えないよう、
-    その場で解消手段を書く（review を伴わない自動 merge はしない）。"""
-    reason = f"pullfrog-approval not success ({app_state or 'absent'})"
-    if app_state is None and _is_bot(view.get("author")):
-        reason += (" — bot author は review 対象外（@pullfrog で依頼するか"
-                   "人間が merge する）")
-    return reason
 
 
 # ---------- Orca ----------
@@ -1918,10 +1887,8 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
         return entry
 
     # draft は author が「未完成」と明示した PR。lane は merge 可否を見る
-    # 場所なので、ready 化されるまで judge/merge の対象にしない。draft の
-    # まま pullfrog が承認を保留すると pullfrog-approval が FAILURE になり、
-    # lane は author に代わって ready 化しないため judge しては blocked を
-    # 繰り返すだけになる。hard_gate も同じ draft を弾く（race 対策）。
+    # 場所なので、ready 化されるまで judge/merge の対象にしない。lane は
+    # author に代わって ready 化しないため、judge しても無駄になる。hard_gate も同じ draft を弾く（race 対策）。
     if v.get("isDraft"):
         entry["actions"].append({"type": "hold",
                                  "reason": "draft (author ready 待ち)"})
@@ -1997,14 +1964,7 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
                                  ["QA and Blast Radius assessment required"]})
         return entry
 
-    # lane / ok 共通: pullfrog-approval（bot_dep または確認済み追従で
-    # judge ok・script 自動 ok の経路のみ免除）
-    ok_app, app_state = pullfrog_approval(roll)
-    if not ((cls["bot_dep_only"] or cls.get("dependency_repair"))
-            and (jok or auto_ok)) and not ok_app:
-        entry["actions"].append({"type": "hold", "reason":
-            approval_block_reason(app_state, v)})
-        return entry
+    # pullfrog-approval は merge 条件にしない（hard_gate と同じ。理由はそちら）
     action = {"type": "merge", "via": "lane", "head": head,
               "bot_dep_only": cls["bot_dep_only"],
               "dependency_repair": bool(cls.get("dependency_repair")),
@@ -2492,8 +2452,7 @@ def _cmd_judge_result(a):
     previous = (st.get("judge") or {}).get(pr_key(a.repo, a.number)) or {}
     # dependency_repair は追従履歴の属性（dep-only head に repair を出した
     # 事実）なので policy version を跨いで保持する — 失効させると追従コードを
-    # 含む head が bot_dep_only を外れ、approval の付かない bot PR が hold に
-    # 固定される。whitelist の効力は gate 側が verdict・head sha・version を
+    # 含む head が bot_dep_only を外れ、repair whitelist の判定から外れる。whitelist の効力は gate 側が verdict・head sha・version を
     # 再検証して縛るので、ここでは過去の属性だけを引き継ぐ
     repairing = bool(previous.get("dependency_repair"))
     if a.verdict == "repair":
@@ -2561,8 +2520,8 @@ def _cmd_merge(a):
         fail("--via must be lane")
     st = load_state()
     key = pr_key(a.repo, a.number)
-    # 直前に state・mergeable・approval・unaddressed・required check・
-    # path 分類を全件引き直す（pullfrog-approval だけに依存しない）
+    # 直前に state・mergeable・unaddressed・required check・
+    # path 分類を全件引き直す
     facts = pr_facts(a.repo, a.number, {})
     judge = (st.get("judge") or {}).get(key)
     ok, reasons = hard_gate(facts, judge=judge, via=a.via,

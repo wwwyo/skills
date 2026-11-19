@@ -286,14 +286,6 @@ items = pt.unaddressed_items(v, [])
 assert items and items[0]["sig"] == "r:12345"
 
 # ============================ checks / gate ============================
-v = view(statusCheckRollup=[check("ci"), check("pullfrog-approval")])
-checks = pt.check_rollup(v)
-ok, st = pt.pullfrog_approval(checks)
-assert ok and st == "SUCCESS"
-v = view(statusCheckRollup=[check("ci"),
-                            check("pullfrog-approval", conc="FAILURE")])
-ok, st = pt.pullfrog_approval(pt.check_rollup(v))
-assert not ok
 v = view(statusCheckRollup=[check("ci", status="IN_PROGRESS",
                                   conc=None)])
 st = pt.required_check_state(pt.check_rollup(v), ["ci"])
@@ -335,23 +327,14 @@ v2 = view(mergeable="CONFLICTING",
 ok, _ = pt.hard_gate(facts(view=v2, required=["ci"]), via="lane")
 assert not ok
 
-# approval 無し → block（bot_dep+judge-ok 以外）
-v2 = view(statusCheckRollup=[check("ci")])
-f = facts(view=v2, required=["ci"])
-ok, reasons = pt.hard_gate(f, via="lane")
-assert not ok and any("pullfrog-approval" in r for r in reasons)
-
-# bot author の PR は pullfrog の review 対象外 — 依存以外の差分を含むと
-# check が永久に付かないので、absent を billing 障害と読み違えないよう理由に
-# 解消手段を書く（review 無しの自動 merge はしない）
-bot = {"login": "dependabot[bot]", "is_bot": True}
-assert "review 対象外" in pt.approval_block_reason(None, view(author=bot))
-assert "review 対象外" not in pt.approval_block_reason(None, view())
-assert "review 対象外" not in pt.approval_block_reason(
-    "FAILURE", view(author=bot))
-vb = view(author=bot, statusCheckRollup=[check("ci")])
-ok, reasons = pt.hard_gate(facts(view=vb), via="lane")
-assert not ok and any("review 対象外" in r for r in reasons), reasons
+# pullfrog-approval は merge 条件にしない（自動レビューは PR ごとに初回だけ
+# なので、追加 push 後の head には付かない）。absent・FAILURE でも judge ok なら通る
+for roll in ([check("ci")], [check("ci"), check("pullfrog-approval", conc="FAILURE")]):
+    v2 = view(statusCheckRollup=roll)
+    ok, reasons = pt.hard_gate(facts(view=v2, required=["ci"]), judge={"sha": "sha1", "verdict": "ok", "policy_version": pt.JUDGE_POLICY_VERSION, "context_hash": pt.pr_context_hash(v2)}, via="lane")
+    assert ok, reasons
+    ok, reasons = pt.hard_gate(facts(view=v2, required=["ci"]), via="lane")
+    assert not ok and not any("pullfrog-approval" in r for r in reasons), reasons
 
 # hold path → judge ok があっても block
 v = view(statusCheckRollup=[check("ci"), check("pullfrog-approval")])
@@ -634,7 +617,7 @@ e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
                            f, [], {}, {})
 assert e["actions"][0]["type"] == "judge" and e["lane"] == "standard"
 
-# wiki は一律 hold を外しても、current judge・approval・required CI を通る
+# wiki は一律 hold を外しても、current judge・required CI を通る
 f = facts(view=v, files=["wiki/tech/page.md", "wiki/index.md", "wiki/log.md"],
           required=["ci"])
 e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7}, f, [], {}, {})
@@ -644,8 +627,7 @@ j = {"sha": "sha1", "verdict": "ok", "policy_version": pt.JUDGE_POLICY_VERSION,
 e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7}, f, [], {},
                            {"judge": {"wwwyo/me#7": j}})
 assert e["actions"][0]["type"] == "merge" and pt.hard_gate(f, judge=j)[0]
-for checks in [[check("ci")],
-               [check("ci", conc="FAILURE"), check("pullfrog-approval")]]:
+for checks in [[check("ci", conc="FAILURE"), check("pullfrog-approval")]]:
     changed_view = view(statusCheckRollup=checks)
     changed = facts(view=changed_view, files=f["files"], required=["ci"])
     changed_judge = dict(j, context_hash=pt.pr_context_hash(changed_view))
@@ -716,13 +698,12 @@ for verdict in ("ok", "ng"):
     assert e["actions"][0]["type"] == "judge"
     assert not pt.hard_gate(f, judge=old, via="lane")[0]
 
-# approval 無し → hold
+# approval 無しでも judge ok なら merge（pullfrog-approval は条件にしない）
 v2 = view(statusCheckRollup=[check("ci")])
 f = facts(view=v2, required=["ci"])
 e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
                            f, [], {}, {"judge": {"wwwyo/me#7": {"sha": "sha1", "verdict": "ok", "policy_version": pt.JUDGE_POLICY_VERSION, "context_hash": pt.pr_context_hash(v2)}}})
-assert e["actions"][0]["type"] == "hold" and "pullfrog" in \
-    e["actions"][0]["reason"]
+assert e["actions"][0]["type"] == "merge", e
 
 # hold path → merge に到達しない
 f = facts(view=v, files=[".env"], required=["ci"])
@@ -1250,9 +1231,10 @@ assert pt.classify_path('.github/renovate.json') == 'hold'
 for files in [['config.toml'], ['config/app.toml'], mise_files + ['config/app.toml']]:
     cls = pt.classify_pr(files, v, '')
     assert not cls['bot_dep_only']
-    assert not pt.hard_gate(dict(f, files=files), judge=j)[0]
-human = view(statusCheckRollup=[check('ci')])
-assert not pt.hard_gate(dict(f, view=human), judge=j)[0]
+    # bot 依存の whitelist から外れ、通常の risk review として judge する
+    e = pt.compute_pr_decision({'repo': 'wwwyo/me', 'number': 7},
+                               dict(f, files=files), [], {}, {})
+    assert e['actions'][0]['whitelist_hint'] == 'risk_review', e
 
 # ============================ dep auto-ok（minor/patch・devDep） ============================
 # spec 分類はタイトルの自己申告ではなく実 spec の差だけを見る
