@@ -25,6 +25,13 @@ python3 ~/src/github.com/wwwyo/skills/.agents/skills/pr-auto-merge/tools/pr_tria
 
 - verdict は **head SHA と判定材料に紐付く**。本文・base・check 結果が変わっても無効で、次 tick の
   gate が再度 `judge` action を出す
+- **`judge-input` の `skipped` は判定に進まない**: plan 取得後に他アクターが
+  マージ・クローズすると、`judge-input` は材料を取らずに
+  `{"skipped": "state is MERGED"|"state is CLOSED", "sha": ..., "url": ...}`
+  を返す。verdict は登録せず、state と sha を note に残して次の action へ進む
+  （merge・sweep も呼ばない）。手動 merge は定常的に起きるので、これは手順ミス
+  でも Error でもない — report の Hold からは外し、Merge 節にも載せない
+  （その日の routine の merge 実績ではない）
 - **ok を出しても merge は自分では発行しない** — judge は lane への推薦で
   あって発行権は持たない。`judge-result` の応答が `merge_ready: true` なら
   残りの hard gate が現在 head で通っているサインなので、**次 tick を
@@ -152,6 +159,13 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   install + test を回し、実行したコマンドと結果を `--reason` / note に残す
   （作業 worktree を汚すと他の action を壊す）。実行しないときはその旨と採った
   代替根拠を `--reason` に書く
+- **依存 bump を CI 無しで確かめる**: CI に該当 test が無い repo の runtime 依存更新は、
+  consumer 側の実行 entry を旧新の依存でそれぞれ回して出力を比べる。
+  `/tmp/<name>-<旧 version>`・`/tmp/<name>-<新 version>` に entry と各バージョンの
+  manifest を置き、手元にある fixture・データを指して新規ダウンロードを発生させない。
+  出力は数値・時刻などの該当列だけを diff する。Python なら PyPI の wheel を展開し、
+  追加・変更された module を列挙して公開 API と必須依存の差分の有無、GPU/CPU 経路の
+  どちらが変わったかを確認する — manifest の 1 行差分だけでは互換性の根拠にならない
 - **画像・OGP の差分**: diff から実ファイルを取り出して開き、解像度・byte 数・描画内容を確認する。
   `gh` の raw 取得が差分の base64 を返して失敗する経路では、head の commit から取り出すか、
   diff の hunk の base64 を復元する
@@ -259,6 +273,11 @@ nits や codemod という説明も実際の差分と照合する。
   除）、rollback の無い deploy 設定変更、prod 向けのバージョン固定解除
 - **見えない側への影響**: schema 変更が読み取り側・書き込み側を壊さないか、
   tool version bump がその tool の非互換を踏まないか
+- **スクロールコンテナの移動**: window 依存のスクロール（`window.scrollY`・
+  `pageYOffset`・`scrollTo`・`scroll` listener）を内側の要素へ移す変更は、
+  hide-on-scroll・scroll depth 計測・back-to-top・戻るボタンの副作用を無言で
+  無効化する。query 側だけ置き換えた差分では参照側が残っていないか grep し、
+  結果を `--reason` に書く
 - **script が分類不能にしたファイル**（未知の拡張子・basename）: 中身が
   無害かどうかここで決める
 - **agent の runtime 設定**: hold segment（`.agents` `.claude` `.codex` `.pi`

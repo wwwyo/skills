@@ -15,7 +15,9 @@ executor session から呼ばれる。全 subcommand は JSON を stdout に出�
   dispatch      1 PR 分の dispatch を実行（revive / spawn の解決、
                 上限管理、delivery 検証、jsonl 記録まで script がやる）
   escalate      上限到達 PR へ escalation コメントを投稿して打ち切る
-  judge-input   diff・PR 本文・CI を LLM judge へ渡す形で出す
+  judge-input   diff・PR 本文・CI を LLM judge へ渡す形で出す。plan 後に
+                MERGED/CLOSED になった PR は {skipped, state, sha, url} を
+                返して材料を取らない（verdict は登録しない）
   judge-result  judge の判定を head SHA・context_hash・policy_version に紐付けて記録する
   merge         merge の唯一の発行経路。発行直前に hard gate を全件引き直す
   sweep         routine が merge した PR の worktree を条件付き削除する
@@ -101,10 +103,15 @@ PLAN_WORK_ACTIONS = ("dispatch", "escalate", "judge", "merge")
 THREADS_PAGE = 50           # reviewThreads の page size
 MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
-JUDGE_POLICY_VERSION = 11  # action bump の CI 根拠に run trigger / workflow revision の確認を追加
+JUDGE_POLICY_VERSION = 12  # スクロールコンテナ移動の副作用（window.scrollY 参照）を確認項目に追加
 DISPATCH_MSG_MAX = 3500     # terminal send へ送る指摘一覧の上限 chars
 MERGEABLE_RETRY = 3         # GitHub の mergeable は非同期計算。UNKNOWN のとき取り直す回数
 MERGEABLE_RETRY_WAIT_S = 2  # 取り直しの間隔（秒）
+# 単発のネットワーク断で tick 全体を落とさないための gh リトライ。gate は
+# 最初の facts 取得で失敗すると plan を残さず終わるので、1 回の瞬断が
+# 30 分の空白になる（実測: `can't assign requested address` で plan 未生成）。
+GH_RETRY_ATTEMPTS = 3        # 読み取り専用の gh 呼び出しの総試行回数
+GH_RETRY_WAIT_S = 2          # 初回待機（秒）。以降は倍にする
 try:
     SEND_WAIT_S = max(0, int(os.environ.get("PR_WATCH_SEND_WAIT_S", "30")))
 except ValueError:
@@ -238,8 +245,64 @@ def sh(args, timeout=120, check=True):
     return r
 
 
+# ネットワーク断・一時的な 5xx の signature。両方の gh 実装で stderr に
+# 出る語を並べる（ローカル環境の ephemeral port 枯渇・DNS・proxy 断を含む）
+GH_TRANSIENT_MARKERS = (
+    "can't assign requested address", "connection reset", "connection refused",
+    "connection timed out", "i/o timeout", "tls handshake timeout",
+    "context deadline exceeded", "temporary failure in name resolution",
+    "network is unreachable", "unexpected eof", "dial tcp", " timed out",
+    "http 502", "http 503", "http 504", "bad gateway",
+    "service unavailable", "gateway timeout",
+)
+# 書き込み系の subcommand。再送するとコメント・close 等が二重実行になる
+GH_WRITE_SUBCOMMANDS = (("pr", "comment"), ("pr", "close"), ("pr", "edit"),
+                        ("pr", "ready"), ("pr", "review"),
+                        ("pr", "merge"))
+GH_WRITE_FLAGS = ("-f", "-F", "--field", "--raw-field", "--input")
+
+
+def gh_retryable(args):
+    """gh 呼び出しをリトライしてよいか（読み取り専用か）。
+
+    一時的な失敗の再送は読み取りだけに限る — 書き込みは 1 回で諦め、
+    executor が理由付きで report に残す。merge は cmd_merge が
+    `gh pr merge` を直接発行するのでここには来ない（書き込み扱い）。"""
+    if not args:
+        return False
+    if tuple(args[:2]) in GH_WRITE_SUBCOMMANDS:
+        return False
+    if args[0] == "api":
+        method = None
+        has_fields = False
+        for i, arg in enumerate(args):
+            if arg in ("-X", "--method") and i + 1 < len(args):
+                method = args[i + 1].upper()
+            elif arg.split("=", 1)[0] in GH_WRITE_FLAGS:
+                has_fields = True
+        # `gh api -f` は -X 省略時の既定が POST。`-X GET -f` は query param
+        # なので読み取りのまま（search・files のページングがこれに当たる）
+        if method is None:
+            return not has_fields
+        return method == "GET"
+    return True
+
+
+def gh_transient_failure(message):
+    """ApiError のメッセージが一時的なネットワーク失敗か。"""
+    low = (message or "").lower()
+    return any(marker in low for marker in GH_TRANSIENT_MARKERS)
+
+
 def gh(args, timeout=120):
-    return sh(["gh", *args], timeout=timeout)
+    attempts = GH_RETRY_ATTEMPTS if gh_retryable(args) else 1
+    for attempt in range(attempts):
+        try:
+            return sh(["gh", *args], timeout=timeout)
+        except ApiError as e:
+            if attempt + 1 >= attempts or not gh_transient_failure(str(e)):
+                raise
+            time.sleep(GH_RETRY_WAIT_S * (2 ** attempt))
 
 
 def gh_json(args, timeout=120):
@@ -2551,6 +2614,17 @@ def cmd_judge_input(a):
 
 def _cmd_judge_input(a):
     v = pr_view(a.repo, a.number)
+    state = (v.get("state") or "").upper()
+    if state and state != "OPEN":
+        # plan 取得〜judge の間に人間が merge するのは定常的に起きる
+        # （同日 2 例）。判定材料を集める前に state を確認し、MERGED/CLOSED
+        # なら LLM 判定と一時 worktree の検証を丸ごと省く — 判定しても
+        # hard gate が `state is MERGED` で捨てるだけで、検証に数分を使う。
+        # verdict は登録しない（次 tick の対象にも戻さない。PR は既に閉じている）。
+        emit({"ok": True, "repo": a.repo, "number": a.number,
+              "sha": v.get("headRefOid"), "state": state,
+              "skipped": f"state is {state}", "url": v.get("url")})
+        return
     files, renamed_from = pr_files(a.repo, a.number)
     diff = review_diff(pr_diff(a.repo, a.number))
     emit({"ok": True, "repo": a.repo, "number": a.number,
@@ -3082,7 +3156,7 @@ SCHEMA = {
     "escalate": {"args": "--repo R --number N [--reason T]",
                  "out": "{escalated}"},
     "judge-input": {"args": "--repo R --number N",
-                    "out": "{sha, draft, body, base, base_sha, context_hash, files, renamed_from, checks, ignored_files, diff, policy_version, truncated:false}"},
+                    "out": "{sha, draft, body, base, base_sha, context_hash, files, renamed_from, checks, ignored_files, diff, policy_version, truncated:false} | {skipped:'state is MERGED|CLOSED', state, sha, url}"},
     "judge-result": {"args": "--repo R --number N --sha S "
                      "--context-hash H --verdict ok|ng|repair [--reason T]",
                      "out": "{verdict, merge_ready, blocked?} — ok で "

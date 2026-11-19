@@ -818,6 +818,70 @@ with mock.patch.object(pt, "pr_view",
     out = emit.call_args.args[0]
     assert out["checks"][0]["name"] == "ci" and         out["checks"][0]["conclusion"] == "FAILURE"
 
+# judge-input は判定の前に state を再確認し、MERGED/CLOSED なら材料収集と
+# 判定を省く（plan 取得〜judge の間に人間が merge する TOCTOU が定常的に
+# 起きる。判定しても hard gate が state is MERGED で捨てるだけ）。
+for dead in ("MERGED", "CLOSED"):
+    with mock.patch.object(pt, "pr_view", return_value=view(state=dead)), \
+            mock.patch.object(pt, "pr_files") as files, \
+            mock.patch.object(pt, "pr_diff") as diff, \
+            mock.patch.object(pt, "emit") as emit:
+        pt._cmd_judge_input(SimpleNamespace(repo="wwwyo/me", number=7))
+        out = emit.call_args.args[0]
+        assert out["skipped"] == f"state is {dead}" and out["sha"] == "sha1"
+        files.assert_not_called()
+        diff.assert_not_called()
+
+# 単発のネットワーク断で tick（plan 未生成）を丸ごと落とさない: 読み取りの
+# gh は一時的な失敗を再試行し、書き込みは再送しない（二重コメント防止）。
+assert pt.gh_retryable(["api", "-X", "GET", "repos/wwwyo/me", "-f", "per_page=1"])
+assert pt.gh_retryable(["pr", "view", "7", "--repo", "wwwyo/me", "--json", "state"])
+assert not pt.gh_retryable(["api", "-X", "POST", "repos/wwwyo/me"])
+assert not pt.gh_retryable(["api", "-f", "body=x", "repos/wwwyo/me/comments"])
+assert not pt.gh_retryable(["pr", "comment", "7", "--repo", "wwwyo/me"])
+
+class _Result:
+    def __init__(self, code, out="", err=""):
+        self.returncode, self.stdout, self.stderr = code, out, err
+
+calls = []
+def flaky(*a, **kw):
+    calls.append(a)
+    if len(calls) < pt.GH_RETRY_ATTEMPTS:
+        return _Result(1, "", "read tcp 10.0.0.1:1->2.2.2.2:443: read: can't assign requested address")
+    return _Result(0, '{"ok": true}')
+
+with mock.patch.object(pt.subprocess, "run", side_effect=flaky), \
+        mock.patch.object(pt.time, "sleep") as nap:
+    assert pt.gh_json(["api", "-X", "GET", "repos/wwwyo/me"]) == {"ok": True}
+    assert len(calls) == pt.GH_RETRY_ATTEMPTS and nap.call_count == pt.GH_RETRY_ATTEMPTS - 1
+
+calls.clear()
+with mock.patch.object(pt.subprocess, "run",
+                       side_effect=lambda *a, **kw: (
+                           calls.append(a),
+                           _Result(1, "", "HTTP 404: Not Found"))[1]), \
+        mock.patch.object(pt.time, "sleep") as nap:
+    try:
+        pt.gh_json(["api", "-X", "GET", "repos/wwwyo/me"])
+        raise AssertionError("non-transient failure must propagate")
+    except pt.ApiError:
+        pass
+    assert len(calls) == 1 and not nap.called
+
+calls.clear()
+with mock.patch.object(pt.subprocess, "run",
+                       side_effect=lambda *a, **kw: (
+                           calls.append(a),
+                           _Result(1, "", "dial tcp: i/o timeout"))[1]), \
+        mock.patch.object(pt.time, "sleep") as nap:
+    try:
+        pt.gh(["pr", "comment", "7", "--repo", "wwwyo/me", "--body", "x"])
+        raise AssertionError("write failure must propagate without retry")
+    except pt.ApiError:
+        pass
+    assert len(calls) == 1 and not nap.called
+
 # policy version を跨いだ再判定でも repair whitelist の属性は保持する。
 # 追従コードを含む head は bot_dep_only を満たさず、失効すると approval
 # （bot PR には付かない）待ちで固定されるため
