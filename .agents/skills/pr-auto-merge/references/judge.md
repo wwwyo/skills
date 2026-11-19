@@ -54,27 +54,16 @@ lane への推薦で、merge の発行は script が hard gate の再検証後�
 `blocked` の理由で次 tick の扱いが変わる:
 
 - `judge ok stale: ...` — 記録済み verdict はあるが、live の head/本文/base/
-  check rollup が判定時と一致しない。`judge-input` の後に CI check や
-  pullfrog-approval が進むと起きる。次 tick に新しい材料で再判定する
+  check rollup が判定時と一致しない。`judge-input` の後に CI check が
+  進むと起きる。次 tick に新しい材料で再判定する
   （エラーや手順ミスではない）。head が動いたなら新しい差分を判定する。
   何が変わったか分からないときは `judge-input` 時点の `checks` と merge 直前の
   live checks を比べる — `context_hash` は checks を含むので、check の遷移だけでも
-  stale になる（承認到着後に再判定になるのはこのため。設計どおりで不具合ではない）。
+  stale になる（設計どおりで不具合ではない）。
 - `no judge ok ...` — 現在 head に紐付く ok verdict が無い。judge action を
   まだ処理していないか、ng/repair が記録されている。
-- `pullfrog-approval not success (...)` — review の承認が現在 head に無い。
-  bot 依存更新・確認済み追従の whitelist 経路以外は merge できない。`absent` の
-  ときは同名の check-run 自体があるかを先に見る — check-run が1件も無ければ
-  review の前に workflow が起動していない（private repo の Actions 上限等）。
-  [Pullfrog 導入 4](../../project-setup/references/pullfrog.md) の billing 確認へ進み、
-  この不在を PR 側の欠陥として `repair` にしない。ただし PR の author が bot の
-  場合、`absent` は pullfrog が bot author を review しないためで、依存以外の
-  差分を含む（`bot_dep_only` が立たない）と check は永久に付かない — billing を
-  疑う前に `@pullfrog` でレビューを依頼するか人間が merge するまで hold が続く
-  （script は理由にその旨を書く）。
 - `draft (author ready 待ち)` — draft は author が未完成と明示した PR で、
-  plan の hold と hard gate の両方が弾く。draft のまま pullfrog が承認を
-  保留すると pullfrog-approval が FAILURE になり、lane は author に代わって
+  plan の hold と hard gate の両方が弾く。lane は author に代わって
   ready 化しないため judge を回しても解けない — 判定せず hold にし、author の
   ready 化を待つ。
 
@@ -219,7 +208,7 @@ workflow を判定する:
 - grouped dependabot PR は manifest の直接更新を全件見る。一部だけ merge はできない
   ので、1件でも要対応なら PR ごと repair、確認不能なら PR ごと ng
 - lockfile だけの PR は lockfile の内容判定を省く。影響は上記の基準で判断する。
-- この経路は pullfrog-approval 免除の whitelist 枠なので、ここで厳しめに
+- この経路は bot 依存更新の whitelist 枠なので、ここで厳しめに
   見る。迷ったら ng として理由を report に書く
 
 ### `bot_dep_repair`（依存更新のために修正された bot PR）
