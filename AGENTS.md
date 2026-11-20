@@ -65,4 +65,4 @@ main から worktree を切って作業し、PR で入れる。canonical checkou
 
 ## Pullfrog の個別設定
 
-この repo の Pullfrog 設定は [`.github/pullfrog.config.sh`](.github/pullfrog.config.sh) が正本。public repo なので初回レビューと追加コミットの再レビューを自動で行い、手動でも `@pullfrog` で依頼できる。model・effort は org 共通設定（dotfiles の `.github/pullfrog.org.config.sh`）を継承する。
+この repo の Pullfrog 設定は [`.github/pullfrog.config.sh`](.github/pullfrog.config.sh) が正本。初回レビューは自動、追加コミットの再レビューは無効。追加レビューは必要時に `@pullfrog` で依頼する。model・effort は org 共通設定（dotfiles の `.github/pullfrog.org.config.sh`）を継承する。

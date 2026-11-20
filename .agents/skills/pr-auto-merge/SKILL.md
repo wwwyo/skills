@@ -175,7 +175,7 @@ QA・Blast Radius の judge 判定と CI・レビューの hard gate を満た�
 
 この routine の merge の発行経路は `pr_triage.py merge` のみ。script は
 発行直前に hard gate（`state`・`mergeable`・unaddressed・required check・
-pullfrog-approval・path 分類・judge verdict@head/判定材料 または script の
+path 分類・judge verdict@head/判定材料 または script の
 依存自動 ok・intent 永続化）を
 全件引き直すので、`gh pr merge` 直叩きはこの再検証を迂回することになる。
 
@@ -249,7 +249,7 @@ script が構造化エラーで弾く。
   時刻窓だけで他 run の実績を切り分けない。
   `blocked` は同じ絞り込んだ judge event の `blocked`（judge-result が ok でも hard
   gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
-  （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い
+  （`judge ok stale`・`draft` など）。該当の無い
   field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
   `pr-watch.md` の件数見出しは**当日累計**（merge・error は当日 jsonl 全体、hold は
   Hold 表の行数）、tick-summary は **per-tick** — 両者が一致しなくても不整合と
@@ -289,7 +289,7 @@ dispatch は修正依頼を送った中間状態で、PR の決着ではない�
 ## Hold
 （merge されなかった open PR を 時刻（JST）|repo|PR|理由 の表で。always-hold path・
 judge ng・draft（author ready 待ち）・CI 待ち・dispatch 済みで author 対応待ちなど。judge ok 登録済みだが
-残りの機械的条件（approval・CI・mergeable 等）を待っている PR は
+残りの機械的条件（CI・mergeable 等）を待っている PR は
 「judge ok 登録済み・<条件>待ち」と書き、「script判定待ち」のような曖昧な
 説明にしない。judge verdict は
 head SHA ごとに記録されるため同じ PR は1行に集約し、当日の試行回数と
@@ -361,8 +361,7 @@ mise の `.config/mise/config.toml` と chezmoi の `home/dot_config/mise/config
 は tool pin の manifest として judge に回す。`.github/workflows/` も
 github-actions ecosystem の依存置き場として judge に回し（`*.lock.yml` は
 生成物で常に hold）、bot の manifest・lock・workflow のみなら、
-script の依存自動 ok または current head の judge ok の後は
-pullfrog-approval を免除する。
+script の依存自動 ok で LLM judge を省ける。
 
 ## references
 
@@ -391,10 +390,9 @@ pullfrog-approval を免除する。
   リトライ後も失敗した tick は従来どおり `tick_error` を残して fail-closed で
   終わり、plan も merge も残らない（単発の瞬断で tick 全体を落とさないための
   分離で、失敗を隠すものではない）
-- `pullfrog-approval` が absent・fail でも直ちに異常としない。bot の
-  manifest・lock・workflow だけの PR は script の依存自動 ok または
-  judge ok で免除済み（上記の規定）。
-  それ以外で review が届かない head は人手介入が要る
+- `pullfrog-approval` は merge 条件にしない。Pullfrog の自動レビューは PR ごとに
+  初回だけで、追加 push 後の head には付かないため。review bot の指摘は
+  unaddressed reviews・CHANGES_REQUESTED として hard gate が止める
 - script の失敗（API エラー）は fail-closed: その tick では merge も
   worktree 削除もしない。再試行は次の tick に任せる
 - dispatch の送信前失敗は送信上限とは別に数え、同一 head・同一エラーが3回続くと
