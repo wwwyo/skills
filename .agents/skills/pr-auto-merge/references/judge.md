@@ -31,7 +31,9 @@ python3 ~/src/github.com/wwwyo/skills/.agents/skills/pr-auto-merge/tools/pr_tria
   を返す。verdict は登録せず、state と sha を note に残して次の action へ進む
   （merge・sweep も呼ばない）。手動 merge は定常的に起きるので、これは手順ミス
   でも Error でもない — report の Hold からは外し、Merge 節にも載せない
-  （その日の routine の merge 実績ではない）
+  （その日の routine の merge 実績ではない）。plan の一覧は `generated_at`
+  直後でも実 state より数十秒遅れうるので、plan 生成直前に merge された PR も
+  ここで捕まる（plan に載ったことは現在 open の証拠にしない）
 - **ok を出しても merge は自分では発行しない** — judge は lane への推薦で
   あって発行権は持たない。`judge-result` の応答が `merge_ready: true` なら
   残りの hard gate が現在 head で通っているサインなので、**次 tick を
@@ -122,6 +124,12 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   annotation・API 応答・status page・billing の実測（[Pullfrog 導入手順 4 の billing 確認](../../project-setup/references/pullfrog.md)）
   のいずれにも理由が無ければ「原因未取得」と書き、原因を断定しない
   （`SKILL.md` の report 規約と同じ水準）
+- **build 後の step だけが落ちる**: build 自体は成功し、その後の deploy・
+  post-build step だけが失敗している（例: Vercel の `STATIC_BUILD_NO_OUT_DIR`）
+  なら、同時刻の別環境の deploy でも同じ code が同じ理由で落ちていないかを
+  確認する。同一 code が他所でも同じ失敗なら PR 起因ではない — `nonrequired_failing`
+  と突き合わせた根拠を `--reason` に書き、`ng` / `repair` にしない。失敗が
+  build 内（型エラー・test）で起きているならこの扱いを適用しない
 - **代替根拠**: 対象 job を実行できない場合も、公式 release / migration guide / compare との照合、
   bump した action の outputs・token の永続化・trigger/permissions の差分有無、その action の id を
   workflow が参照しているか、既存成果物の sha・代表値の一致、revert 手順で影響を判定できる。
@@ -141,6 +149,12 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   install + test を回し、実行したコマンドと結果を `--reason` / note に残す
   （作業 worktree を汚すと他の action を壊す）。実行しないときはその旨と採った
   代替根拠を `--reason` に書く
+- **該当 suite が repo に無い**: repo の `AGENTS.md` が「画面挙動は local e2e」等と
+  定めていても、その suite が repo に無い・CI で回らないなら executor は代替実行
+  できない。走査して suite の不在を確認した事実と、採った代替根拠（型検査・
+  差分の内部整合・preview の状態）を note に分けて書き、画面挙動が影響範囲に
+  入るなら `ng`（人手確認待ち）にする。同じ head・同じ材料なら再判定しても
+  結論は変わらない旨も note に残す
 - **依存 bump を CI 無しで確かめる**: CI に該当 test が無い repo の runtime 依存更新は、
   consumer 側の実行 entry を旧新の依存でそれぞれ回して出力を比べる。
   `/tmp/<name>-<旧 version>`・`/tmp/<name>-<新 version>` に entry と各バージョンの
@@ -151,6 +165,14 @@ hold にする。テストファイルの追加や CI green だけを、影響�
 - **画像・OGP の差分**: diff から実ファイルを取り出して開き、解像度・byte 数・描画内容を確認する。
   `gh` の raw 取得が差分の base64 を返して失敗する経路では、head の commit から取り出すか、
   diff の hunk の base64 を復元する
+- **docs・参照整合の差分**: 削除 file・README・設計文書を含む差分は、head を
+  `/tmp` に shallow clone（`git clone --depth 1`）するか `git archive` で取り出し、
+  実 tree を走査する。削除した file への参照が 0 件、文書が指す path の実在、
+  文書中の定数・model 名・channel 名と code の一致を確認し、結果を `--reason` に
+  書く。install が要る test は既存 `node_modules` を symlink して回せるが、
+  lockfile が動く PR では前提が崩れるので使わない。差分の外にある環境状態
+  （connector の接続有無など）は repo から検証できないので、未確認と明記して
+  merge 可否から切り離す（差分の影響範囲が未検証な場合とは区別する）
 - **本文の成功報告を根拠にしたとき**: build・再生など実行可能な検証を再実行せず PR 本文の報告を
   根拠にしたら、再実行していない事実と代替根拠を `--reason` に明記する。本文の記述と現 head の
   差分が食い違えば差分を正とし、食い違い自体も note に残す

@@ -80,7 +80,7 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
    | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
    | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**`judge-input` が `skipped`（plan 後に他アクターが MERGED/CLOSED）を返したら判定せず**、state と sha を note に残して次へ進む（verdict を登録せず、merge も sweep も呼ばない — これは手順ミスではなく、手動 merge が定常的に起きる前提の早期終了）。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
-   | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない |
+   | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない。**同じ tick の先行 merge で `CONFLICTING` になった、または plan 後に `mergeable` が復帰した PR は、同じ tick で再試行しない** — plan にない再実行を足さず次 tick の plan に委ねる。`merge` が書く `merge_blocked` は jsonl に残る |
    | `hold` | 何もしない。理由は report に載せる |
 
 3. script は毎 tick local Orca の全 worktree/session を確認する。`plan.local_sessions`
@@ -249,7 +249,10 @@ script が構造化エラーで弾く。
   時刻窓だけで他 run の実績を切り分けない。
   `blocked` は同じ絞り込んだ judge event の `blocked`（judge-result が ok でも hard
   gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
-  （`judge ok stale`・`draft` など）。該当の無い
+  （`judge ok stale`・`draft` など）。**`merge` action の `merge_blocked`
+  （`CONFLICTING`・`mergeable UNKNOWN` 等）はこの field に含めない** —
+  merge の blocked は jsonl の `merge_blocked` を別に数え、summary の `blocked=[]`
+  を「blocked が無かった」と読まない。該当の無い
   field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
   `pr-watch.md` の件数見出しは**当日累計**（merge・error は当日 jsonl 全体、hold は
   Hold 表の行数）、tick-summary は **per-tick** — 両者が一致しなくても不整合と
