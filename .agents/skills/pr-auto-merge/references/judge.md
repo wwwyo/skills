@@ -224,7 +224,11 @@ workflow を判定する:
   1. release note / migration guide で、bump した action の outputs・後続 step への
      注入（token の永続化、cache/artifact 名 等）が変わりうる箇所を洗う
   2. その機能を使っている workflow / 後続 step が実際にどれかを workflow tree で
-     突き合わせる（使っていなければ非該当）
+     突き合わせる（使っていなければ非該当）。release note の修正が特定の OS・
+     platform・option・入力だけに効くなら、その条件を自 repo の job が使うかも
+     同じ突き合わせで示す（例: Windows 限定の install 修正 × `runs-on:
+     ubuntu-latest`・該当 env の未使用 = 非該当）。「patch だから安全」ではなく
+     条件の一致で非該当を言う
   3. current head に対象 workflow/job の CI run があれば、その run URL を根拠に挙げる
      （run が無い・未実行・skip の場合はその旨を書き、それだけで ng にはしない — 下の基準どおり）
      run の trigger と実際に使った workflow revision も確認する。`pull_request_target` は

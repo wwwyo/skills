@@ -15,6 +15,7 @@ executor session から呼ばれる。全 subcommand は JSON を stdout に出�
   dispatch      1 PR 分の dispatch を実行（revive / spawn の解決、
                 上限管理、delivery 検証、jsonl 記録まで script がやる）
   escalate      上限到達 PR へ escalation コメントを投稿して打ち切る
+  resume        人間の実査後に escalation を解除し、routine の対象へ戻す
   judge-input   diff・PR 本文・CI を LLM judge へ渡す形で出す。plan 後に
                 MERGED/CLOSED になった PR は {skipped, state, sha, url} を
                 返して材料を取らない（verdict は登録しない）
@@ -1930,7 +1931,8 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
         allowed, why, escalate = dispatch_allows(ds, head)
         if ds.get("escalated"):
             entry["actions"].append({"type": "hold",
-                                     "reason": "escalated previously"})
+                                     "reason": "escalated previously"
+                                               "; resume after inspection"})
         elif escalate:
             entry["actions"].append({"type": "escalate",
                                      "reason": why,
@@ -2563,6 +2565,55 @@ def _cmd_escalate(a):
           "state_file": str(STATE_FILE)})
 
 
+def cmd_resume(a):
+    try:
+        return _cmd_resume(a)
+    except ApiError as e:
+        fail(str(e))
+
+
+def _cmd_resume(a):
+    """人間が実査した後に escalation を解除し、routine の対象へ戻す。
+
+    escalate は escalated を立てるだけで解除する経路が無く、実査して未送達を
+    確認しても plan は hold（escalated previously）を返し続ける — 人手で
+    state.json を編集するまで PR が routine から外れる。送信回数・往復ラウンドも
+    数え直すのは、解除しても同じ head の cap に当たって即 escalate し直すだけに
+    なるため（旧値は resume event に残す）。送達済みの PR に使うと二重送信に
+    なるので、未達を実査で確認したときだけ呼ぶ。"""
+    reason = (a.reason or "").strip()
+    if not reason:
+        fail("resume requires --reason (実査結果と、もう一度送ってよい根拠)")
+    st = load_state()
+    before = get_dispatch_state(st, a.repo, a.number)
+    if not (before.get("escalated") or before.get("delivery_pending") or
+            before.get("dispatch_failure")):
+        emit({"ok": True, "resumed": False, "reason": "nothing to reset",
+              "state_file": str(STATE_FILE)})
+        return
+    # 実査した terminal を report・event に残す（escalate と同じ解決順）。
+    handle = (before.get("delivery_pending") or {}).get("handle")
+    if not handle:
+        dispatches = before.get("dispatches") or []
+        handle = dispatches[-1].get("handle") if dispatches else None
+    prior = {"escalated": bool(before.get("escalated")),
+             "dispatches": len(before.get("dispatches") or []),
+             "rounds": list(before.get("rounds") or []),
+             "pending_sha": (before.get("delivery_pending") or {}).get("sha"),
+             "failure_count": (before.get("dispatch_failure") or {}).get("count")}
+    ds = dispatch_state(st, a.repo, a.number)
+    for key in ("escalated", "delivery_pending", "dispatch_failure"):
+        ds.pop(key, None)
+    ds["dispatches"] = []
+    ds["rounds"] = []
+    ds["stale_ticks"] = 0
+    save_state(st)
+    rec = append_event("resume", repo=a.repo, pr=a.number,
+                       reason=reason[:200], handle=handle, prior=prior)
+    emit({"ok": True, "resumed": True, "handle": handle,
+          "state_file": str(STATE_FILE), "record": rec})
+
+
 # ---------- judge ----------
 
 def cmd_judge_input(a):
@@ -3113,7 +3164,13 @@ SCHEMA = {
     "dispatch": {"args": "--repo R --number N",
                  "out": "{dispatched, route?, reason?, defer?, needs_escalate?}"},
     "escalate": {"args": "--repo R --number N [--reason T]",
-                 "out": "{escalated}"},
+                 "out": "{escalated, handle?}",
+                 "effect": "tick では解除されない。実査後の再開は resume"},
+    "resume": {"args": "--repo R --number N --reason T",
+               "out": "{resumed, handle?, reason?}",
+               "effect": "escalated・delivery_pending・dispatch_failure を消し、"
+                         "送信回数と往復ラウンドを数え直す（旧値は resume event）。"
+                         "未達を実査で確認したときだけ使う（送達済みなら二重送信）"},
     "judge-input": {"args": "--repo R --number N",
                     "out": "{sha, draft, body, base, base_sha, context_hash, files, renamed_from, checks, ignored_files, diff, policy_version, truncated:false} | {skipped:'state is MERGED|CLOSED', state, sha, url}"},
     "judge-result": {"args": "--repo R --number N --sha S "
@@ -3172,6 +3229,12 @@ def main():
     e.add_argument("--number", type=int, required=True)
     e.add_argument("--reason")
     e.set_defaults(fn=cmd_escalate)
+
+    rs = sub.add_parser("resume", help="人間の実査後に escalation を解除して再開")
+    rs.add_argument("--repo", required=True)
+    rs.add_argument("--number", type=int, required=True)
+    rs.add_argument("--reason", required=True)
+    rs.set_defaults(fn=cmd_resume)
 
     ji = sub.add_parser("judge-input", help="judge 用の diff + 材料を返す")
     ji.add_argument("--repo", required=True)

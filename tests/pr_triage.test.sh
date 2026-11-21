@@ -548,6 +548,49 @@ ds["escalated"] = True
 a, why, esc = pt.dispatch_allows(ds, "hZ")
 assert not a and not esc
 
+# ============================ resume（実査後の解除） ============================
+# escalate は tick では解除されないので、人間の実査後の resume だけが
+# routine を再開させる。送信回数・往復ラウンドも数え直す（旧値は event に残す）。
+escalated_st = {}
+pt.mark_dispatch_sent(escalated_st, "wwwyo/me", 8, "sha9", "sig",
+                      handle="term-x")
+ds8 = pt.dispatch_state(escalated_st, "wwwyo/me", 8)
+ds8["escalated"] = True
+ds8["delivery_pending"] = {"sha": "sha9", "sig": "sig", "handle": "term-x",
+                          "at": pt._iso(pt._now())}
+ds8["dispatch_failure"] = {"sha": "sha9", "error": "turn_started not observed",
+                           "count": 3, "at": pt._iso(pt._now())}
+pt.save_state(escalated_st)
+# --reason は必須（未達を実査で確認した証拠を残させ、盲目的な解除を防ぐ）
+missing = subprocess.run([sys.executable, sys.argv[1], "resume",
+                          "--repo", "wwwyo/me", "--number", "8"],
+                         capture_output=True, text=True)
+assert missing.returncode != 0 and "--reason" in missing.stderr, missing.stderr
+resumed = subprocess.run([sys.executable, sys.argv[1], "resume",
+                          "--repo", "wwwyo/me", "--number", "8",
+                          "--reason", "session JSONL に delivery marker 無し"],
+                         capture_output=True, text=True, check=True)
+resumed_out = json.loads(resumed.stdout)
+assert resumed_out["resumed"] and resumed_out["handle"] == "term-x"
+saved = pt.load_state()
+ds8 = pt.get_dispatch_state(saved, "wwwyo/me", 8)
+assert not ds8.get("escalated") and not ds8.get("delivery_pending")
+assert not ds8.get("dispatch_failure") and ds8.get("dispatches") == []
+assert ds8.get("rounds") == []
+a, why, esc = pt.dispatch_allows(ds8, "sha9")
+assert a and not esc
+records = [e for e in pt.read_events()
+           if e.get("event") == "resume" and e.get("pr") == 8]
+assert records and records[-1]["prior"]["dispatches"] == 1
+assert records[-1]["prior"]["rounds"] == ["sha9"]
+assert records[-1]["prior"]["pending_sha"] == "sha9"
+assert records[-1]["prior"]["failure_count"] == 3
+nothing = subprocess.run([sys.executable, sys.argv[1], "resume",
+                          "--repo", "wwwyo/me", "--number", "404",
+                          "--reason", "x"], capture_output=True, text=True,
+                         check=True)
+assert json.loads(nothing.stdout)["resumed"] is False
+
 # ============================ sweep candidates ============================
 st = {"merged": {"wwwyo/me#7": {"sha": "abc", "head_ref": "wwwyo/x"}}}
 # live terminal 有り → 対象外

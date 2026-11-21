@@ -78,7 +78,7 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    | action | やること |
    |--------|---------|
    | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
-   | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
+   | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く。打ち切りは tick では解除されない — 実査後の再開は `resume`（[pi の送信確認](#pi-の送信確認)） |
    | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**`judge-input` が `skipped`（plan 後に他アクターが MERGED/CLOSED）を返したら判定せず**、state と sha を note に残して次へ進む（verdict を登録せず、merge も sweep も呼ばない — これは手順ミスではなく、手動 merge が定常的に起きる前提の早期終了）。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない。**同じ tick の先行 merge で `CONFLICTING` になった、または plan 後に `mergeable` が復帰した PR は、同じ tick で再試行しない** — plan にない再実行を足さず次 tick の plan に委ねる。`merge` が書く `merge_blocked` は jsonl に残る |
    | `hold` | 何もしない。理由は report に載せる |
@@ -260,6 +260,11 @@ script が構造化エラーで弾く。
   同じ理由で、md は後続 tick が Hold 行を書き換える（MERGED・他アクターの merge を外す）ため、
   ある時点の md に行が無いことを「未実施」の証拠にしない — 実施の有無は jsonl の
   `plan_generated`・action・`note` で確認する。
+  action の無い tick（gate が `run: false` を返した tick）は md を書かないので、
+  md の時刻・Hold 行は「最後に action があった tick」時点のもの — その間 merge・
+  error は増えないが、他アクターの merge や author の対応で Hold の中身は変わりうる。
+  在庫・実施の検証は md の見出しではなく、jsonl の `plan_generated`（`has_work`）と
+  action event で行う。
 
 dispatch ガードの延期も Hold に載せ、恒久的な保留と区別して日本語で理由を書く。
 以下の表は dispatch ガード延期の `reason` だけを対象とし、返された理由以上の原因を
@@ -331,6 +336,9 @@ head SHA ごとに記録されるため同じ PR は1行に集約し、当日の
   確認件数（`local_sessions_checked`）が残る。次 tick への引き継ぎが必要な
   情報だけ jsonl の note に残す
 - hold の理由が主役（1行で読めること）。該当の無い節は出さない
+- escalate した PR の Hold 理由は「人間の実査待ち（handle <handle>）」と書き、
+  「次 tick で実査」とは書かない — `escalated` は tick では解除されず、次の tick は
+  hold を返すだけなので、routine が実行しない宿題を report に残さない
 - report 更新直前に、plan の PR と既存 Hold の state・head・mergedAt を GitHub から
   取り直す。MERGED は Hold から外し、当日の routine の merge 実績がある場合だけ
   Merge に移す。CLOSED も Hold
@@ -417,8 +425,11 @@ script の依存自動 ok で LLM judge を省ける。
   ならず、bot の依存更新のみなら自動 ok 判定、それ以外は judge に進む。
   manifest と同じ PR で hold path の非依存 file を触る場合は従来どおり hold
 - 送信上限（同一 head 3回・往復 3 ラウンド）に達した PR は escalate 済み
-  として扱い、routine はそれ以上 dispatch しない
+  として扱い、routine はそれ以上 dispatch しない。解除するのは人間の実査後の
+  `resume` だけで、tick は待たない
 
 ## pi の送信確認
 
 修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。`dispatch_failed`（名目 turn_started not observed）は未送信の確定ではない — `worktreePath` 欠落や観測窓より遅い generation でも起こる。escalate した PR の実査は、report の `handle` から terminal の `agentIdentity` / `worktreePath` と、対象 worktree の session JSONL に delivery marker 付き user input と後続 generation があるかを先に見る。
+
+解除は `pr_triage.py resume --repo <r> --number <n> --reason '<実査結果と再送してよい根拠>'` — `escalated`・`delivery_pending`・失敗回数・送信回数を数え直す（旧値は `resume` event に残る）。`escalated` は tick では解除されないので、実査しない限り plan は hold（`escalated previously`）を返し続ける。送達済み（marker 付き user input と後続 generation あり）の PR に resume を使わない — 同じ head への二重送信になるので、worker の完了で head か指摘が変わるまで Hold に置く。
