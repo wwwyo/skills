@@ -15,7 +15,10 @@ executor session から呼ばれる。全 subcommand は JSON を stdout に出�
   dispatch      1 PR 分の dispatch を実行（revive / spawn の解決、
                 上限管理、delivery 検証、jsonl 記録まで script がやる）
   escalate      上限到達 PR へ escalation コメントを投稿して打ち切る
-  judge-input   diff・PR 本文・CI を LLM judge へ渡す形で出す
+  resume        人間の実査後に escalation を解除し、routine の対象へ戻す
+  judge-input   diff・PR 本文・CI を LLM judge へ渡す形で出す。plan 後に
+                MERGED/CLOSED になった PR は {skipped, state, sha, url} を
+                返して材料を取らない（verdict は登録しない）
   judge-result  judge の判定を head SHA・context_hash・policy_version に紐付けて記録する
   merge         merge の唯一の発行経路。発行直前に hard gate を全件引き直す
   sweep         routine が merge した PR の worktree を条件付き削除する
@@ -95,13 +98,21 @@ SWEEP_MAX_TRIES = 6         # sweep が永続的理由で skip し続ける回�
 # 永続的理由として数える — 数えないと毎 tick session が起きる
 SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live",
                            "removal verification unavailable")
+# plan の action 種別。tick-summary と plan_generated event が同じ語彙を使う
+PLAN_ACTION_TYPES = ("dispatch", "escalate", "judge", "merge", "hold")
+PLAN_WORK_ACTIONS = ("dispatch", "escalate", "judge", "merge")
 THREADS_PAGE = 50           # reviewThreads の page size
 MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
-JUDGE_POLICY_VERSION = 11  # action bump の CI 根拠に run trigger / workflow revision の確認を追加
+JUDGE_POLICY_VERSION = 13  # build 後 step の切り分け・suite 不在時・docs 参照整合の確認を追加
 DISPATCH_MSG_MAX = 3500     # terminal send へ送る指摘一覧の上限 chars
 MERGEABLE_RETRY = 3         # GitHub の mergeable は非同期計算。UNKNOWN のとき取り直す回数
 MERGEABLE_RETRY_WAIT_S = 2  # 取り直しの間隔（秒）
+# 単発のネットワーク断で tick 全体を落とさないための gh リトライ。gate は
+# 最初の facts 取得で失敗すると plan を残さず終わるので、1 回の瞬断が
+# 30 分の空白になる（実測: `can't assign requested address` で plan 未生成）。
+GH_RETRY_ATTEMPTS = 3        # 読み取り専用の gh 呼び出しの総試行回数
+GH_RETRY_WAIT_S = 2          # 初回待機（秒）。以降は倍にする
 try:
     SEND_WAIT_S = max(0, int(os.environ.get("PR_WATCH_SEND_WAIT_S", "30")))
 except ValueError:
@@ -235,8 +246,64 @@ def sh(args, timeout=120, check=True):
     return r
 
 
+# ネットワーク断・一時的な 5xx の signature。両方の gh 実装で stderr に
+# 出る語を並べる（ローカル環境の ephemeral port 枯渇・DNS・proxy 断を含む）
+GH_TRANSIENT_MARKERS = (
+    "can't assign requested address", "connection reset", "connection refused",
+    "connection timed out", "i/o timeout", "tls handshake timeout",
+    "context deadline exceeded", "temporary failure in name resolution",
+    "network is unreachable", "unexpected eof", "dial tcp", " timed out",
+    "http 502", "http 503", "http 504", "bad gateway",
+    "service unavailable", "gateway timeout",
+)
+# 書き込み系の subcommand。再送するとコメント・close 等が二重実行になる
+GH_WRITE_SUBCOMMANDS = (("pr", "comment"), ("pr", "close"), ("pr", "edit"),
+                        ("pr", "ready"), ("pr", "review"),
+                        ("pr", "merge"))
+GH_WRITE_FLAGS = ("-f", "-F", "--field", "--raw-field", "--input")
+
+
+def gh_retryable(args):
+    """gh 呼び出しをリトライしてよいか（読み取り専用か）。
+
+    一時的な失敗の再送は読み取りだけに限る — 書き込みは 1 回で諦め、
+    executor が理由付きで report に残す。merge は cmd_merge が
+    `gh pr merge` を直接発行するのでここには来ない（書き込み扱い）。"""
+    if not args:
+        return False
+    if tuple(args[:2]) in GH_WRITE_SUBCOMMANDS:
+        return False
+    if args[0] == "api":
+        method = None
+        has_fields = False
+        for i, arg in enumerate(args):
+            if arg in ("-X", "--method") and i + 1 < len(args):
+                method = args[i + 1].upper()
+            elif arg.split("=", 1)[0] in GH_WRITE_FLAGS:
+                has_fields = True
+        # `gh api -f` は -X 省略時の既定が POST。`-X GET -f` は query param
+        # なので読み取りのまま（search・files のページングがこれに当たる）
+        if method is None:
+            return not has_fields
+        return method == "GET"
+    return True
+
+
+def gh_transient_failure(message):
+    """ApiError のメッセージが一時的なネットワーク失敗か。"""
+    low = (message or "").lower()
+    return any(marker in low for marker in GH_TRANSIENT_MARKERS)
+
+
 def gh(args, timeout=120):
-    return sh(["gh", *args], timeout=timeout)
+    attempts = GH_RETRY_ATTEMPTS if gh_retryable(args) else 1
+    for attempt in range(attempts):
+        try:
+            return sh(["gh", *args], timeout=timeout)
+        except ApiError as e:
+            if attempt + 1 >= attempts or not gh_transient_failure(str(e)):
+                raise
+            time.sleep(GH_RETRY_WAIT_S * (2 ** attempt))
 
 
 def gh_json(args, timeout=120):
@@ -1661,17 +1728,24 @@ def pi_worker_command():
     raise ApiError("delegate worker/personal has no available pi candidate")
 
 
-def spawn_worktree(repo, number, head_ref):
-    """専用 worktree に pi を起動し (handle, path, wtid) を返す。
-    pi は ready 前の prompt を保持しないので起動後に wait/send する。
-    head branch は agent 起動前に作成した worktree 内で checkout する。"""
-    command = pi_worker_command()
-    name = f"pr{number}-review"
-    repo_name = repo.split("/")[-1]
+def repo_inventory():
+    """Orca に登録済みの repo 一覧。切り詰め・取得不能は ApiError（fail-closed）。"""
     inventory = orca_json(["repo", "list"])
     if inventory.get("truncated"):
         raise ApiError("Orca repo inventory incomplete")
-    candidates = [Path(r["path"]) for r in inventory.get("repos", [])
+    return inventory.get("repos") or []
+
+
+def canonical_checkout(repo, repos):
+    """spawn の前提になる canonical checkout を1つに定める。
+
+    gate と dispatch が同じ解決を使う — gate がここで失敗する repo に
+    dispatch を出すと、spawn が毎 tick 失敗して head ごとに上限到達の
+    escalate コメントが積まれる（ローカル環境の不足を PR の障害として
+    扱ってしまう）。
+    """
+    repo_name = repo.split("/")[-1]
+    candidates = [Path(r["path"]) for r in repos
                   if r.get("path") and r.get("executionHostId", "local") == "local"
                   and (r.get("displayName") == repo_name or
                        (r.get("gitRemoteIdentity") or {}).get("canonicalKey") ==
@@ -1702,7 +1776,28 @@ def spawn_worktree(repo, number, head_ref):
     if len(matching) != 1:
         detail = f"; candidate errors: {'; '.join(unavailable)}" if unavailable else ""
         raise ApiError(f"canonical checkout ambiguous or unavailable for {repo}{detail}")
-    canonical = matching[0]
+    return matching[0]
+
+
+def dispatch_checkout_reason(repo, repos):
+    """spawn 経路の dispatch を出してよいか。出せないときは hold 理由を返す。
+
+    repo 単位で毎 tick 見直すので、checkout を置けば次 tick から dispatch に戻る。
+    """
+    try:
+        canonical_checkout(repo, repos)
+    except ApiError as e:
+        return str(e)
+    return None
+
+
+def spawn_worktree(repo, number, head_ref):
+    """専用 worktree に pi を起動し (handle, path, wtid) を返す。
+    pi は ready 前の prompt を保持しないので起動後に wait/send する。
+    head branch は agent 起動前に作成した worktree 内で checkout する。"""
+    command = pi_worker_command()
+    name = f"pr{number}-review"
+    canonical = canonical_checkout(repo, repo_inventory())
     try:
         res = orca_json(["worktree", "create", "--repo", f"path:{canonical}",
                          "--name", name, "--no-parent"], timeout=300)
@@ -1836,7 +1931,8 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
         allowed, why, escalate = dispatch_allows(ds, head)
         if ds.get("escalated"):
             entry["actions"].append({"type": "hold",
-                                     "reason": "escalated previously"})
+                                     "reason": "escalated previously"
+                                               "; resume after inspection"})
         elif escalate:
             entry["actions"].append({"type": "escalate",
                                      "reason": why,
@@ -2172,6 +2268,61 @@ def prune_state(st, days=30):
             st["prs"].pop(k)
 
 
+def _block_spawn_without_checkout(plan_entries, st):
+    """spawn 経路の dispatch を、canonical checkout が定まる repo にだけ出す。
+
+    checkout が無い・一意でない repo へ dispatch を出すと、spawn が毎 tick
+    失敗し、head ごとに上限到達の escalate コメントが積まれる — ローカル
+    環境の不足が PR 側の障害として記録され、report の Hold も原因を
+    表さない。repo 単位で判定して hold にし、checkout が置かれれば次 tick
+    から自動で dispatch に戻す（state の記録もそこで消す）。
+    """
+    repos_needed = sorted({e["repo"] for e in plan_entries
+                           for a in e["actions"]
+                           if a["type"] == "dispatch"
+                           and a.get("route") == "spawn"})
+    if not repos_needed:
+        return
+    try:
+        repos = repo_inventory()
+    except ApiError as e:
+        # inventory を読めない間は spawn を出さない（fail-closed）。
+        # 次 tick に再確認するので、復旧すれば dispatch に戻る
+        reasons = {r: f"repo inventory unavailable: {e}" for r in repos_needed}
+    else:
+        reasons = {r: dispatch_checkout_reason(r, repos) for r in repos_needed}
+    blocked = st.setdefault("dispatch_unavailable", {})
+    for repo in repos_needed:
+        reason = reasons[repo]
+        if not reason:
+            blocked.pop(repo, None)
+            continue
+        if (blocked.get(repo) or {}).get("reason") != reason:
+            append_event("dispatch_unavailable", repo=repo, reason=reason)
+        blocked[repo] = {"reason": reason, "at": _iso(_now())}
+    if not blocked:
+        st.pop("dispatch_unavailable", None)
+    for entry in plan_entries:
+        reason = reasons.get(entry["repo"])
+        if not reason:
+            continue
+        entry["actions"] = [
+            {"type": "hold", "reason": reason}
+            if (a["type"] == "dispatch" and a.get("route") == "spawn") else a
+            for a in entry["actions"]]
+
+
+def action_counts(plan_entries):
+    """plan の action 種別件数。既知の種別は 0 でも入れて、tick-summary の
+    各項と plan_generated の記録をそのまま突き合わせられるようにする。"""
+    counts = {t: 0 for t in PLAN_ACTION_TYPES}
+    for entry in plan_entries:
+        for action in entry.get("actions") or []:
+            t = action.get("type")
+            counts[t] = counts.get(t, 0) + 1
+    return counts
+
+
 def _gate(a, st, run_id):
     # intent reconcile: 前回 crash 等で record が欠落した merge を拾い直す。
     # merge 発行前に intent を書いているので、API が受理した直後に
@@ -2209,11 +2360,12 @@ def _gate(a, st, run_id):
 
     plan_entries = [compute_pr_decision(p, facts, worktrees, terms_cache, st)
                     for p, facts in entries]
+    _block_spawn_without_checkout(plan_entries, st)
 
     sweeps = sweep_candidates(st, worktrees)
+    counts = action_counts(plan_entries)
     has_work = sweeps or any(
-        x["type"] in ("dispatch", "merge", "judge", "escalate")
-        for e in plan_entries for x in e["actions"])
+        counts[t] for t in PLAN_WORK_ACTIONS)
 
     plan = {"generated_at": _iso(_now()), "date": _today_jst(),
             "run_id": run_id,
@@ -2225,14 +2377,17 @@ def _gate(a, st, run_id):
                          encoding="utf-8")
     # plan artifact は次 tick で上書きされるため、tick 単位の復元・窓確定の
     # 監査用に jsonl へ plan 生成の記録を残す（evaluator は plan の generated_at
-    # と次 tick の generated_at で窓を確定する）。
+    # と次 tick の generated_at で窓を確定する）。action 種別の件数も残す —
+    # tick-summary の dispatch/judge/hold 等は plan の action 件数であり、
+    # plan が上書きされた後に照合できるのはこの event だけになる。
     try:
         append_event("plan_generated",
                      run_id=run_id,
                      generated_at=plan["generated_at"],
                      date=plan["date"],
                      pr_count=len(plan_entries),
-                     action_count=sum(len(e["actions"]) for e in plan_entries),
+                     action_count=sum(counts.values()),
+                     actions_by_type=counts,
                      sweep_count=len(sweeps),
                      has_work=has_work)
     except Exception as e:
@@ -2246,7 +2401,8 @@ def _gate(a, st, run_id):
               "prs": len(prs)})
         sys.exit(1)
     emit({"ok": True, "run": True, "plan": str(PLAN_FILE), "run_id": run_id,
-          "actions": sum(len(e["actions"]) for e in plan_entries),
+          "actions": sum(counts.values()),
+          "actions_by_type": counts,
           "sweep": len(sweeps)})
 
 
@@ -2409,6 +2565,55 @@ def _cmd_escalate(a):
           "state_file": str(STATE_FILE)})
 
 
+def cmd_resume(a):
+    try:
+        return _cmd_resume(a)
+    except ApiError as e:
+        fail(str(e))
+
+
+def _cmd_resume(a):
+    """人間が実査した後に escalation を解除し、routine の対象へ戻す。
+
+    escalate は escalated を立てるだけで解除する経路が無く、実査して未送達を
+    確認しても plan は hold（escalated previously）を返し続ける — 人手で
+    state.json を編集するまで PR が routine から外れる。送信回数・往復ラウンドも
+    数え直すのは、解除しても同じ head の cap に当たって即 escalate し直すだけに
+    なるため（旧値は resume event に残す）。送達済みの PR に使うと二重送信に
+    なるので、未達を実査で確認したときだけ呼ぶ。"""
+    reason = (a.reason or "").strip()
+    if not reason:
+        fail("resume requires --reason (実査結果と、もう一度送ってよい根拠)")
+    st = load_state()
+    before = get_dispatch_state(st, a.repo, a.number)
+    if not (before.get("escalated") or before.get("delivery_pending") or
+            before.get("dispatch_failure")):
+        emit({"ok": True, "resumed": False, "reason": "nothing to reset",
+              "state_file": str(STATE_FILE)})
+        return
+    # 実査した terminal を report・event に残す（escalate と同じ解決順）。
+    handle = (before.get("delivery_pending") or {}).get("handle")
+    if not handle:
+        dispatches = before.get("dispatches") or []
+        handle = dispatches[-1].get("handle") if dispatches else None
+    prior = {"escalated": bool(before.get("escalated")),
+             "dispatches": len(before.get("dispatches") or []),
+             "rounds": list(before.get("rounds") or []),
+             "pending_sha": (before.get("delivery_pending") or {}).get("sha"),
+             "failure_count": (before.get("dispatch_failure") or {}).get("count")}
+    ds = dispatch_state(st, a.repo, a.number)
+    for key in ("escalated", "delivery_pending", "dispatch_failure"):
+        ds.pop(key, None)
+    ds["dispatches"] = []
+    ds["rounds"] = []
+    ds["stale_ticks"] = 0
+    save_state(st)
+    rec = append_event("resume", repo=a.repo, pr=a.number,
+                       reason=reason[:200], handle=handle, prior=prior)
+    emit({"ok": True, "resumed": True, "handle": handle,
+          "state_file": str(STATE_FILE), "record": rec})
+
+
 # ---------- judge ----------
 
 def cmd_judge_input(a):
@@ -2420,6 +2625,17 @@ def cmd_judge_input(a):
 
 def _cmd_judge_input(a):
     v = pr_view(a.repo, a.number)
+    state = (v.get("state") or "").upper()
+    if state and state != "OPEN":
+        # plan 取得〜judge の間に人間が merge するのは定常的に起きる
+        # （同日 2 例）。判定材料を集める前に state を確認し、MERGED/CLOSED
+        # なら LLM 判定と一時 worktree の検証を丸ごと省く — 判定しても
+        # hard gate が `state is MERGED` で捨てるだけで、検証に数分を使う。
+        # verdict は登録しない（次 tick の対象にも戻さない。PR は既に閉じている）。
+        emit({"ok": True, "repo": a.repo, "number": a.number,
+              "sha": v.get("headRefOid"), "state": state,
+              "skipped": f"state is {state}", "url": v.get("url")})
+        return
     files, renamed_from = pr_files(a.repo, a.number)
     diff = review_diff(pr_diff(a.repo, a.number))
     emit({"ok": True, "repo": a.repo, "number": a.number,
@@ -2720,6 +2936,17 @@ def _cmd_sweep(a):
         verify_removal(m["pending_removal"])
     if not a.dry_run:
         save_state(st)
+        # 実施の有無と件数を jsonl で照合できるようにする — removed=0 の
+        # sweep は worktree_rm を残さないため、この event が無いと
+        # tick-summary の sweep= を後から確認できない。run_id は tick の
+        # lock 所有者。記録できなくても sweep 自体は成立する（報告と監査の
+        # 欠落として stderr にだけ残す）。
+        try:
+            append_event("sweep", run_id=_lock_info().get("run_id"),
+                         removed=len(removed), skipped=len(skipped))
+        except Exception as e:
+            print(f"pr_triage: sweep event append failed: {e}",
+                  file=sys.stderr)
     emit({"ok": True, "local_sessions": audit, "removed": removed, "skipped": skipped})
 
 
@@ -2931,15 +3158,21 @@ def cmd_events(a):
 
 
 SCHEMA = {
-    "gate": {"out": "{run, plan?, reason?}", "exit":
+    "gate": {"out": "{run, plan?, reason?, actions_by_type?}", "exit":
              "0=session必要 1=skip(変化なし/locked) 2=API失敗(fail-closed)"},
     "plan": {"out": "current tick plan"},
     "dispatch": {"args": "--repo R --number N",
                  "out": "{dispatched, route?, reason?, defer?, needs_escalate?}"},
     "escalate": {"args": "--repo R --number N [--reason T]",
-                 "out": "{escalated}"},
+                 "out": "{escalated, handle?}",
+                 "effect": "tick では解除されない。実査後の再開は resume"},
+    "resume": {"args": "--repo R --number N --reason T",
+               "out": "{resumed, handle?, reason?}",
+               "effect": "escalated・delivery_pending・dispatch_failure を消し、"
+                         "送信回数と往復ラウンドを数え直す（旧値は resume event）。"
+                         "未達を実査で確認したときだけ使う（送達済みなら二重送信）"},
     "judge-input": {"args": "--repo R --number N",
-                    "out": "{sha, draft, body, base, base_sha, context_hash, files, renamed_from, checks, ignored_files, diff, policy_version, truncated:false}"},
+                    "out": "{sha, draft, body, base, base_sha, context_hash, files, renamed_from, checks, ignored_files, diff, policy_version, truncated:false} | {skipped:'state is MERGED|CLOSED', state, sha, url}"},
     "judge-result": {"args": "--repo R --number N --sha S "
                      "--context-hash H --verdict ok|ng|repair [--reason T]",
                      "out": "{verdict, merge_ready, blocked?} — ok で "
@@ -2947,7 +3180,9 @@ SCHEMA = {
     "merge": {"args": "--repo R --number N [--via lane] [--sha S]",
               "out": "{merged, blocked?}"},
     "sweep": {"args": "[--dry-run] [--only worktreeId]",
-              "out": "{removed[], skipped[]}"},
+              "out": "{removed[], skipped[]}",
+              "effect": "append sweep event (run_id/removed/skipped); "
+                        "dry-run は記録しない"},
     "lock": {"args": "acquire|release [--run-id S]|status",
              "out": "{acquired, run_id?} | {released}"},
     "log": {"args": "--input JSON_FILE | --message S [--repo R] [--pr N] "
@@ -2994,6 +3229,12 @@ def main():
     e.add_argument("--number", type=int, required=True)
     e.add_argument("--reason")
     e.set_defaults(fn=cmd_escalate)
+
+    rs = sub.add_parser("resume", help="人間の実査後に escalation を解除して再開")
+    rs.add_argument("--repo", required=True)
+    rs.add_argument("--number", type=int, required=True)
+    rs.add_argument("--reason", required=True)
+    rs.set_defaults(fn=cmd_resume)
 
     ji = sub.add_parser("judge-input", help="judge 用の diff + 材料を返す")
     ji.add_argument("--repo", required=True)

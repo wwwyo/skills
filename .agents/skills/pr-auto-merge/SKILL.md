@@ -51,6 +51,12 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    ```
 
    gate は plan 書き出し時に `plan_generated` event を当日の jsonl に追記する。
+   plan artifact は次 tick で上書きされるので、tick ごとの action 種別件数を
+   事後に知る手段はこの event だけになる — `plan_generated` は `pr_count`・
+   `action_count`・`sweep_count` に加えて `actions_by_type` を残す。
+   tick を二重に起動した疑いがあるときは、`plan.run_id` と `lock status` の
+   `holder.run_id` を比べる。違う（または lock が無い）なら gate が新しい plan を
+   書いているので、`plan` を取り直して新しい `run_id` で続ける。
    前 tick の lock が TTL を超過しても解放されなかった場合、次の gate が
    stale lock を回収して `tick_abandoned` event（previous_run_id / previous_ts /
    age_seconds / reason）を記録する — この event が示すのは lock が TTL 内に
@@ -72,9 +78,9 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    | action | やること |
    |--------|---------|
    | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
-   | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
-   | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
-   | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない |
+   | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く。打ち切りは tick では解除されない — 実査後の再開は `resume`（[pi の送信確認](#pi-の送信確認)） |
+   | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**`judge-input` が `skipped`（plan 後に他アクターが MERGED/CLOSED）を返したら判定せず**、state と sha を note に残して次へ進む（verdict を登録せず、merge も sweep も呼ばない — これは手順ミスではなく、手動 merge が定常的に起きる前提の早期終了）。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
+   | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない。**同じ tick の先行 merge で `CONFLICTING` になった、または plan 後に `mergeable` が復帰した PR は、同じ tick で再試行しない** — plan にない再実行を足さず次 tick の plan に委ねる。`merge` が書く `merge_blocked` は jsonl に残る |
    | `hold` | 何もしない。理由は report に載せる |
 
 3. script は毎 tick local Orca の全 worktree/session を確認する。`plan.local_sessions`
@@ -94,14 +100,17 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    workspaceStatus を completed に変えたり、force 削除したりしない。
    sweep の実施と削除成功は区別する。`removed` は Orca の登録とディレクトリの消失を確認した件数で、削除受付後も残っていれば `skipped` の `removal pending` になる。受付済みの削除は state に保存して登録消失後も確認し、残存が続けば既存の skip 上限で give up する。観測に失敗した回は `removal verification unavailable` として上限を消費せず、削除要求も繰り返さない。
    jsonl には `worktree_rm` と `sweep_skipped` が残るが、同一 worktree・理由の連続 skip は
-   重複記録されない。呼び出した事実・削除件数・エラーは `pr_triage.py log` の note に
-   記録する。残存理由が出力にない場合は、`orca worktree ps --json` と必要に応じ
+   重複記録されない。sweep を呼んだ事実と件数は script が `sweep` event
+   （`run_id` / `removed` / `skipped`、dry-run は記録しない）に残すので、削除0件の
+   tick でも実施と `sweep=` を jsonl で照合できる。残存理由が出力にない場合は、
+   `orca worktree ps --json` と必要に応じ
    `orca terminal list --worktree id:<worktreeId> --json` で merge した PR の worktree を
    再確認し、active・作業中・live terminal があり未 completed 等の理由を note に補う。
    確認できなければ未確認と書き、削除成功に数えない。sweep / log と状態確認の Orca コマンドは、Orca socket・
    GitHub・state dir（`~/.local/state/pr-watch`）・jsonl 保存先へアクセスできる環境で実行する。sandbox に阻まれる場合は
    `gh` と同じく sandbox 外で実行し、権限設定を一律に緩めない。
-   sweep 失敗で merge 成功を取り消さず、代替実装もしない。log も失敗したら報告に残す。
+   sweep 失敗で merge 成功を取り消さず、代替実装もしない。error と note の記録も
+   失敗したら報告に残す。
 4. report を書く（下記）
 5. 最後に必ず `pr_triage.py lock release --run-id <plan.run_id>`。
    `gate` が保持したまま渡した run lock を executor session が引き継ぐ
@@ -205,8 +214,9 @@ python3 ~/src/github.com/wwwyo/skills/.agents/skills/pr-auto-merge/tools/pr_tria
 "repo":"wwwyo/example","pr":1,"sha":"確認した head",
 "sources":["https://github.com/wwwyo/example/pull/1"]}`。
 `note` は補足ログであり action・verdict・送信成功・merge 実績を変更しない。
-merge 後 sweep の実施結果は削除0件でも note に残す。それ以外の空振りや
-tick ごとの件数を重複記録せず、次回に必要な情報だけ補足する。
+merge 後 sweep の実施と件数は script が `sweep` event に残すので、同じ内容を
+note に書き直さない。空振りや tick ごとの件数を重複記録せず、次回に必要な
+情報（残存理由・判断の根拠）だけ補足する。
 既存 `pr-watch-log.md` の移行時は、原文と元ファイルの日付・path を `note` に
 保持して読み戻しを確認してから旧ファイルを削除する。過去の実績 event として再生成しない。
 **note の JSON を組む独自 helper を書かない** — キーを取り違えた helper は
@@ -223,21 +233,38 @@ script が構造化エラーで弾く。
   ```
 
   `sweep` はこの tick の sweep 出力の `removed` 件数の合計で、呼び出し回数ではない。
-  jsonl で照合する場合は `ts >= plan.generated_at` の `worktree_rm` に絞り、
-  この実行の sweep 出力と worktree を照合する（同時刻の手動 sweep を混ぜない）。
-  sweep 実施済みでも `removed=[]` なら 0 とし、実施・残存理由は jsonl の note を参照する。
-  `hold` は plan の hold action 件数。`judge_ok`・`judge_ng`・`judge_repair` は
+  jsonl で照合するときは `run_id == plan.run_id` の `sweep` event（`removed` /
+  `skipped`）を数え、worktree 単位は同じ窓の `worktree_rm` と照合する（同時刻の
+  手動 sweep を混ぜない）。実施済みで 0 件なら 0 とし、残存理由は `sweep_skipped`
+  と note を参照する。
+  `dispatch`・`escalate`・`judge`・`merge`・`hold` は plan のその action 件数で、
+  同じ値が `plan_generated` の `actions_by_type` に残る — plan は次 tick で
+  上書きされるので、事後に照合できるのはこの event になる。`judge_ok`・
+  `judge_ng`・`judge_repair` は
   `event == "judge"` かつ `ts >= plan.generated_at` の event だけを数える — 当日の
   jsonl には前 tick の judge event も入るため、時刻で絞らないと件数が膨らむ。
+  ただし `judge_ok` は ok を登録した回数で、最終 verdict ではない（blocked で
+  merge に至らなかった ok も 1 と数える）。並行して走った別 run の event も同じ
+  時刻窓に入りうるので、tick-summary は自分の plan の action と実行結果で数え、
+  時刻窓だけで他 run の実績を切り分けない。
   `blocked` は同じ絞り込んだ judge event の `blocked`（judge-result が ok でも hard
   gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
-  （`judge ok stale`・`draft` など）。該当の無い
+  （`judge ok stale`・`draft` など）。**`merge` action の `merge_blocked`
+  （`CONFLICTING`・`mergeable UNKNOWN` 等）はこの field に含めない** —
+  merge の blocked は jsonl の `merge_blocked` を別に数え、summary の `blocked=[]`
+  を「blocked が無かった」と読まない。該当の無い
   field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
-  `pr-watch.md` の件数見出しは**当日累計**（当日 jsonl 全体）、tick-summary は
-  **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
+  `pr-watch.md` の件数見出しは**当日累計**（merge・error は当日 jsonl 全体、hold は
+  Hold 表の行数）、tick-summary は **per-tick** — 両者が一致しなくても不整合と
+  読まない（後続 tick が同じ日次 file に追記する）。
   同じ理由で、md は後続 tick が Hold 行を書き換える（MERGED・他アクターの merge を外す）ため、
   ある時点の md に行が無いことを「未実施」の証拠にしない — 実施の有無は jsonl の
-  action・note で確認する。
+  `plan_generated`・action・`note` で確認する。
+  action の無い tick（gate が `run: false` を返した tick）は md を書かないので、
+  md の時刻・Hold 行は「最後に action があった tick」時点のもの — その間 merge・
+  error は増えないが、他アクターの merge や author の対応で Hold の中身は変わりうる。
+  在庫・実施の検証は md の見出しではなく、jsonl の `plan_generated`（`has_work`）と
+  action event で行う。
 
 dispatch ガードの延期も Hold に載せ、恒久的な保留と区別して日本語で理由を書く。
 以下の表は dispatch ガード延期の `reason` だけを対象とし、返された理由以上の原因を
@@ -264,6 +291,8 @@ dispatch は修正依頼を送った中間状態で、PR の決着ではない�
 # PR Watch — YYYY-MM-DD
 
 当日累計: merge N 件 / hold K 件 / error E 件
+（merge・error は当日 jsonl の merge / tick_error・失敗から数え、hold K は
+ 下の Hold 表の行数 — plan や前 tick の見出しの数字を写さない）
 
 ## Hold
 （merge されなかった open PR を 時刻（JST）|repo|PR|理由 の表で。always-hold path・
@@ -307,6 +336,9 @@ head SHA ごとに記録されるため同じ PR は1行に集約し、当日の
   確認件数（`local_sessions_checked`）が残る。次 tick への引き継ぎが必要な
   情報だけ jsonl の note に残す
 - hold の理由が主役（1行で読めること）。該当の無い節は出さない
+- escalate した PR の Hold 理由は「人間の実査待ち（handle <handle>）」と書き、
+  「次 tick で実査」とは書かない — `escalated` は tick では解除されず、次の tick は
+  hold を返すだけなので、routine が実行しない宿題を report に残さない
 - report 更新直前に、plan の PR と既存 Hold の state・head・mergedAt を GitHub から
   取り直す。MERGED は Hold から外し、当日の routine の merge 実績がある場合だけ
   Merge に移す。CLOSED も Hold
@@ -355,7 +387,20 @@ script の依存自動 ok で LLM judge を省ける。
 - archive 済み repo の open PR は列挙段階（`list_open_prs`）で除外する。
   archive 済み repo は read-only で push も merge もできないため、judge・hold
   の対象にも報告にも載せない（毎 tick 判断待ちに積み続けない）
+- spawn を要する dispatch は、対象 repo の canonical checkout（Orca の repo
+  一覧と `~/src/github.com/<owner>/<repo>` から1つに定まるもの）があるときだけ
+  gate が出す。無い・一意でない repo は dispatch ではなく hold
+  （`canonical checkout ambiguous or unavailable for <repo>`）になり、PR への
+  コメントも spawn の試行も起きない — ローカル環境の不足を PR 側の障害として
+  escalate しない。`ghq get <owner>/<repo>` で checkout を置けば次 tick から
+  spawn に戻る。gate が jsonl に残す `dispatch_unavailable` がその記録になる。
 - `gh` はネットワーク/認証が要るので sandbox 外で実行する
+- 読み取りの `gh` 呼び出しは一時的なネットワーク失敗（`can't assign requested
+  address`・connection reset・5xx・timeout 等）を最大 3 回まで自動リトライする。
+  書き込み（`pr comment`・`api` の POST/PATCH）は二重実行を避けるため再送しない。
+  リトライ後も失敗した tick は従来どおり `tick_error` を残して fail-closed で
+  終わり、plan も merge も残らない（単発の瞬断で tick 全体を落とさないための
+  分離で、失敗を隠すものではない）
 - `pullfrog-approval` は merge 条件にしない。Pullfrog の自動レビューは PR ごとに
   初回だけで、追加 push 後の head には付かないため。review bot の指摘は
   unaddressed reviews・CHANGES_REQUESTED として hard gate が止める
@@ -380,8 +425,11 @@ script の依存自動 ok で LLM judge を省ける。
   ならず、bot の依存更新のみなら自動 ok 判定、それ以外は judge に進む。
   manifest と同じ PR で hold path の非依存 file を触る場合は従来どおり hold
 - 送信上限（同一 head 3回・往復 3 ラウンド）に達した PR は escalate 済み
-  として扱い、routine はそれ以上 dispatch しない
+  として扱い、routine はそれ以上 dispatch しない。解除するのは人間の実査後の
+  `resume` だけで、tick は待たない
 
 ## pi の送信確認
 
 修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。`dispatch_failed`（名目 turn_started not observed）は未送信の確定ではない — `worktreePath` 欠落や観測窓より遅い generation でも起こる。escalate した PR の実査は、report の `handle` から terminal の `agentIdentity` / `worktreePath` と、対象 worktree の session JSONL に delivery marker 付き user input と後続 generation があるかを先に見る。
+
+解除は `pr_triage.py resume --repo <r> --number <n> --reason '<実査結果と再送してよい根拠>'` — `escalated`・`delivery_pending`・失敗回数・送信回数を数え直す（旧値は `resume` event に残る）。`escalated` は tick では解除されないので、実査しない限り plan は hold（`escalated previously`）を返し続ける。送達済み（marker 付き user input と後続 generation あり）の PR に resume を使わない — 同じ head への二重送信になるので、worker の完了で head か指摘が変わるまで Hold に置く。
