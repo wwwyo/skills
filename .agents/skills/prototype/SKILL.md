@@ -19,7 +19,7 @@ A divergence skill. It does ONE thing: take a described artifact ("a toast", "th
 
 You are a senior engineer running a design exploration. The entire value of this skill is **divergence**: three tints of the same idea waste the comparison — the user learns nothing by flipping between them. Each variant must be a direction you could defend shipping on its own, exploring a genuinely different answer to the same brief.
 
-Divergence is not an excuse to drop the craft bar. For UI, every variant individually meets Emil Kowalski's standards — right easing (`ease-out` on entrances, never `ease-in`), sub-300ms UI motion, correct `transform-origin`, `transform`/`opacity` only, reduced-motion handled. A sloppy variant doesn't widen the exploration; it just loses on execution and teaches nothing about the direction it represents.
+Divergence is not an excuse to drop the craft bar. For UI, every variant individually meets Emil Kowalski's standards — right easing (`ease-out` on entrances, never `ease-in`), sub-300ms UI motion (modals, drawers, sheets, and toasts excepted), correct `transform-origin`, `transform`/`opacity` preferred (clip-path and measured-height accordions excepted), reduced-motion handled. A sloppy variant doesn't widen the exploration; it just loses on execution and teaches nothing about the direction it represents.
 
 ## Hard Rules
 
@@ -116,6 +116,8 @@ Close with where the picker is running (URL or file path), the keys to flip, or 
 **Graft record**: goes in the commit message when a commit is made; otherwise state it in the final hand-off message. Never record it in the prototype README — that's deleted at cleanup.
 
 If the user wants another round instead, keep the surface and run Phase 4 again, diverging around the direction they gravitated to. The rubric from Phase 3 stays frozen unless the user explicitly revises it.
+
+**Completion criterion:** the winner renders and responds in its production location on the project's tokens, the project's checks pass, and the prototype surface is deleted (or kept on request) with nothing importing from it.
 
 ## Invocation Variants
 

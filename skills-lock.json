@@ -1,7 +1,7 @@
 {
   "skills": {
     "agent-browser": {
-      "computedHash": "60a9cbe5af176150582c019e16e5d3703a41bb02d88438e881349876120d7944",
+      "computedHash": "13d4c36e4147478e4749ece397f7a37c7ed04cd2697d81f37ba3c241431e085f",
       "skillPath": "skills/agent-browser/SKILL.md",
       "source": "vercel-labs/agent-browser",
       "sourceType": "github",
@@ -65,7 +65,7 @@
       "sourceUrl": "https://github.com/mattpocock/skills.git"
     },
     "e2e": {
-      "computedHash": "433d512c9334d38b8dd9426489e54a82d94999fafb1d8d76e3dacfffc4fb9c72",
+      "computedHash": "a58d942089e9d97d95b9df4c373516923aa36290df3f6d8d2508fca3e4bdae97",
       "skillPath": "skills/e2e/SKILL.md",
       "source": "tester-army/e2e",
       "sourceType": "github",
@@ -143,7 +143,7 @@
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
     "prototype": {
-      "computedHash": "77be567d8c946608fdd15e61b62ab383cdf289a194dce2479828b7eda860d3ba",
+      "computedHash": "0a59ba7e30d4c1d778d1fbc6da8bbaef3c106aa4e7f81203088ebfedfb616495",
       "skillPath": "skills/prototype/SKILL.md",
       "source": "emilkowalski/skills",
       "sourceType": "github",
@@ -269,7 +269,7 @@
       "sourceUrl": "https://github.com/typesafe-ai/skills.git"
     },
     "unslop": {
-      "computedHash": "c03b6e1a1e95ce9def5d9c3d7aff089deaa01b93d2999e080c986d3517ce1eea",
+      "computedHash": "9a185defd7c852782c0c8d9b5445e8c62742a1c8148b0aae6e06c57c84547bed",
       "skillPath": "skills/unslop/SKILL.md",
       "source": "heydamir/unslop",
       "sourceType": "github",
