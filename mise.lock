@@ -167,7 +167,7 @@ checksum = "sha256:f26081f438319757f8a1b46d7d0b2c5ec7583d4038e485e0aa725cfde7885
 url = "https://dl.google.com/go/go1.27.3.windows-amd64.zip"
 
 [[tools."go:github.com/wwwyo/skillctrl"]]
-version = "3e5135a03c14828323990c44dcac29d76750bf7a"
+version = "a580cf051ee4b01aebbee9c07d8a97acd1b3c17a"
 backend = "go:github.com/wwwyo/skillctrl"
 
 [[tools.node]]
