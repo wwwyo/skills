@@ -565,7 +565,7 @@ jobs:
           echo "SKILLCTRL_BIN=$binary" >> "$GITHUB_ENV"
           echo "binary=$binary" >> "$GITHUB_OUTPUT"
         working-directory: /tmp/gh-aw/skillctrl-cli
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: skillctrl-input
           path: /tmp/gh-aw/skillctrl/input
@@ -1150,7 +1150,7 @@ jobs:
           if [ ! -f /tmp/gh-aw/agent_output.json ]; then
             echo '{"items":[]}' > /tmp/gh-aw/agent_output.json
           fi
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           if-no-files-found: error
           name: skillctrl-repair
@@ -1347,7 +1347,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_REF: ${{ github.event.pull_request.head.ref }}
         working-directory: /tmp/gh-aw/skillctrl-cli
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         env:
           CHECKER_SOURCE: ${{ github.event.pull_request.base.sha || github.sha }}
           CI_DIR: /tmp/skillctrl
@@ -1378,7 +1378,7 @@ jobs:
           PR_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_REF: ${{ github.event.pull_request.head.ref }}
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         env:
           CHECKER_SOURCE: ${{ github.event.pull_request.base.sha || github.sha }}
           CI_DIR: /tmp/skillctrl
@@ -1503,7 +1503,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_REF: ${{ github.event.pull_request.head.ref }}
       - if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         env:
           CHECKER_SOURCE: ${{ github.event.pull_request.base.sha || github.sha }}
           CI_DIR: /tmp/skillctrl
@@ -1835,7 +1835,7 @@ jobs:
           GH_HOST="${GH_HOST#http://}"
           echo "GH_HOST=${GH_HOST}" >> "$GITHUB_ENV"
       - if: needs.select.outputs.changed == 'true' && (needs.record.result == 'success' || needs.apply_skill_repairs.result == 'success')
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: skillctrl-lock-state
           path: /tmp/skillctrl-status
@@ -1997,7 +1997,7 @@ jobs:
           MISE_DATA_DIR: /tmp/gh-aw/skillctrl-cli/data
           MISE_GLOBAL_CONFIG_FILE: /tmp/gh-aw/skillctrl-cli/global.toml
         working-directory: /tmp/gh-aw/skillctrl-cli
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: skillctrl-input
           path: /tmp/skillctrl/input
@@ -2057,7 +2057,7 @@ jobs:
           cp "$CI_DIR/check.json" /tmp/skillctrl-lock-state.json
         env:
           APP_TOKEN: ${{ steps.app-token.outputs.token }}
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           if-no-files-found: error
           name: skillctrl-lock-state
@@ -2322,7 +2322,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - if: steps.plan.outputs.changed == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           if-no-files-found: error
           name: skillctrl-input
