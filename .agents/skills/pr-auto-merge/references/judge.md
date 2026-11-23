@@ -25,6 +25,15 @@ python3 ~/src/github.com/wwwyo/skills/.agents/skills/pr-auto-merge/tools/pr_tria
 
 - verdict は **head SHA と判定材料に紐付く**。本文・base・check 結果が変わっても無効で、次 tick の
   gate が再度 `judge` action を出す
+- **`judge-input` の `skipped` は判定に進まない**: plan 取得後に他アクターが
+  マージ・クローズすると、`judge-input` は材料を取らずに
+  `{"skipped": "state is MERGED"|"state is CLOSED", "sha": ..., "url": ...}`
+  を返す。verdict は登録せず、state と sha を note に残して次の action へ進む
+  （merge・sweep も呼ばない）。手動 merge は定常的に起きるので、これは手順ミス
+  でも Error でもない — report の Hold からは外し、Merge 節にも載せない
+  （その日の routine の merge 実績ではない）。plan の一覧は `generated_at`
+  直後でも実 state より数十秒遅れうるので、plan 生成直前に merge された PR も
+  ここで捕まる（plan に載ったことは現在 open の証拠にしない）
 - **ok を出しても merge は自分では発行しない** — judge は lane への推薦で
   あって発行権は持たない。`judge-result` の応答が `merge_ready: true` なら
   残りの hard gate が現在 head で通っているサインなので、**次 tick を
@@ -62,6 +71,11 @@ lane への推薦で、merge の発行は script が hard gate の再検証後�
   stale になる（設計どおりで不具合ではない）。
 - `no judge ok ...` — 現在 head に紐付く ok verdict が無い。judge action を
   まだ処理していないか、ng/repair が記録されている。
+- `state is MERGED (...)`・`head moved: ...` — merge 直前に別のアクターが
+  merge した、または head が動いた race。判定の誤りでも規約違反でもないので
+  `ng` / `repair` を登録しない。MERGED を観測した PR は Hold から外して
+  Merge 節にも載せず（当日の routine の merge 実績は jsonl で数える）、head が
+  動いた PR は新しい head を次 tick で判定し直す。verdict 未登録のままでよい。
 - `draft (author ready 待ち)` — draft は author が未完成と明示した PR で、
   plan の hold と hard gate の両方が弾く。lane は author に代わって
   ready 化しないため judge を回しても解けない — 判定せず hold にし、author の
@@ -110,10 +124,21 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   annotation・API 応答・status page・billing の実測（[Pullfrog 導入手順 4 の billing 確認](../../project-setup/references/pullfrog.md)）
   のいずれにも理由が無ければ「原因未取得」と書き、原因を断定しない
   （`SKILL.md` の report 規約と同じ水準）
+- **build 後の step だけが落ちる**: build 自体は成功し、その後の deploy・
+  post-build step だけが失敗している（例: Vercel の `STATIC_BUILD_NO_OUT_DIR`）
+  なら、同時刻の別環境の deploy でも同じ code が同じ理由で落ちていないかを
+  確認する。同一 code が他所でも同じ失敗なら PR 起因ではない — `nonrequired_failing`
+  と突き合わせた根拠を `--reason` に書き、`ng` / `repair` にしない。失敗が
+  build 内（型エラー・test）で起きているならこの扱いを適用しない
 - **代替根拠**: 対象 job を実行できない場合も、公式 release / migration guide / compare との照合、
   bump した action の outputs・token の永続化・trigger/permissions の差分有無、その action の id を
   workflow が参照しているか、既存成果物の sha・代表値の一致、revert 手順で影響を判定できる。
   何を確認して何が非該当かを `--reason` に列挙する
+- **検証が未了のまま判定しない**: 差分を検証する check（required でない
+  refresh・統合 test を含む）がまだ実行中のときは `ok` にしない。理由の先頭に
+  `未了:` を付け（`未了: refresh-check running`）、差分・根拠の不足による `ng`
+  と区別する — `ng` は同じ head の判定材料が変わるまで hold に固定されるので、
+  「待てば判定できる」状態を「差分が不十分」と同じ文言で残さない。
 - **差分から影響範囲を確定する**: 共有コード（変換器・共通設定）を変える PR は、
   変更が「どの key / 関数に限定されたか」を列挙し、影響しないはずの側の差分が
   指紋・整形のみであることを機械走査する。独立な集計値（合計・件数）は base と
@@ -124,9 +149,30 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   install + test を回し、実行したコマンドと結果を `--reason` / note に残す
   （作業 worktree を汚すと他の action を壊す）。実行しないときはその旨と採った
   代替根拠を `--reason` に書く
+- **該当 suite が repo に無い**: repo の `AGENTS.md` が「画面挙動は local e2e」等と
+  定めていても、その suite が repo に無い・CI で回らないなら executor は代替実行
+  できない。走査して suite の不在を確認した事実と、採った代替根拠（型検査・
+  差分の内部整合・preview の状態）を note に分けて書き、画面挙動が影響範囲に
+  入るなら `ng`（人手確認待ち）にする。同じ head・同じ材料なら再判定しても
+  結論は変わらない旨も note に残す
+- **依存 bump を CI 無しで確かめる**: CI に該当 test が無い repo の runtime 依存更新は、
+  consumer 側の実行 entry を旧新の依存でそれぞれ回して出力を比べる。
+  `/tmp/<name>-<旧 version>`・`/tmp/<name>-<新 version>` に entry と各バージョンの
+  manifest を置き、手元にある fixture・データを指して新規ダウンロードを発生させない。
+  出力は数値・時刻などの該当列だけを diff する。Python なら PyPI の wheel を展開し、
+  追加・変更された module を列挙して公開 API と必須依存の差分の有無、GPU/CPU 経路の
+  どちらが変わったかを確認する — manifest の 1 行差分だけでは互換性の根拠にならない
 - **画像・OGP の差分**: diff から実ファイルを取り出して開き、解像度・byte 数・描画内容を確認する。
   `gh` の raw 取得が差分の base64 を返して失敗する経路では、head の commit から取り出すか、
   diff の hunk の base64 を復元する
+- **docs・参照整合の差分**: 削除 file・README・設計文書を含む差分は、head を
+  `/tmp` に shallow clone（`git clone --depth 1`）するか `git archive` で取り出し、
+  実 tree を走査する。削除した file への参照が 0 件、文書が指す path の実在、
+  文書中の定数・model 名・channel 名と code の一致を確認し、結果を `--reason` に
+  書く。install が要る test は既存 `node_modules` を symlink して回せるが、
+  lockfile が動く PR では前提が崩れるので使わない。差分の外にある環境状態
+  （connector の接続有無など）は repo から検証できないので、未確認と明記して
+  merge 可否から切り離す（差分の影響範囲が未検証な場合とは区別する）
 - **本文の成功報告を根拠にしたとき**: build・再生など実行可能な検証を再実行せず PR 本文の報告を
   根拠にしたら、再実行していない事実と代替根拠を `--reason` に明記する。本文の記述と現 head の
   差分が食い違えば差分を正とし、食い違い自体も note に残す
@@ -178,7 +224,11 @@ workflow を判定する:
   1. release note / migration guide で、bump した action の outputs・後続 step への
      注入（token の永続化、cache/artifact 名 等）が変わりうる箇所を洗う
   2. その機能を使っている workflow / 後続 step が実際にどれかを workflow tree で
-     突き合わせる（使っていなければ非該当）
+     突き合わせる（使っていなければ非該当）。release note の修正が特定の OS・
+     platform・option・入力だけに効くなら、その条件を自 repo の job が使うかも
+     同じ突き合わせで示す（例: Windows 限定の install 修正 × `runs-on:
+     ubuntu-latest`・該当 env の未使用 = 非該当）。「patch だから安全」ではなく
+     条件の一致で非該当を言う
   3. current head に対象 workflow/job の CI run があれば、その run URL を根拠に挙げる
      （run が無い・未実行・skip の場合はその旨を書き、それだけで ng にはしない — 下の基準どおり）
      run の trigger と実際に使った workflow revision も確認する。`pull_request_target` は
@@ -231,6 +281,11 @@ nits や codemod という説明も実際の差分と照合する。
   除）、rollback の無い deploy 設定変更、prod 向けのバージョン固定解除
 - **見えない側への影響**: schema 変更が読み取り側・書き込み側を壊さないか、
   tool version bump がその tool の非互換を踏まないか
+- **スクロールコンテナの移動**: window 依存のスクロール（`window.scrollY`・
+  `pageYOffset`・`scrollTo`・`scroll` listener）を内側の要素へ移す変更は、
+  hide-on-scroll・scroll depth 計測・back-to-top・戻るボタンの副作用を無言で
+  無効化する。query 側だけ置き換えた差分では参照側が残っていないか grep し、
+  結果を `--reason` に書く
 - **script が分類不能にしたファイル**（未知の拡張子・basename）: 中身が
   無害かどうかここで決める
 - **agent の runtime 設定**: hold segment（`.agents` `.claude` `.codex` `.pi`

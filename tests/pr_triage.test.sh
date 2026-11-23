@@ -548,6 +548,49 @@ ds["escalated"] = True
 a, why, esc = pt.dispatch_allows(ds, "hZ")
 assert not a and not esc
 
+# ============================ resume（実査後の解除） ============================
+# escalate は tick では解除されないので、人間の実査後の resume だけが
+# routine を再開させる。送信回数・往復ラウンドも数え直す（旧値は event に残す）。
+escalated_st = {}
+pt.mark_dispatch_sent(escalated_st, "wwwyo/me", 8, "sha9", "sig",
+                      handle="term-x")
+ds8 = pt.dispatch_state(escalated_st, "wwwyo/me", 8)
+ds8["escalated"] = True
+ds8["delivery_pending"] = {"sha": "sha9", "sig": "sig", "handle": "term-x",
+                          "at": pt._iso(pt._now())}
+ds8["dispatch_failure"] = {"sha": "sha9", "error": "turn_started not observed",
+                           "count": 3, "at": pt._iso(pt._now())}
+pt.save_state(escalated_st)
+# --reason は必須（未達を実査で確認した証拠を残させ、盲目的な解除を防ぐ）
+missing = subprocess.run([sys.executable, sys.argv[1], "resume",
+                          "--repo", "wwwyo/me", "--number", "8"],
+                         capture_output=True, text=True)
+assert missing.returncode != 0 and "--reason" in missing.stderr, missing.stderr
+resumed = subprocess.run([sys.executable, sys.argv[1], "resume",
+                          "--repo", "wwwyo/me", "--number", "8",
+                          "--reason", "session JSONL に delivery marker 無し"],
+                         capture_output=True, text=True, check=True)
+resumed_out = json.loads(resumed.stdout)
+assert resumed_out["resumed"] and resumed_out["handle"] == "term-x"
+saved = pt.load_state()
+ds8 = pt.get_dispatch_state(saved, "wwwyo/me", 8)
+assert not ds8.get("escalated") and not ds8.get("delivery_pending")
+assert not ds8.get("dispatch_failure") and ds8.get("dispatches") == []
+assert ds8.get("rounds") == []
+a, why, esc = pt.dispatch_allows(ds8, "sha9")
+assert a and not esc
+records = [e for e in pt.read_events()
+           if e.get("event") == "resume" and e.get("pr") == 8]
+assert records and records[-1]["prior"]["dispatches"] == 1
+assert records[-1]["prior"]["rounds"] == ["sha9"]
+assert records[-1]["prior"]["pending_sha"] == "sha9"
+assert records[-1]["prior"]["failure_count"] == 3
+nothing = subprocess.run([sys.executable, sys.argv[1], "resume",
+                          "--repo", "wwwyo/me", "--number", "404",
+                          "--reason", "x"], capture_output=True, text=True,
+                         check=True)
+assert json.loads(nothing.stdout)["resumed"] is False
+
 # ============================ sweep candidates ============================
 st = {"merged": {"wwwyo/me#7": {"sha": "abc", "head_ref": "wwwyo/x"}}}
 # live terminal 有り → 対象外
@@ -798,6 +841,70 @@ with mock.patch.object(pt, "pr_view",
     pt._cmd_judge_input(SimpleNamespace(repo="wwwyo/me", number=7))
     out = emit.call_args.args[0]
     assert out["checks"][0]["name"] == "ci" and         out["checks"][0]["conclusion"] == "FAILURE"
+
+# judge-input は判定の前に state を再確認し、MERGED/CLOSED なら材料収集と
+# 判定を省く（plan 取得〜judge の間に人間が merge する TOCTOU が定常的に
+# 起きる。判定しても hard gate が state is MERGED で捨てるだけ）。
+for dead in ("MERGED", "CLOSED"):
+    with mock.patch.object(pt, "pr_view", return_value=view(state=dead)), \
+            mock.patch.object(pt, "pr_files") as files, \
+            mock.patch.object(pt, "pr_diff") as diff, \
+            mock.patch.object(pt, "emit") as emit:
+        pt._cmd_judge_input(SimpleNamespace(repo="wwwyo/me", number=7))
+        out = emit.call_args.args[0]
+        assert out["skipped"] == f"state is {dead}" and out["sha"] == "sha1"
+        files.assert_not_called()
+        diff.assert_not_called()
+
+# 単発のネットワーク断で tick（plan 未生成）を丸ごと落とさない: 読み取りの
+# gh は一時的な失敗を再試行し、書き込みは再送しない（二重コメント防止）。
+assert pt.gh_retryable(["api", "-X", "GET", "repos/wwwyo/me", "-f", "per_page=1"])
+assert pt.gh_retryable(["pr", "view", "7", "--repo", "wwwyo/me", "--json", "state"])
+assert not pt.gh_retryable(["api", "-X", "POST", "repos/wwwyo/me"])
+assert not pt.gh_retryable(["api", "-f", "body=x", "repos/wwwyo/me/comments"])
+assert not pt.gh_retryable(["pr", "comment", "7", "--repo", "wwwyo/me"])
+
+class _Result:
+    def __init__(self, code, out="", err=""):
+        self.returncode, self.stdout, self.stderr = code, out, err
+
+calls = []
+def flaky(*a, **kw):
+    calls.append(a)
+    if len(calls) < pt.GH_RETRY_ATTEMPTS:
+        return _Result(1, "", "read tcp 10.0.0.1:1->2.2.2.2:443: read: can't assign requested address")
+    return _Result(0, '{"ok": true}')
+
+with mock.patch.object(pt.subprocess, "run", side_effect=flaky), \
+        mock.patch.object(pt.time, "sleep") as nap:
+    assert pt.gh_json(["api", "-X", "GET", "repos/wwwyo/me"]) == {"ok": True}
+    assert len(calls) == pt.GH_RETRY_ATTEMPTS and nap.call_count == pt.GH_RETRY_ATTEMPTS - 1
+
+calls.clear()
+with mock.patch.object(pt.subprocess, "run",
+                       side_effect=lambda *a, **kw: (
+                           calls.append(a),
+                           _Result(1, "", "HTTP 404: Not Found"))[1]), \
+        mock.patch.object(pt.time, "sleep") as nap:
+    try:
+        pt.gh_json(["api", "-X", "GET", "repos/wwwyo/me"])
+        raise AssertionError("non-transient failure must propagate")
+    except pt.ApiError:
+        pass
+    assert len(calls) == 1 and not nap.called
+
+calls.clear()
+with mock.patch.object(pt.subprocess, "run",
+                       side_effect=lambda *a, **kw: (
+                           calls.append(a),
+                           _Result(1, "", "dial tcp: i/o timeout"))[1]), \
+        mock.patch.object(pt.time, "sleep") as nap:
+    try:
+        pt.gh(["pr", "comment", "7", "--repo", "wwwyo/me", "--body", "x"])
+        raise AssertionError("write failure must propagate without retry")
+    except pt.ApiError:
+        pass
+    assert len(calls) == 1 and not nap.called
 
 # policy version を跨いだ再判定でも repair whitelist の属性は保持する。
 # 追従コードを含む head は bot_dep_only を満たさず、失効すると approval
@@ -1160,7 +1267,9 @@ with tempfile.TemporaryDirectory() as tmp:
         events.reset_mock()
         pt._cmd_sweep(SimpleNamespace(only=None, dry_run=False))
         assert not output.call_args.args[0]['removed']
-        events.assert_not_called()
+        # 削除0件でも実施は sweep event に残る（それ以外は記録しない）
+        assert [c.args[0] for c in events.call_args_list] == ['sweep']
+        assert events.call_args.kwargs['removed'] == 0
         remove.assert_not_called()
         git.assert_not_called()
 
@@ -1182,17 +1291,22 @@ def run_sweep(sh_outs, dry_run=False):
             mock.patch.object(pt, 'save_state'), mock.patch.object(pt, 'emit'), \
             mock.patch.object(pt, 'append_event') as ev:
         pt._cmd_sweep(SimpleNamespace(only=None, dry_run=dry_run))
-        return [(c.args[0], c.kwargs.get('reason'))
-                for c in ev.call_args_list]
+        return [(c.args[0], c.kwargs) for c in ev.call_args_list]
 
-assert run_sweep([' M f']) == [('sweep_skipped', 'dirty worktree')]
-assert run_sweep([' M f']) == []                    # 同じ理由は再記録しない
-assert run_sweep(['', 'abc', 'other']) == \
-    [('sweep_skipped', 'branch changed')]
-# 永続的 skip が上限に達すると sweep_giveup も残る
+assert [n for n, _ in run_sweep([' M f'])] == ['sweep_skipped', 'sweep']
+# 同じ理由は再記録しない（sweep の実施だけは毎回残る）
+assert [n for n, _ in run_sweep([' M f'])] == ['sweep']
+assert [n for n, _ in run_sweep(['', 'abc', 'other'])] == \
+    ['sweep_skipped', 'sweep']
+# sweep event は実施と件数を残す（removed=0 でも実施が分かる）
+skipped_ev, sweep_ev = run_sweep([' M f'])
+assert skipped_ev[1].get('reason') == 'dirty worktree', skipped_ev
+assert sweep_ev[1]['removed'] == 0 and sweep_ev[1]['skipped'] == 1, sweep_ev
+assert 'run_id' in sweep_ev[1], sweep_ev
+# 永続的 skip が上限に達すると sweep_giveup も残る（同じ worktree+理由の
+# sweep_skipped は直前に記録済みなので再記録しない）
 sweep_st["merged"]["wwwyo/me#8"]["sweep_skips"] = pt.SWEEP_MAX_TRIES - 1
-assert run_sweep([' M f']) == [('sweep_skipped', 'dirty worktree'),
-                              ('sweep_giveup', 'dirty worktree')]
+assert [n for n, _ in run_sweep([' M f'])] == ['sweep_giveup', 'sweep']
 # dry-run はイベントを記録しない
 sweep_st["merged"]["wwwyo/me#8"]["sweep_skips"] = 0
 assert run_sweep([' M f'], dry_run=True) == []
@@ -1726,6 +1840,137 @@ pt._lock_release()
 st = {"prs": {"wwwyo/me#7": {"dispatches": [], "rounds": []}}}
 pt.save_state(st)
 assert pt.load_state() == st
+
+# ============================ spawn 前提の canonical checkout ============================
+# gate は spawn を出す前に、対象 repo の canonical checkout が一意に定まるかを
+# 見る。無い repo へ dispatch を出すと spawn が毎 tick 失敗し、head ごとに上限
+# 到達の escalate コメントが積まれる（ローカル環境の不足を PR の障害にしない）。
+def make_checkout(dirname, remote):
+    path = Path.home() / "src" / "github.com" / dirname
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "-C", str(path), "init", "-q"], check=True)
+    subprocess.run(["git", "-C", str(path), "remote", "add", "origin",
+                    f"https://github.com/{remote}.git"], check=True)
+    return path
+
+fixture_co = make_checkout("wwwyo/fixture", "wwwyo/fixture")
+assert pt.canonical_checkout("wwwyo/fixture", []) == fixture_co
+assert pt.canonical_checkout(
+    "wwwyo/fixture", [{"path": str(fixture_co), "displayName": "fixture",
+                       "executionHostId": "local"}]) == fixture_co
+assert pt.dispatch_checkout_reason("wwwyo/fixture", []) is None
+missing_reason = pt.dispatch_checkout_reason("wwwyo/missing", [])
+assert missing_reason.startswith(
+    "canonical checkout ambiguous or unavailable for wwwyo/missing"), missing_reason
+try:
+    pt.canonical_checkout("wwwyo/missing", [])
+    raise AssertionError("missing checkout accepted")
+except pt.ApiError:
+    pass
+
+# 候補が2つ（inventory 登録 + default の場所）なら spawn 先を決められない。
+second_co = make_checkout("wwwyo/fixture2", "wwwyo/fixture")
+inv_two = [{"path": str(second_co), "displayName": "fixture",
+            "executionHostId": "local"}]
+try:
+    pt.canonical_checkout("wwwyo/fixture", inv_two)
+    raise AssertionError("ambiguous checkout accepted")
+except pt.ApiError as e:
+    assert "ambiguous or unavailable for wwwyo/fixture" in str(e)
+
+# plan の action 種別件数は tick-summary と同じ語彙で、既知の種別は 0 でも入る。
+# plan.json は次 tick で上書きされるので、この件数を plan_generated event に
+# 残しておかないと tick ごとの dispatch/judge/hold を後から照合できない。
+assert pt.action_counts([
+    {"actions": [{"type": "dispatch"}, {"type": "hold"}]},
+    {"actions": [{"type": "judge"}, {"type": "dispatch"}, {"type": "future"}]},
+    {"actions": []},
+]) == {"dispatch": 2, "escalate": 0, "judge": 1, "merge": 0,
+      "hold": 1, "future": 1}
+assert pt.action_counts([]) == {t: 0 for t in pt.PLAN_ACTION_TYPES}
+
+def spawn_entries():
+    return [
+        {"repo": "wwwyo/fixture", "number": 1,
+         "actions": [{"type": "dispatch", "route": "spawn", "sig": "s"},
+                     {"type": "dispatch", "route": "revive"}]},
+        {"repo": "wwwyo/fixture", "number": 2,
+         "actions": [{"type": "dispatch", "route": "spawn", "sig": "t"}]},
+        {"repo": "wwwyo/other", "number": 3,
+         "actions": [{"type": "hold", "reason": "r"}]},
+    ]
+
+events = []
+spawn_state = {}
+with mock.patch.object(pt, "repo_inventory", return_value=inv_two), \
+        mock.patch.object(pt, "append_event",
+                          side_effect=lambda *a, **kw: events.append((a, kw))):
+    entries = spawn_entries()
+    pt._block_spawn_without_checkout(entries, spawn_state)
+    assert [x["type"] for x in entries[0]["actions"]] == ["hold", "dispatch"]
+    assert entries[1]["actions"][0]["type"] == "hold"
+    assert entries[2]["actions"][0]["type"] == "hold"
+    assert [c[0][0] for c in events] == ["dispatch_unavailable"]
+    assert spawn_state["dispatch_unavailable"]["wwwyo/fixture"][
+        "reason"].startswith("canonical checkout ambiguous or unavailable")
+    # 同じ理由が続く tick では event を重複記録しない
+    events.clear()
+    pt._block_spawn_without_checkout(spawn_entries(), spawn_state)
+    assert not events
+    # inventory が読めない間は spawn を出さない（fail-closed）
+    with mock.patch.object(pt, "repo_inventory",
+                           side_effect=pt.ApiError("boom")):
+        entries = spawn_entries()
+        pt._block_spawn_without_checkout(entries, {})
+    assert entries[0]["actions"][0]["type"] == "hold"
+    assert "repo inventory unavailable" in entries[0]["actions"][0]["reason"]
+    # checkout が一意に定まれば dispatch に戻し、repo の block 記録も消す
+    events.clear()
+    fresh = spawn_entries()
+    with mock.patch.object(pt, "repo_inventory", return_value=[]):
+        pt._block_spawn_without_checkout(fresh, spawn_state)
+    assert fresh[0]["actions"][0]["type"] == "dispatch"
+    assert fresh[0]["actions"][1]["type"] == "dispatch"
+    assert "dispatch_unavailable" not in spawn_state
+    # spawn の dispatch が1つも無い tick は inventory を読まない
+    with mock.patch.object(pt, "repo_inventory", boom := mock.Mock(
+            side_effect=AssertionError("must not read inventory"))):
+        pt._block_spawn_without_checkout(
+            [{"repo": "wwwyo/other", "number": 3,
+              "actions": [{"type": "hold", "reason": "r"}]}], spawn_state)
+    boom.assert_not_called()
+
+# gate は spawn を選んだ tick で、canonical checkout の無い repo の action を
+# hold に落とし、session を起こさない（dispatch を出さない）。
+gate_entry = {"repo": "wwwyo/missing", "number": 9, "title": "t",
+              "url": "u", "head": "sha1", "author": "wwwyo",
+              "actions": [{"type": "dispatch", "route": "spawn", "sig": "s"}]}
+gate_state = {}
+with mock.patch.object(pt, "list_open_prs",
+                       return_value=[{"repo": "wwwyo/missing", "number": 9}]), \
+        mock.patch.object(pt, "worktree_ps", return_value=[]), \
+        mock.patch.object(pt, "pr_facts", return_value={}), \
+        mock.patch.object(pt, "local_session_audit", return_value={}), \
+        mock.patch.object(pt, "compute_pr_decision", return_value=gate_entry), \
+        mock.patch.object(pt, "repo_inventory", return_value=[]), \
+        mock.patch.object(pt, "save_state"), \
+        mock.patch.object(pt, "append_event") as gate_events, \
+        mock.patch.object(pt, "_lock_release") as gate_release, \
+        mock.patch.object(pt, "emit"):
+    try:
+        pt._gate(SimpleNamespace(), gate_state, "run1")
+        raise AssertionError("spawn without checkout did not stop the tick")
+    except SystemExit as e:
+        assert e.code == 1
+    gate_release.assert_called_once_with("run1")
+    assert any(c.args[0] == "dispatch_unavailable"
+               for c in gate_events.call_args_list)
+assert gate_entry["actions"][0]["type"] == "hold"
+assert "canonical checkout ambiguous or unavailable for wwwyo/missing" in \
+    gate_entry["actions"][0]["reason"]
+plan = json.loads(pt.PLAN_FILE.read_text())
+assert plan["prs"][0]["actions"][0]["type"] == "hold"
+assert gate_state["dispatch_unavailable"]["wwwyo/missing"]["reason"]
 
 print("ok")
 EOF
