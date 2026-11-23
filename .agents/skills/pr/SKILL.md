@@ -144,7 +144,7 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 
 ### 6. (wwwyo/*・fudoki-hensansitu/* のみ) ready にする
 
-対象repoが `wwwyo/*`・`fudoki-hensansitu/*` の場合、step 5の終了条件を満たした後、`gh pr view <PRのURL> --json headRefOid,isDraft` で現在のheadを再確認する。QA対象ならheadが検証済みのSHAと一致することを確認し、不一致ならstep 4で再検証してstep 5に戻る。QA対象外なら最新diffとPR bodyの理由を再確認する。条件を満たしたら `gh pr ready <PRのURL>` でdraftを解除し、`isDraft: false` と確認済みheadからSHAが変わっていないことを再確認する。変わっていたら `gh pr ready <PRのURL> --undo` でdraftに戻し、新しいheadでstep 4・5を確認し直す。変わっていなければ [Auto Approve への再レビュー依頼](#auto-approve-への再レビュー依頼) をする。個人repoは人間レビュアーを介さないため、条件を満たしたdraftはreadyまで進める。業務repoではこのstepをskipし、draftのまま人間のレビューに委ねる。
+対象repoが `wwwyo/*`・`fudoki-hensansitu/*` の場合、step 5の終了条件を満たした後、`gh pr view <PRのURL> --json headRefOid,isDraft` で現在のheadを再確認する。QA対象ならheadが検証済みのSHAと一致することを確認し、不一致ならstep 4で再検証してstep 5に戻る。QA対象外なら最新diffとPR bodyの理由を再確認する。条件を満たしたら `gh pr ready <PRのURL>` でdraftを解除し、`isDraft: false` と確認済みheadからSHAが変わっていないことを再確認する。変わっていたら `gh pr ready <PRのURL> --undo` でdraftに戻し、新しいheadでstep 4・5を確認し直す。変わっていなければ [Auto Approve への再レビュー依頼](#auto-approve-への再レビュー依頼) をし、その返信を step 5 の監視で待って対応する。返信への対応で push しても ready のままなので、`gh pr ready` を繰り返さず、push 後の依頼に切り替える。個人repoは人間レビュアーを介さないため、条件を満たしたdraftはreadyまで進める。業務repoではこのstepをskipし、draftのまま人間のレビューに委ねる。
 
 ## Auto Approve への再レビュー依頼
 
@@ -166,7 +166,9 @@ sha=$(gh pr view <PR URL> --json headRefOid --jq '.headRefOid[0:7]')
 gh pr comment <PR URL> --body "@orca-bots 再レビュー: ${sha}（修正を push した）"   # ready 化の直後は「ready にした」
 ```
 
-失敗しても（Orca が無い環境・`gh` が使えないなど）作業は止めず、依頼できなかったことを報告に残す。Auto Approve の返信は AI レビューボットのコメントとして、step 5 のコメント対応ポリシーで扱う。
+失敗しても（Orca が無い環境・`gh` が使えないなど）作業は止めず、依頼できなかったことを報告に残す。
+
+依頼したら step 5 の監視に戻り、Auto Approve のレビューを「開始されたレビュー」として終了条件に数える。bot は依頼の直後に `orca-bots` 名義で `Working…` とだけ書いたコメントを付け、レビューが終わるとそのコメントを結果（must / should / nit）に書き換える。依頼より後の `orca-bots` のコメントが `Working…` のままなら進行中、書き換わったら終了とみなし、指摘は AI レビューボットのコメントとして step 5 のコメント対応ポリシーで扱う。依頼から 15 分たってもコメントが付かなければ、未確認としてユーザーに報告し、それを理由に作業を止めない。
 
 ## 注意点
 
