@@ -118,7 +118,7 @@ PR作成後、CI の完了とレビューコメントの到着を監視する。
 
 1. `gh pr checks <PRのURL> --watch --fail-fast` で check の完了（または最初の fail）まで待つ。CI 待ちが監視時間の大半なので、固定間隔の polling より早く起きられ、check として走る review bot（pullfrog 等）もここで待てる。待機を `--required` に絞らないのは、required 未設定の repo では `--required` だと待たずに即終了するため（合否の判定は step 2 の `--required` で行う）。push 直後は check が未登録で `no checks reported` を返して即終了することがあるので、そのときは少し置いて再実行する。CodeRabbit の check だけが pending で他の check が揃ったら、その時点で 2 の評価へ進む（CodeRabbit の完了は待たない）
 2. 起きたら `gh pr checks <PRのURL> --required` + `gh pr view <PRのURL> --json statusCheckRollup,reviews,comments,mergeable,reviewDecision`（未 resolve の thread は `gh api graphql`）を取り直し、下の終了条件を評価する。待機コマンドの出力や exit code は起きる合図に使い、終了判定の根拠にしない
-3. 対応が必要なら対応して push し、1 に戻る。check にならないレビュー（Copilot review 等。CodeRabbit は polling 対象から除く）だけが待機中・進行中なら、数分おきに 2 を評価する短い polling で待つ
+3. 対応が必要なら対応して push し、[Auto Approve への再レビュー依頼](#auto-approve-への再レビュー依頼)（ready の PR だけ）をしてから 1 に戻る。check にならないレビュー（Copilot review 等。CodeRabbit は polling 対象から除く）だけが待機中・進行中なら、数分おきに 2 を評価する短い polling で待つ
 
 **待機は「完了で自分を起こせる」機構で回す。** 素の background 実行は終了を通知しない環境があり、終了に気づけず監視が死ぬ。harness に「background コマンドの終了で agent を再起動する」機構があればそれで待機コマンドを回す（Claude Code は Bash の `run_in_background` — その案内上も、1 回の完了待ちはこれ、出力の継続監視は `Monitor` と使い分ける）。background タスクは起動元の session と運命を共にするので、同期 subagent ではなく PR を所有する session で起動する。無ければ待機コマンドを foreground の blocking 呼び出しとして実行し、timeout で打ち切られたら旧 command が background に残っていないか確認してから再実行する（Claude Code は foreground の timeout を kill せず background へ移す）— 戻り値が返ること自体が起きる合図になる。sleep やポーリング間隔を LLM 側で自前管理すると受動的に凍りうる。session が閉じれば監視も止まる。`wwwyo/*`・`fudoki-hensansitu/*` の長引く PR は merge 可否の triage だけを [pr-auto-merge](../pr-auto-merge/SKILL.md) の定期 lane が拾い、session 固有の報告・QA 再検証・完了通知は引き継がれない — 監視を止めるときは repo を問わず、その時点の PR の状態をユーザーに報告する。
 
@@ -144,7 +144,31 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 
 ### 6. (wwwyo/*・fudoki-hensansitu/* のみ) ready にする
 
-対象repoが `wwwyo/*`・`fudoki-hensansitu/*` の場合、step 5の終了条件を満たした後、`gh pr view <PRのURL> --json headRefOid,isDraft` で現在のheadを再確認する。QA対象ならheadが検証済みのSHAと一致することを確認し、不一致ならstep 4で再検証してstep 5に戻る。QA対象外なら最新diffとPR bodyの理由を再確認する。条件を満たしたら `gh pr ready <PRのURL>` でdraftを解除し、`isDraft: false` と確認済みheadからSHAが変わっていないことを再確認する。変わっていたら `gh pr ready <PRのURL> --undo` でdraftに戻し、新しいheadでstep 4・5を確認し直す。個人repoは人間レビュアーを介さないため、条件を満たしたdraftはreadyまで進める。業務repoではこのstepをskipし、draftのまま人間のレビューに委ねる。
+対象repoが `wwwyo/*`・`fudoki-hensansitu/*` の場合、step 5の終了条件を満たした後、`gh pr view <PRのURL> --json headRefOid,isDraft` で現在のheadを再確認する。QA対象ならheadが検証済みのSHAと一致することを確認し、不一致ならstep 4で再検証してstep 5に戻る。QA対象外なら最新diffとPR bodyの理由を再確認する。条件を満たしたら `gh pr ready <PRのURL>` でdraftを解除し、`isDraft: false` と確認済みheadからSHAが変わっていないことを再確認する。変わっていたら `gh pr ready <PRのURL> --undo` でdraftに戻し、新しいheadでstep 4・5を確認し直す。変わっていなければ [Auto Approve への再レビュー依頼](#auto-approve-への再レビュー依頼) をし、その返信を step 5 の監視で待って対応する。返信への対応で push しても ready のままなので、`gh pr ready` を繰り返さず、push 後の依頼に切り替える。個人repoは人間レビュアーを介さないため、条件を満たしたdraftはreadyまで進める。業務repoではこのstepをskipし、draftのまま人間のレビューに委ねる。
+
+## Auto Approve への再レビュー依頼
+
+Auto Approve（Orca のレビュー bot）は、オーナー（wwwyo）とオーナーの `gh` で動く agent による push・ready 化を通知されないため、初回レビュー後の修正を見落とす。PR に `@orca-bots` を含むコメントを書くと起動するので、次の 2 つの時点でだけ依頼する。
+
+- ready の PR に push した直後（step 5 の修正、pr-auto-merge の dispatch による修復を含む）。1 回の push に commit が複数あってもコメントは 1 つ
+- `gh pr ready` で draft を解除した直後（step 6）。push してから ready にする流れでは、この 1 回だけ書く
+
+PR を作った直後（作成時は bot が自動でレビューする）と、draft のままの push では書かない。
+
+対象 repo（この一覧の正本。他の skill はこの節を参照し、一覧を複製しない）:
+
+- wwwyo/{me, wwwyo, tools, dotfiles, slidex, skills, hyperframes, marketingskills}
+- fudoki-hensansitu/{home, fudoki, prototype, auth}
+
+```bash
+# <PR URL> の repo が対象のときだけ。push 後は isDraft: false のときだけ
+sha=$(gh pr view <PR URL> --json headRefOid --jq '.headRefOid[0:7]')
+gh pr comment <PR URL> --body "@orca-bots 再レビュー: ${sha}（修正を push した）"   # ready 化の直後は「ready にした」
+```
+
+失敗しても（Orca が無い環境・`gh` が使えないなど）作業は止めず、依頼できなかったことを報告に残す。
+
+依頼したら step 5 の監視に戻り、Auto Approve のレビューを「開始されたレビュー」として終了条件に数える。bot は依頼の直後に `orca-bots` 名義で `Working…` とだけ書いたコメントを付け、レビューが終わると結果（must / should / nit）を新しいコメントとして投稿する。返信なしで終わった run では `Working…` が残るので、`Working…` の有無では判定しない。依頼より後に `Working…` 以外の `orca-bots` のコメントが付いたら終了とみなし、指摘は AI レビューボットのコメントとして step 5 のコメント対応ポリシーで扱う。依頼から 15 分たっても結果のコメントが無ければ、`Working…` が残っていても未確認としてユーザーに報告して先へ進む。
 
 ## 注意点
 

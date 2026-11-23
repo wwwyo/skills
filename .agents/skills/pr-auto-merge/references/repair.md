@@ -26,6 +26,9 @@ merge は author session で発行せず、修正後の次 tick で script に�
 - push・コメント直前に state と head を再取得する。OPEN でなくなった、
   または他の session が head を更新した場合は push せず再確認する。
   通常 push を使い、他の変更を上書きする force push はしない。
+- push した PR が ready なら、push の直後に pr skill の
+  [Auto Approve への再レビュー依頼](../../pr/SKILL.md#auto-approve-への再レビュー依頼) をする
+  （対象 repo の判定と書式はそちらが正本）。draft なら書かない。
 - 変更は必要な最小限にする。ローカル検証の結果と未確認事項を区別して
   PR に原因・変更・理由を書く。ローカル green を hosted CI green としない。
 - 判断や人間の対応が必要なら、修正せず PR に理由を書く。重複 PR の
