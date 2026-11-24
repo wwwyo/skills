@@ -42,16 +42,16 @@ skillctrl remove agent-browser
 | 意図に沿う再適応（update のみ） | engine の agent が直接編集・検証し `skillctrl record <name>` |
 | 固定 scope の patch 検証 | workflow 内の固定 script（PR は受理 lock のみ、update は skill・登録・受理 lock） |
 | 対象外 entry の整理 | `skillctrl record`（引数なし、prune のみ） |
-| 公開 | Git/gh が push・draft PR を作成 |
+| 公開 | Git/gh が push・PR を作成（定期更新は ready で出す） |
 | 最終ゲート | `skillctrl check` を `jq -e '.local.lock_changed == false'` で検査する `Skill lock status` |
 
 CLI の pin は信頼済み base commit の `mise.toml` から取得する。独立した mise 設定に CLI の pin・同じ base の `mise.lock` にある release checksum・release policy だけを取り出し、repo 側の設定や global の暗号化 env は読み込まない。agent の sandbox から使える場所に binary を配置し、各 job はその絶対パスを呼ぶ。reviewer の Node・Pi・model 定義も base 由来とする。
 
 認証なしで対象を選択し、lock の整理と upstream 取得は推論なしで行う。intent のある対象には Actions secret `OPENCODE_API_KEY` が必要。この engine はユーザー指定の例外として pi / OpenCode Go を使う。書き込み token を持たない agent が patch・report を出し、別 job が scope と `check` を検証して公開する。未解決・認証不足・公開結果不明なら最後の **Skill lock status** は fail する。
 
-レビュー報告と定期更新の draft PR 本文は英語で生成する。
+レビュー報告と定期更新の PR 本文は英語で生成する。
 
-定期更新は repo のテストを実行し、main の進行を確認して draft PR を作る。Actions の「Allow GitHub Actions to create and approve pull requests」が必要。自動 merge はしない。`GITHUB_TOKEN` による push は CI を再起動しないため、修正前の check を新しい commit の証明にしない。
+定期更新は repo のテストを実行し、main の進行を確認して ready の PR を作る。Actions の「Allow GitHub Actions to create and approve pull requests」が必要。workflow 自身は merge しない。merge は pr-auto-merge の lane が行う — skill 本体は lane の always-hold 領域だが、この App が `automation/skillctrl-update` から出し skill 本体と lock だけを変える PR に限って judge に回す（`pr_triage.py` の `is_skillctrl_update`）。draft で出していた頃は lane が draft を対象外にするため誰も merge せず、2026-11 に更新が 2 週間届かなかった。`GITHUB_TOKEN` による push は CI を再起動しないため、修正前の check を新しい commit の証明にしない。
 
 ## 接続の検証
 

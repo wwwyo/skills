@@ -98,7 +98,7 @@ SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live",
 THREADS_PAGE = 50           # reviewThreads の page size
 MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
-JUDGE_POLICY_VERSION = 11  # action bump の CI 根拠に run trigger / workflow revision の確認を追加
+JUDGE_POLICY_VERSION = 12  # skillctrl の週次 upstream 更新 PR を hold から judge へ回す
 DISPATCH_MSG_MAX = 3500     # terminal send へ送る指摘一覧の上限 chars
 MERGEABLE_RETRY = 3         # GitHub の mergeable は非同期計算。UNKNOWN のとき取り直す回数
 MERGEABLE_RETRY_WAIT_S = 2  # 取り直しの間隔（秒）
@@ -752,6 +752,69 @@ def _is_bot(a):
         login.endswith("[bot]") or login in BOTS
 
 
+# wwwyo/skills の週次 upstream 更新（skillctrl-update workflow）。skill 本体は
+# `.agents` の always-hold 領域だが、この PR は保存済み intent に照らした AI 審査と
+# repo テストを通った後に専用 App が出すもので、hold にすると誰も merge せず
+# 更新が届かない（2026-11 に 2 週間止まった）。author・head branch・repo・
+# 変更 path の全部が一致するときだけ hold から judge へ回す。人の skill 編集や
+# 他の file を混ぜた PR は従来どおり hold。対象 skill は base の
+# `.agents/skillctrl/lock.json` の upstreams に載る skill だけ — 手書き skill
+# （この merge gate 自身を含む）を engine が書き換えても judge に回さない。
+# 許可した path は `.agents` に加えて名前（auth 等）による hold も外す。
+# upstream の script 名で恒久的に止まるのを避け、内容は judge が見る。
+SKILLCTRL_UPDATE_REPO = "wwwyo/skills"
+SKILLCTRL_UPDATE_HEAD = "automation/skillctrl-update"
+SKILLCTRL_UPDATE_AUTHORS = {"app/wwwyo-skillctrl-update",
+                            "wwwyo-skillctrl-update[bot]",
+                            "wwwyo-skillctrl-update"}
+SKILLCTRL_UPDATE_FILES = {".agents/skillctrl/lock.json", "skills-lock.json"}
+
+
+def _pr_repo(meta):
+    m = re.match(r"https://github\.com/([^/]+/[^/]+)/pull/",
+                 (meta or {}).get("url") or "")
+    return m.group(1).lower() if m else ""
+
+
+def _skillctrl_update_head(meta):
+    """author・head branch・repo が週次 upstream 更新 PR のものか。"""
+    login = ((meta or {}).get("author") or {}).get("login") or ""
+    return login in SKILLCTRL_UPDATE_AUTHORS and _is_bot(meta.get("author")) \
+        and (meta.get("headRefName") or "") == SKILLCTRL_UPDATE_HEAD \
+        and _pr_repo(meta) == SKILLCTRL_UPDATE_REPO
+
+
+def skillctrl_managed_skills(repo, base_sha):
+    """base commit の lock にある upstream 管理 skill。取れなければ空（hold 側）。"""
+    try:
+        raw = gh(["api", "-H", "Accept: application/vnd.github.raw",
+                  f"repos/{repo}/contents/.agents/skillctrl/lock.json"
+                  f"?ref={base_sha}"]).stdout
+        return sorted((json.loads(raw or "{}").get("upstreams") or {}).keys())
+    except Exception:  # noqa: BLE001 — 取れないときは例外を使わず hold に倒す
+        return []
+
+
+def is_skillctrl_update(touched, meta):
+    """週次 upstream 更新 PR で、upstream 管理 skill の本体と lock だけを
+    変えているか。meta["skillctrl_managed"] は ensure_facts が base の lock から
+    入れる（無ければ何も許可しない）。"""
+    if not _skillctrl_update_head(meta):
+        return False
+    managed = set(meta.get("skillctrl_managed") or ())
+
+    def allowed(path):
+        if path in SKILLCTRL_UPDATE_FILES:
+            return True
+        segs = _segments(path)
+        # plugin manifest（.codex-plugin 等）は生成物で、更新 PR が触る理由が無い
+        return path.startswith(".agents/skills/") and len(segs) >= 4 and \
+            segs[2] in managed and \
+            not any(s.startswith(".") for s in segs[2:]) and \
+            ".." not in segs
+    return bool(touched) and all(allowed(f) for f in touched)
+
+
 def classify_pr(files, meta, diff, renamed_from=()):
     """PR 単位の lane 分類。
 
@@ -767,6 +830,12 @@ def classify_pr(files, meta, diff, renamed_from=()):
     classes = {f: classify_path(f) for f in touched}
     holds = [f for f, c in classes.items() if c == "hold"]
     judges = [f for f, c in classes.items() if c == "judge"]
+
+    if holds and is_skillctrl_update(touched, meta):
+        return {"lane": "judge", "reasons":
+                ["skillctrl upstream refresh: skill bodies and lock only"],
+                "classes": classes, "bot_dep_only": False,
+                "skillctrl_update": True}
 
     # 1. 常に hold の path が1つでも → どの経路でも merge しない
     if holds:
@@ -1807,7 +1876,12 @@ def ensure_facts(repo, number, facts):
     if facts.get("files") is None:
         facts["files"], facts["renamed_from"] = pr_files(repo, number)
     touched = (facts["files"] or []) + (facts.get("renamed_from") or [])
-    if any(classify_path(p) == "hold" for p in touched):
+    view = facts.get("view") or {}
+    if _skillctrl_update_head(view) and "skillctrl_managed" not in view:
+        view["skillctrl_managed"] = skillctrl_managed_skills(
+            repo, view.get("baseRefOid") or view.get("baseRefName") or "main")
+    if any(classify_path(p) == "hold" for p in touched) and \
+            not is_skillctrl_update(touched, view):
         return
     if facts.get("diff") is None:
         facts["diff"] = pr_diff(repo, number)

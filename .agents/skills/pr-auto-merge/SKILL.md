@@ -162,6 +162,16 @@ PR 本文の `Blast Radius` と `QA` を差分・検証結果と照合し、判�
 QA・Blast Radius の judge 判定と CI・レビューの hard gate を満たす必要がある。
 `AGENTS.md` 等、wiki 以外の理由で常に hold となる path の規則は適用する。
 
+wwwyo/skills の週次 upstream 更新（skillctrl-update workflow の App が
+`automation/skillctrl-update` から出す PR）は、upstream 管理 skill（base の
+`.agents/skillctrl/lock.json` の upstreams にあるもの）の本体と
+`.agents/skillctrl/lock.json`・`skills-lock.json` だけを変えるときに限り、
+`.agents` の always-hold から外して judge に回す。その配下では名前（auth 等）に
+よる hold も外す（upstream の script 名で恒久的に止まらないよう、内容は judge が見る）。intent 審査と repo テストを
+通った後に出る PR で、hold にすると誰も merge せず更新が届かないため。
+手書き skill（この pr-auto-merge を含む）や他の file（intent・workflow・plugin
+manifest 等）を含む、または author・branch が違う PR は従来どおり hold。判定の観点は [judge](references/judge.md)。
+
 ## merge の発行経路（規約）
 
 この routine の merge の発行経路は `pr_triage.py merge` のみ。script は
