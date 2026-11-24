@@ -47,6 +47,16 @@ python3 ~/src/github.com/wwwyo/skills/.agents/skills/pr-auto-merge/tools/pr_tria
 
 mise の `[tools]` は開発用依存（devDependencies 相当）として扱う。Renovate と Dependabot に同じ規則を適用し、`mise.toml`・`.mise.toml`・`.config/mise/config.toml`・`home/dot_config/mise/config.toml` の固定 semver pin 更新だけなら、major・0.x minor・prerelease の更新を含め script が自動 ok とする。同じ dir の `mise.lock` は対応 manifest の写像として除外する。tool の追加/削除・downgrade・range/alias・installer option・`[settings]`/`[env]` 等の変更が混ざるものは judge に残す。CI・review・always-hold・merge 直前の再検証は維持する。
 
+## skillctrl の週次 upstream 更新
+
+lane が `skillctrl upstream refresh` として judge に回した PR は、upstream の
+skill 原本を保存済み intent に合わせて取り込んだもの。本文の QA（workflow 内の
+`skillctrl check` と repo テスト）は CI の結果と突き合わせる。差分は
+`.agents/skillctrl/intents/<skill>.md` と照らし、intent が保ちたい振る舞い
+（言語・起動条件・やらないこと）を崩していなければ `ok`。upstream の機能追加・
+修正そのものは ng の理由にしない。intent に反する変更、scripts の外部送信や
+認証情報の扱いの追加など判断しきれない変更があれば理由付きで `ng`。
+
 ## merge_ready が false のとき（blocked の読み方）
 
 `ok` を登録しても `merge_ready: false` が返るのは正常経路（judge の ok は

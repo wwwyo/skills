@@ -1,7 +1,7 @@
 ---
 name: Skillctrl Update
 description: Refresh upstream skills weekly and reconcile them with saved customization intent.
-intent: Acquire upstream originals on a schedule, adapt installed skills to saved intent, and open a draft PR.
+intent: Acquire upstream originals on a schedule, adapt installed skills to saved intent, and open a PR for the pr-auto-merge lane.
 on:
   schedule:
     - cron: "0 0 * * 6" # 土曜09:00 JST
@@ -150,7 +150,7 @@ safe-outputs:
     engine: false
   jobs:
     apply-skill-repairs:
-      description: Validate repairs and publish to the triggering PR or a verified scheduled update draft PR.
+      description: Validate repairs and publish to the triggering PR or a verified scheduled update PR.
       runs-on: ubuntu-latest
       inputs:
         head:
@@ -273,7 +273,7 @@ safe-outputs:
               bash "$t"
             done
         # GITHUB_TOKEN cannot open PRs here, and PRs it opens would not trigger CI
-        # or review. A dedicated App opens the draft PR; pushes keep GITHUB_TOKEN.
+        # or review. A dedicated App opens the ready PR; pushes keep GITHUB_TOKEN.
         - name: Mint the PR app token
           id: app-token
           uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -309,9 +309,9 @@ safe-outputs:
               push origin "HEAD:refs/heads/automation/skillctrl-update"
             existing="$(jq -r '.existing_pr // empty' "$CI_DIR/plan.json" 2>/dev/null || true)"
             if [[ -z "$existing" ]]; then
-              GH_TOKEN="$APP_TOKEN" gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
+              GH_TOKEN="$APP_TOKEN" gh pr create --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
                 --title "chore(skills): weekly upstream refresh" \
-                --body "Automated upstream skill refresh reconciled with saved intents by the skillctrl update workflow."
+                --body "$(printf '%s\n' 'Automated upstream skill refresh reconciled with saved intents by the skillctrl update workflow.' '' '## QA' '- `skillctrl check` passed with the accepted lock unchanged, and the repository tests (`tests/*.test.sh`, `.agents/skillctrl/*.test.sh`) passed in this workflow before publishing.' '' '## Blast Radius' '- Skill bodies and the skillctrl lock only. pr-auto-merge judges and merges this PR; compare the SKILL.md changes with `.agents/skillctrl/intents/`.')"
             fi
         - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
           if: always()
@@ -562,7 +562,7 @@ jobs:
             bash "$t"
           done
       # GITHUB_TOKEN cannot open PRs here, and PRs it opens would not trigger CI
-      # or review. A dedicated App opens the draft PR; pushes keep GITHUB_TOKEN.
+      # or review. A dedicated App opens the ready PR; pushes keep GITHUB_TOKEN.
       - name: Mint the PR app token
         id: app-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -601,9 +601,9 @@ jobs:
           Path('/tmp/skillctrl/existing-pr.txt').write_text(plan.get('existing_pr') or '')
           PY
             if [[ ! -s /tmp/skillctrl/existing-pr.txt ]]; then
-              GH_TOKEN="$APP_TOKEN" gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
+              GH_TOKEN="$APP_TOKEN" gh pr create --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
                 --title "chore(skills): weekly upstream refresh" \
-                --body "Automated upstream skill refresh; no saved intents required re-adaptation."
+                --body "$(printf '%s\n' 'Automated upstream skill refresh; no saved intents required re-adaptation.' '' '## QA' '- `skillctrl check` passed with the accepted lock unchanged, and the repository tests (`tests/*.test.sh`, `.agents/skillctrl/*.test.sh`) passed in this workflow before publishing.' '' '## Blast Radius' '- Skill bodies and the skillctrl lock only. pr-auto-merge judges and merges this PR; compare the SKILL.md changes with `.agents/skillctrl/intents/`.')"
             fi
           fi
           cp "$CI_DIR/check.json" /tmp/skillctrl-lock-state.json
@@ -700,6 +700,6 @@ Write a concise English report to the report path named in the prompt without
 claiming unperformed checks. Do not commit, push, install dependencies or
 execute upstream scripts. The harness validates the resulting patch and
 requests `apply_skill_repairs` through safe outputs; a separate job verifies
-the scope and the final hash gate, then publishes a draft PR. When no changed
+the scope and the final hash gate, then publishes a PR. When no changed
 hash requires review, deterministic selection skips this engine. If the
 supplied plan is unexpectedly empty, call `noop` and do not request repairs.
