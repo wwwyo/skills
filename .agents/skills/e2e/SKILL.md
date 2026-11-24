@@ -95,8 +95,11 @@ PRD criterion とテストの対応を残し、出荷判断では未確認の cr
    in the session. An `act` goal goes in before you walk its path, and the
    path's actions stay out of the test. A `screen` line is the `Test line:`
    its action printed, copied as is. When the outcome shows, run its
-   `expect` with `run_code` and add it once it passes; a passing statement
+   `expect` with `run_code` and add it once it passes; a passing line
    also joins `test_lines`; checks go in the test's assert block at the end.
+   `run_code` runs JavaScript on the test API, so use it for most of a
+   session's work, a loop or a read and a check in one call, over many
+   single actions.
    The walk ends with the test written. Without a
    server, learn the accessible names the app renders from the components or
    a `--headed` run.
@@ -209,8 +212,7 @@ lines you changed:
   ask before adding a test framework, and name any existing framework.
 - Live MCP tools need an `e2e mcp` server in the client: the e2e plugin's
   (Codex and Cursor), or one registered in the project (topic `mcp`). In a directory with no e2e config, a live look still
-  works: `open_session {engine: "@e2e-dev/web", app: {url: "http://localhost:3000"}}` opens a session
-  on the engine's defaults. Tests need a config and run with the CLI.
+  works (topic `mcp`). Tests need a config and run with the CLI.
   Keep a session open across runs while you write or fix a web test; topic
   `mcp` says when a run can go beside it, and what to do on
   `APP_ALREADY_RUNNING`.

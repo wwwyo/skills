@@ -98,7 +98,7 @@ jq '.run.results[] | select(.selected and .status != "passed") | .attempts[-1]
 | Code | Usual cause | Fix |
 | --- | --- | --- |
 | `CONFIG_LOAD_FAILED` | The config throws while loading (a refused engine option is `INVALID_CONFIG` instead) or imports a missing package, subpath, or removed export such as `defineConfig` | Install the dependency, or fix the import or line quoted |
-| `INVALID_CONFIG`, `INVALID_GLOB` | Unknown or foreign key (`app`, `webServer`, `use`, `projects`, `baseURL`), `dot` with `list`; a `tests` glob with braces, classes, an absolute path, or no wildcard | The message names the key or glob to write; the app is declared in the target's `app` |
+| `INVALID_CONFIG`, `INVALID_GLOB` | Unknown or foreign key (`app`, `webServer`, `use`, `projects`, `baseURL`), two of `list`, `dot`, and `line` together; a `tests` glob with braces, classes, an absolute path, or no wildcard | The message names the key or glob to write; the app is declared in the target's `app` |
 | `CONFIG_NOT_FOUND` | Wrong `--config` path, or an MCP `open_session` in a directory with no config | Fix the path; in a directory with no config, pass `engine` to `open_session` (topic `mcp`) |
 | `CONFIG_AMBIGUOUS` | Both `.ts` and `.mts` present | Keep one |
 | `ENGINE_NOT_INSTALLED` | An MCP `open_session {engine}` named a package that is not in the project, beside e2e, or in `~/.e2e/engines` | Run the install command the message names |
@@ -120,8 +120,9 @@ jq '.run.results[] | select(.selected and .status != "passed") | .attempts[-1]
 | `MODEL_OUTPUT_INVALID` | An `extract` or `assert` answer failed the schema after one repair round | Simplify the schema or question; pick a stronger model |
 | `ACTION_FAILED` | Element not actionable (covered, disabled, detached), or an operation timed out | `waitFor` the condition right before the action that failed; close overlays; check `actionTimeout` |
 | `TEST_TIMEOUT` | The attempt exceeded `timeout` (120 s) | Split the test, or raise `timeout` |
-| `STEP_NOT_AWAITED` | The body returned while a step or `expect.poll` still ran, or an `afterEach` hook or fixture teardown returned while an `expect.poll` still ran: a call without `await` | `await` the call the code frame names (every `app`, `agent`, `screen`, `expect`, `expect.poll` call) |
-| `MODEL_UNAVAILABLE` | `agents.<name>.model` holds no AI SDK instance: reported once under `run.errors` at the first `agent` fixture; the run stops. A model-less custom executor fails only `waitFor` and `extract` this way. Also GitHub Copilot refusing the configured model to the account (`model_not_supported`, a plan or settings limit the listing cannot show): reported once at the first call, the run stops | Construct one, e.g. `gateway('anthropic/claude-haiku-5.5')` from `ai`, and export its key (`AI_GATEWAY_API_KEY`); for Copilot, pick an id the plan serves || `MODEL_PROVIDER_FAILED` | Network, 5xx, rate limit, no credits, or no response in 120 s, after the transport retries | Check the credential (the key; for keyless `gateway()` the Vercel CLI login and `.vercel/project.json`) and quota; retry (exit 3) |
+| `STEP_NOT_AWAITED` | The body returned while a step, `expect.poll`, or `toPass` still ran, or an `afterEach` hook or fixture teardown returned while an `expect.poll` or `toPass` still ran: a call without `await` | `await` the call the code frame names (every `app`, `agent`, `screen`, `expect`, `expect.poll`, `toPass` call) |
+| `MODEL_UNAVAILABLE` | `agents.<name>.model` holds no AI SDK instance: reported once under `run.errors` at the first `agent` fixture; the run stops. A model-less custom executor fails only `waitFor` and `extract` this way. Also GitHub Copilot refusing the configured model to the account (`model_not_supported`, a plan or settings limit the listing cannot show): reported once at the first call, the run stops | Construct one, e.g. `gateway('anthropic/claude-haiku-5.5')` from `ai`, and export its key (`AI_GATEWAY_API_KEY`); for Copilot, pick an id the plan serves |
+| `MODEL_PROVIDER_FAILED` | Network, 5xx, rate limit, no credits, or no response in 120 s, after the transport retries | Check the credential (the key; for keyless `gateway()` the Vercel CLI login and `.vercel/project.json`) and quota; retry (exit 3) |
 | `MODEL_REFUSED` | The model refused the prompt (finish reason `content-filter`). Exit 1 | Rephrase the prompt or instruction, or switch to a different model |
 | `REPLAY_STALE` | `--strict-cache` or `cache.strict`, and a committed recording no longer replays; `step.cache.reason` says why | Rerun read-write with the knob the message names off; commit the changed entry under the directory it names (a custom `cache.store` is written by that run) |
 | `AUTOMATION_UNSUPPORTED` | The step needs an interaction the engine's toolset lacks (a right-click on a device, say); blocked, exit 1 | Reach the result another way the engine supports (a long press, a menu button), or run the test on a target that supports it |
@@ -167,6 +168,9 @@ stdout/stderr 直接書き込みまでは隔離しない。
 | `await app.screenshot('before-submit')` | Evidence at a point you choose; it masks secure fields only |
 | `app.startRecording()`, then `await app.stopRecording()` | One transition as a video; fails while the test's `video` records |
 | `CI=1 mise x -- e2e run` | Reproduce CI-only behaviour (defaults: topic running) |
+
+With `--step`, you won't stop at steps inside an `expect.poll` read or a
+`toPass` block.
 
 ## Flaky tests
 

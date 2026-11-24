@@ -133,6 +133,7 @@ test('conditional', async () => { test.skip(await onlyOneOrg(), 'nothing to swit
 test('later', async () => { test.skip('waiting on the API'); }); // bare skip from the body
 test.fixme('not yet', async () => {}); // test.skip's three forms; reported skipped with cause "fixme" and reason "fixme", or "fixme: <reason>" from test.fixme(reason) or test.fixme(cond, reason) in a body
 test('big import', async () => { test.setTimeout(180_000); }); // body or beforeEach: the attempt's timeout, counted from its start; in beforeAll: that hook's own
+test('slow sync', async () => { test.slow(); }); // triples the timeout in force, once per attempt; test.slow(condition, reason) only when true
 test.fail('known gap', async () => {}); // expected to fail: a test failure passes it, a pass fails it with UNEXPECTED_PASS
 test('gap on web', async ({ platform }) => { test.fail(platform === 'web', 'known gap'); }); // marks, does not throw; the body runs on
 describe.fail('legacy', () => {}); // every test inside expected to fail; a reason: describe('legacy', { fail: 'reason' }, fn)
@@ -317,8 +318,8 @@ Each action resolves one node, waits up to `config.actionTimeout` (30 s, or
 `fill(value | Secret)`, `pressSequentially(text, { delay? })`, `clear()`,
 `press(key)`, `check()`, `uncheck()`,
 `selectOption(label | { label } | { value } | { index })` (one option; an
-array is `INVALID_ARGUMENT`), `focus()`, `blur()`, `hover()`, `setInputFiles(paths)`
-(relative to the project root; `[]` clears), `dragTo(locator)`, `scrollIntoView()`,
+array is `INVALID_ARGUMENT`), `focus()`, `blur()`, `hover()`, `setInputFiles(files)`
+(paths relative to the project root, or `{ name, mimeType, buffer: Buffer }` payloads, singly or as an array; `[]` clears; a missing path, or one under a directory the runner cannot search, is `INVALID_ARGUMENT`), `dragTo(locator)`, `scrollIntoView()`,
 `swipe({ direction, momentum? })`. Web only, `UNSUPPORTED_CAPABILITY` on a
 device: `blur`, `secondaryTap`, `selectOption`, `setInputFiles`, `scrollIntoView`,
 and `modifiers`.
@@ -367,17 +368,36 @@ continuously, or for the whole `timeout` when that is shorter, so it never
 returns sooner. `expect(locator, message?)`, `expect(screen, message?)`, and
 their `expect.soft` forms open each assertion failure with the message.
 `expect(value, message?)` is synchronous.
-`expect.poll(read, { timeout?, interval?, message? })` re-reads until a value
-matcher passes (`assertionTimeout` and 100 ms by default, stopping with the
+`expect.poll(read, { timeout?, interval?, intervals?, message? })` re-reads until a value
+matcher passes (`assertionTimeout` and `[100, 250, 500, 1000]` ms by default, stopping with the
 attempt); a throwing read keeps polling, and it is not a report step. A
 poll that the body or a hook returns without awaiting is cancelled and fails
 that phase with `STEP_NOT_AWAITED`.
+Use `intervals: [<ms>]` in place of the deprecated `interval` option.
 `timeout: 0` on a locator or fixture action, `waitFor`, a matcher, or
 `expect.poll` sets no deadline of its own: the test timeout
 (`cleanupTimeout` in `afterEach`) still bounds it, and `expect.poll` with 0
-outside a test is `INVALID_CONFIG`. A negative or non-finite `timeout` is
+outside a test, hook, or hosted session is `INVALID_CONFIG`. A negative or non-finite `timeout` is
 `INVALID_ARGUMENT` (`INVALID_CONFIG` from `expect.poll`); `agent.*` calls
 take a positive `timeout` only.
+
+Use `await expect(fn, message?).toPass({ timeout?, intervals? })` when
+several assertions must pass together. The block is retried until it
+completes without throwing. Use hard assertions inside the block. Keep
+inner locator timeouts short. With `.not.toPass()`, the assertion
+passes on the first throw or rejection. With `expect.soft(fn).toPass()`,
+you can keep a timeout failure and continue the test body.
+
+Set call options to override the corresponding fields in `config.toPass`.
+The defaults are the phase deadline and pauses of `[100, 250, 500, 1000]` ms.
+Pass a positive `timeout` outside an attempt or hook. In the report, you
+can see the steps from each try, including failed steps. At the cutoff,
+running steps in a `toPass` try or poll read are cancelled.
+
+The config defaults and hook deadline apply to both `expect.poll` and
+`toPass` in `beforeAll`, `afterAll`, and worker fixture teardown. A call
+`timeout` above 2147483647 ms is `INVALID_CONFIG`.
+
 `expect.soft(x)` keeps a failure instead of throwing; the attempt fails
 after the body with every soft failure listed. If the body then calls
 `test.skip`, the attempt still fails, with the skip reason in its `skip`.
@@ -403,7 +423,7 @@ typed; prefer it when the app already has a schema for the response.
 
 | Locator matchers | Browser matchers | Value matchers |
 | --- | --- | --- |
-| `toBeVisible`, `toBeHidden`, `toBeAttached`, `toBeEnabled`, `toBeDisabled`, `toBeChecked`, `toBeSelected`, `toBeExpanded`, `toBeFocused`, `toHaveText`, `toContainText`, `toHaveValue`, `toHaveAttribute`, `toHaveCount`, `toHaveAccessibleName`, `toHaveRole`, `toHaveScreenshot` (also on `screen`) | `toHaveURL`, `toHaveTitle`, `toHaveClass(locator, expected)` | `toBe`, `toEqual`, `toMatchObject`, `toBeTruthy`, `toBeFalsy`, `toBeNull`, `toBeUndefined`, `toBeDefined`, `toHaveLength`, `toHaveProperty`, `toContain`, `toMatch`, `toBeGreaterThan`, `toBeGreaterThanOrEqual`, `toBeLessThan`, `toBeLessThanOrEqual`, `toBeCloseTo`, `toMatchSchema` |
+| `toBeVisible`, `toBeHidden`, `toBeAttached`, `toBeEnabled`, `toBeDisabled`, `toBeEditable`, `toBeChecked`, `toBeSelected`, `toBeExpanded`, `toBeFocused`, `toHaveText`, `toContainText`, `toHaveValue`, `toHaveAttribute`, `toHaveCount`, `toHaveAccessibleName`, `toHaveRole`, `toHaveScreenshot` (also on `screen`) | `toHaveURL`, `toHaveTitle`, `toHaveClass(locator, expected)` | `toBe`, `toEqual`, `toMatchObject`, `toBeTruthy`, `toBeFalsy`, `toBeNull`, `toBeUndefined`, `toBeDefined`, `toHaveLength`, `toHaveProperty`, `toContain`, `toMatch`, `toBeGreaterThan`, `toBeGreaterThanOrEqual`, `toBeLessThan`, `toBeLessThanOrEqual`, `toBeCloseTo`, `toMatchSchema` |
 
 `toHaveText` compares the whole normalized text, `toContainText` a substring
 or RegExp, `toHaveValue` a form control's value as is, whitespace included
@@ -416,8 +436,8 @@ presence, `toHaveAttribute(name, value)` the value; `toBeAttached` waits for
 a match, hidden or not; `toHaveClass` compares the whole normalized class
 list or tests a RegExp. A failed matcher is `ASSERTION_FAILED`, exit code 1.
 
-Playwright's `{ checked: false }`, `{ enabled: false }`, `{ visible: false }`,
-and `{ attached: false }` flip their matchers, and `{ ignoreCase: true }`
+Playwright's `{ checked: false }`, `{ enabled: false }`, `{ editable: false }`,
+`{ visible: false }`, and `{ attached: false }` flip their matchers, and `{ ignoreCase: true }`
 works on `toHaveText`, `toContainText`, `toHaveAccessibleName`,
 `toHaveAttribute(name, value)`, and `expect(browser).toHaveURL`. Any other option, `indeterminate` or
 `useInnerText` included, is `INVALID_ARGUMENT`, in JavaScript too.
@@ -655,6 +675,15 @@ the opener is gone. `tabs()`, `newTab()`, `tab.activate()`, and
   `keyboard.up(key)`, `mouse.*`: unfocused input. Only `down(key)` holds a
   key or modifier until `up(key)`. `press(key)` presses and releases within
   the call. Prefer `locator.press` and `locator.fill`.
+- `webmcp.tools()`, `webmcp.callTool(name, input?)`: the tools the page
+  registers through WebMCP (`document.modelContext`), listed and called
+  with no model. Needs `web({ webmcp: true })`, Chromium or Firefox, and a page on
+  `https:` or `localhost`; on a page without WebMCP both fail with
+  `UNSUPPORTED_CAPABILITY`. `callTool` returns the tool's result and fails
+  with `ACTION_FAILED` when the page has no such tool, the tool throws, or
+  the tool navigates the page or runs out of time before it answers (it may
+  have run).
+  Both cover the page's main frame only, not its iframes.
 
 A `route`, `unroute`, or `waitForResponse` pattern is a glob string or
 `RegExp` matched against the full URL (`*` stays within one path segment,
@@ -679,5 +708,5 @@ them. A predicate function is `INVALID_ARGUMENT`.
   enough for the slowest case (topic `agent` lists its model and budget
   limits), or a matcher with a longer `timeout` when a locator names the
   state exactly.
-- `await` every step call and `expect.poll`, else `STEP_NOT_AWAITED` at the line of the call.
+- `await` every step call, `expect.poll`, and `toPass`, else `STEP_NOT_AWAITED` at the line of the call.
 - Assert the fact a model produced with `toContain`, not its exact sentence.

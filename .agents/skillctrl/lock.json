@@ -4,10 +4,10 @@
     "ce-simplify-code": "e62d8d043021e0c7a44fb855b98cca109bedc81a",
     "cloudflare": "aeea5a45701ac077377985a22f233f9d3da07278",
     "domain-modeling": "ee7bc9f9e4971125c8252d1b824a98983d9844b2",
-    "e2e": "49b68fff0d2863cab1c1b488ed4b8b2dd5998bc6",
+    "e2e": "d35c6f36a4e19f9788c12ab48c2b1bd2d09cbd34",
     "grill-with-docs": "8aa67ae654f28fb6a9098a3dd287536438fc2092",
     "langfuse": "1f4efa271b10a127fa56e876ce2861eb28aba00a",
-    "learn": "db32b0c1152c54365e501e7c6d3a0d1841aa8a7d",
+    "learn": "d326d001f6d0971c61a0ca4e3b8890a83aad51d5",
     "prototype": "9cb645f2387dbb6e34439b2ecb418b9d81e1290f",
     "skillctrl": "37872ff011ae3fa468a81c6f470b4dbc73b63f4e",
     "unslop": "7b87213f808441fa03defbed096e19887f2f2bbe"
@@ -178,22 +178,22 @@
       "updatedAt": "2026-10-25T04:02:57.630Z"
     },
     "e2e": {
-      "computedHash": "a58d942089e9d97d95b9df4c373516923aa36290df3f6d8d2508fca3e4bdae97",
+      "computedHash": "4cbbe1f5f781fb15561248f67b116efe21f81e352f3f357e4a40f93153a1548c",
       "installedAt": "2026-10-03T04:52:03.957Z",
       "native": {
-        "computedHash": "a58d942089e9d97d95b9df4c373516923aa36290df3f6d8d2508fca3e4bdae97",
+        "computedHash": "4cbbe1f5f781fb15561248f67b116efe21f81e352f3f357e4a40f93153a1548c",
         "skillPath": "skills/e2e/SKILL.md",
         "source": "tester-army/e2e",
         "sourceType": "github",
         "sourceUrl": "https://github.com/tester-army/e2e.git"
       },
-      "skillFolderHash": "b7536088d04f7f2e3c0471913d93087c74ff9405",
+      "skillFolderHash": "6331c2389ac53ec56db1bd35b109038256e0d6c8",
       "skillPath": "skills/e2e/SKILL.md",
       "source": "tester-army/e2e",
-      "sourceCommit": "c30354ff84668a9c4e0d7bd8790e93d85f40a20c",
+      "sourceCommit": "51cbd2ed5aaaa8cab9f6e99a99b3b138df7cbacd",
       "sourceType": "github",
       "sourceUrl": "https://github.com/tester-army/e2e.git",
-      "updatedAt": "2026-11-22T00:03:47.737Z"
+      "updatedAt": "2026-11-24T02:40:38.323Z"
     },
     "emil-design-eng": {
       "computedHash": "479c09fe9e574178112bbbcd8473c60064539b9687a3c1a6ebd36e1c2370898e",
@@ -341,17 +341,17 @@
       "updatedAt": "2026-11-10T03:45:30.128Z"
     },
     "learn": {
-      "computedHash": "7fa628a37884944fc5b68a16ebd0b0b45261abe99726f647b5b1979aeb9ff32e",
+      "computedHash": "a43372e887a501936a2c4c4210e821f9de768df8f268f1fc9b9c00ab47a6ca54",
       "installedAt": "2026-10-05T08:51:53.784Z",
       "nativeName": "answer-me-with-html",
       "skill": "answer-me-with-html",
-      "skillFolderHash": "9cb617862948eb8390dd5a8745656f472f75de8d",
+      "skillFolderHash": "87cd687d19d78c5e6486cd9ed4931873b5660138",
       "skillPath": "skills/answer-me-with-html/SKILL.md",
       "source": "QingYunA/answer-me-with-html",
-      "sourceCommit": "997479b6f34c8a5141c61b03f144e821c8f99f2d",
+      "sourceCommit": "8411df37a9aecb62a6048f18ba63bd27bb74abec",
       "sourceType": "github",
       "sourceUrl": "https://github.com/QingYunA/answer-me-with-html.git",
-      "updatedAt": "2026-11-22T00:03:50.980Z"
+      "updatedAt": "2026-11-24T02:40:39.807Z"
     },
     "mobile-native": {
       "computedHash": "19a47e318bfcb2a1c2be346b79219758b296437800cc6226d2cb467233403d17",
