@@ -65,7 +65,7 @@
       "sourceUrl": "https://github.com/mattpocock/skills.git"
     },
     "e2e": {
-      "computedHash": "a58d942089e9d97d95b9df4c373516923aa36290df3f6d8d2508fca3e4bdae97",
+      "computedHash": "4cbbe1f5f781fb15561248f67b116efe21f81e352f3f357e4a40f93153a1548c",
       "skillPath": "skills/e2e/SKILL.md",
       "source": "tester-army/e2e",
       "sourceType": "github",
