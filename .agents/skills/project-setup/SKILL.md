@@ -49,7 +49,6 @@ CLAUDE.md は `read @AGENTS.md` の 1 行だけを持つ。起動時 index は `
 - 主要FW・ライブラリ（任意）
 - **対象オーディエンス・言語**（海外向け・英語圏も対象にするなら README・AGENTS.md などの公開向けドキュメントは英語で書く。日本国内向け・個人用途なら日本語でよい。ステップ 7・8 の生成言語をここで決める）
 - **Langfuse に agent session の trace を収集するか**（yes ならステップ 4 で全 agent 分を opt-in。プロンプトと tool 入出力 = コード内容が外部 SaaS に送られるため、機密を扱う repo では no のままにする）
-- **Pullfrog（PR review・agent 自動化）を導入するか**（yes ならステップ 11 で App install・workflow・repo-level config まで設定して動く状態にする）
 - **プロジェクト固有のドキュメントを置く dir**（`docs/` = チーム共有で tracked、`.agent/` = gitignore される個人メモ。ステップ 7 のディレクトリ構造に最初から描く）
 
 あわせて repo の種別を決める。依頼や repo 名から読み取れるなら聞かない。
@@ -133,7 +132,7 @@ mise exec -- gh secure status --repo <owner>/<repo>
 
 #### 10.1. Dependabot の定期更新（public の場合のみ）
 
-`.github/dependabot.yml`（`version: 2`）を生成する。実際の manifest・lock file に合わせて `updates` の ecosystem・directory を選び、各対象に `schedule.interval: weekly` と `cooldown.default-days: 7` を設定する。ステップ 11 で導入する workflow も含め、GitHub Actions を使う場合は `github-actions`（`directory: "/"`）を加える。[対応する設定値](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#package-ecosystem) を参照する。
+`.github/dependabot.yml`（`version: 2`）を生成する。実際の manifest・lock file に合わせて `updates` の ecosystem・directory を選び、各対象に `schedule.interval: weekly` と `cooldown.default-days: 7` を設定する。GitHub Actions を使う場合は `github-actions`（`directory: "/"`）を加える。[対応する設定値](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#package-ecosystem) を参照する。
 
 各 `updates` 対象に ecosystem 名の `groups` を設け、`update-types: [minor, patch]` で version update を1つの PR にまとめる（bun・uv・github-actions 等すべて）。major は破壊的変更を個別に見るため package ごとの PR のままにする。security update は group の対象外とし、`applies-to` は既定値が `version-updates` なので書かない（[groups の仕様](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#groups)）。bun の例:
 
@@ -153,19 +152,15 @@ updates:
 
 package ごとに PR を分けると、同じ lockfile の更新が merge のたびにずれて rebase 待ちになり、版を揃える必要のある `ai` と `@ai-sdk/*` 等が別 PR では型検査を通らないこともある。まとめることで、version update の open PR 上限（既定で ecosystem ごとに5件）に詰まって他の更新が出ない状況も減らす。
 
-生成した設定をデフォルトブランチへ commit・push する。更新対象の manifest・workflow がまだなければ、初回追加時に `dependabot.yml` を作成・追記するようステップ 13 の handoff に含める。
+生成した設定をデフォルトブランチへ commit・push する。更新対象の manifest・workflow がまだなければ、初回追加時に `dependabot.yml` を作成・追記するようステップ 12 の handoff に含める。
 
 lockfile を commit する JS/TS の package manager（bun / npm / pnpm / yarn）を使う場合は、Dependabot が lockfile 未追従の PR を作ったときに自動修復する workflow も生成する。背景・`pull_request_target` が必要な理由・雛形は [references/dependabot-lockfile.md](references/dependabot-lockfile.md) に従う。
 
 #### 10.2. home への登録
 
-この repo を扱うチームの home があれば、owner や継続性に関わらず、その home の「他 repo」節に pointer を 1 行足す（[home repo](references/home-repo.md#新しい-pj-を立てたとき)）。個人 PJ は `wwwyo/me` が home で、ステップ 12 で足す。
+この repo を扱うチームの home があれば、owner や継続性に関わらず、その home の「他 repo」節に pointer を 1 行足す（[home repo](references/home-repo.md#新しい-pj-を立てたとき)）。個人 PJ は `wwwyo/me` が home で、ステップ 11 で足す。
 
-### 11. Pullfrog 導入（yes の場合のみ）
-
-ステップ 2 で導入を選んだ場合は、repo 作成・visibility 確定後に [導入手順](references/pullfrog.md) を読む。App・workflow・repo-level config を設定し、実際の PR で動作確認して commit・push する。 完了条件には Pullfrog 実効値の監査（`pullfrog config list --repo` と `--org` の両方で継承込みの値を確認）と直近レビュー言語の確認を含める。
-
-### 12. wiki に PJ domain を作成（継続して育てる PJ の場合のみ）
+### 11. wiki に PJ domain を作成（継続して育てる PJ の場合のみ）
 
 立ち上げた PJ は `wwwyo/me` の wiki に記憶を持たせる。**setup の必須完了項目**として抜けずに実施し、失敗したまま終わらせない。規約の SSOT は `~/src/github.com/wwwyo/me/wiki/AGENTS.md`（「PJ ページのメンテナンス規約」「プロジェクト記憶も wiki で管理する」の項）。これは me の AGENTS.md「メモリ（wiki）」の書き込み条件（議論で到達した理解のみ）に対する例外で、PJ の台帳としての状態同期にあたる。単発 task・playground 内の使い捨て PoC は PJ ではないので作らない — playground repo 自体を継続運用するなら repo 単位で 1 domain を作る。**対象は個人 PJ のみ** — ステップ 1 で確定した owner が `wwwyo` 以外（仕事の org repo 等）ならこの手順は対象外。
 
@@ -174,9 +169,9 @@ lockfile を commit する JS/TS の package manager（bun / npm / pnpm / yarn�
 - `wiki/index.md` の Map に domain index への link を足す
 - `wiki/life/project-focus.md` の PJ 一覧・フォーカスに反映する
 - `wwwyo/me` の root `AGENTS.md` の「他 repo」の個人 PJ 一覧に 1 行足す（`wwwyo/me` は個人の home。[home repo](references/home-repo.md)）
-- `wwwyo/me` の `wiki/AGENTS.md` の書き込み後チェックで検証し、`wwwyo/me` の `AGENTS.md` の checkout 規約に従って、この PJ 登録で変更したファイルだけを stage・commit・push する。push の成功までをステップ 12 の完了条件とする
+- `wwwyo/me` の `wiki/AGENTS.md` の書き込み後チェックで検証し、`wwwyo/me` の `AGENTS.md` の checkout 規約に従って、この PJ 登録で変更したファイルだけを stage・commit・push する。push の成功までをステップ 11 の完了条件とする
 
-### 13. 最初の PRD へ handoff
+### 12. 最初の PRD へ handoff
 
 setup 完了後、作成した repo を作業ディレクトリとする agent session へ handoff し、最初の `prd` skill を実行する。`delegate` skill の共通設定と `orca-cli` skill の Full Handoffs に従う。
 
