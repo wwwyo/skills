@@ -73,7 +73,7 @@ install `@e2e-dev/acp` and its adapter, and put
 - `context` is what the app calls things, sent to every model call, judges
   included; `system` is how the acting agent works, read only by the act
   loop. Both live on the agents entry; `agentContext` on a test or group
-  adds more. Under `e2e run`, every prompt opens with the test's title path
+  adds more. Under `e2e run`, every prompt carries the test's title path
   (`Test: billing > upgrades the tier`), judges included, so name a test
   for what it covers, not for the verdict it expects.
 
@@ -95,12 +95,9 @@ context, so each persona records and replays its own steps.
 ## act: one goal
 
 ```ts
-import { credentials, expect } from 'e2e';
+import { credentials } from 'e2e';
 
 await agent.act('add a todo named "Buy milk"');
-await expect(screen.getByRole('listitem', 'Buy milk')).toBeVisible();
-await agent.act('mark the "Buy milk" todo as done');
-await expect(screen.getByRole('checkbox', 'Buy milk')).toBeChecked();
 await agent.act('invite {email} as an editor', { params: { email: 'ada@example.test' } });
 
 const member = credentials.user('member');
@@ -138,7 +135,8 @@ Options:
 The tools, one per engine action. Name the target as the screen names it
 (files in `params`); the agent picks the verb:
 
-- `observe`: re-read the screen after waiting on work in progress.
+- `observe`: re-read the screen after waiting on work in progress, or to
+  check whether a press that commits something went through.
 - `tap`: button, link, menu item, tab, checkbox, row, field.
 - `double_tap`/`long_press`/`right_click`: second-click item, long-press
   menu, context menu only.
@@ -159,8 +157,17 @@ The tools, one per engine action. Name the target as the screen names it
 - `resize_viewport`: set the viewport size (200 to 4096 CSS px) to check a
   layout at phone, tablet, or desktop width. Engines with `session.resize`,
   such as web.
+- `switch_tab`: show another open tab by its number (from 1, in opening
+  order). A tab the app opens stays in the background: the action's result
+  says so, and the screen header says `tab 1 of 2`. Engines with
+  `session.switchTab`, such as web.
+- `close_tab`: close an open tab by the same number. Closing the tab on
+  screen returns the screen to its opener, or to the tab shown most
+  recently when the opener is closed too. The last open tab stays open.
+  Engines with `session.closeTab`, such as web.
 - `type_secret`: a declared secret by name; plaintext never reaches the model.
-  Offered only when the step declares secrets and the engine can fill them.
+  Offered whenever the engine can fill secrets; the step's opening message
+  lists the ones it declares, and an undeclared name fills nothing.
 - `screenshot`: attach viewport pixels; every later result then carries one.
 - `tap_at`/`hover_at`/`press_at`/`select_at`/`type_at`: a screenshot point.
 - `drag_at`: from one screenshot point to another (`to_x`, `to_y`).
@@ -178,7 +185,12 @@ nothing to tap by id opens with a screenshot attached. A device has no
 `right_click`, `select`, `upload`, or `scroll_to` by node id. Pixels mask
 secure fields only (topic writing-tests). A result says when an action
 closed an on-screen keyboard; on a touch screen that tap was often spent
-closing it, so act again.
+closing it, so act again. A control that commits something (save, submit,
+delete) is pressed once for each commit the step asks for. When the tap
+only closed the keyboard, the agent presses again at once. Otherwise it
+checks the screen before a second press, and presses again only when the
+screen shows the first press did not commit (a validation error that
+blocked the save and that the agent then corrected).
 
 ## assert, waitFor, extract: one question
 
@@ -214,8 +226,10 @@ expect(data.titles).toContain('Buy milk');
 - A value shown in more than one place (a total in the summary and on the
   pay button) must agree everywhere, or the judgment fails. Name the one
   you mean (`'the order summary total is $42.00'`) when only it matters.
-- `waitFor` observes every `interval` (default 3 s), judges only when the
-  screen or its location changed, and is `STEP_TIMEOUT` after `timeout` (default 30 s).
+- `waitFor` observes every 500 ms, judges only when the screen or its
+  location changed, and is `STEP_TIMEOUT` after `timeout` (default 30 s). A
+  change after a still screen is judged at once; while the screen keeps
+  changing, at most once per `interval` (default 3 s).
 - Never sleep for a fixed time to let the app settle. A sleep is too short
   on a slow run and wasted time on a fast one; `waitFor` returns as soon as
   the state appears:
@@ -258,12 +272,44 @@ what the screen presents (an overlay, a broken layout, a chart) where the
 tree would answer first. `'only'` never falls back to the tree: unprovably
 masked pixels fail with `POLICY_DENIED`.
 
+### Viewport exploration
+
+With `explore: true`, `agent.assert` can scroll the current screen and combine
+evidence from several viewports. This helps when a list fits on a tablet but
+needs scrolling on a phone.
+
+```ts
+await agent.assert('Settings lists HOS Settings, Account, Language and Theme', {
+  explore: true,
+  maxSteps: 10,
+  maxModelCalls: 6,
+});
+```
+
+Exploration offers `observe`, `scroll`, `scroll_to`, and project tools declared
+`mutates: false`. The built-in executor also offers `screenshot` when `vision`
+is `true` or `'only'`; the default is tree-only. Other actions are rejected. The viewport stays
+where exploration ends.
+
+Defaults are 10 scroll actions and 6 model calls, each capped at the selected
+agent's configured limit. Overrides may exceed the 10/6 defaults, up to the
+configured limits. The deadline
+defaults to `judgmentTimeout`. `maxSteps` or `maxModelCalls` without
+`explore: true` throws `INVALID_ARGUMENT`. The built-in executor uses
+`agents.<name>.model`, even when `judge` is configured.
+
+A contradiction is `ASSERTION_FAILED`; insufficient evidence within the time
+or action/model budget is `ASSERTION_INCONCLUSIVE`.
+
+Use `waitFor` for a condition that changes over time, and `explore` for content
+elsewhere on the current screen.
+
 ## Write instructions the model can execute
 
 - One goal per `act`; goal order is the test's, the path the model's.
 - Keep each goal atomic: one outcome that one check confirms. When two
   parts of an instruction each leave a state worth checking, they are two
-  goals: give each its own `act` and check. Steps toward a single outcome
+  goals, each its own `act`. Steps toward a single outcome
   are the path, not more goals: scrolling to a control, closing a banner,
   opening the menu that holds it, filling the fields of one form.
 - A split flow fails at the goal that broke. Each goal replays from its own
@@ -271,25 +317,38 @@ masked pixels fail with `POLICY_DENIED`.
   timeout still caps them all.
 
 ```ts
-// BAD: three goals in one instruction, one recording, no check between them.
+// BAD: three goals in one instruction, one recording.
 await agent.act('open the Pro plan, set the seats to {seats}, and check out', { params: { seats: 3 } });
 
-// GOOD: three atomic goals, each pinned before the next.
-await agent.act('open the Pro plan');
-await expect(screen.getByRole('heading', 'Pro plan')).toBeVisible();
-await agent.act('set the seats to {seats}', { params: { seats: 3 } });
-await expect(screen.getByRole('status', 'Seats')).toHaveText('3 seats');
-await agent.act('check out');
-await expect(screen.getByText('Order confirmed')).toBeVisible();
+// GOOD: arrange with two atomic goals, act with the one under test, assert last.
+test('checks out the Pro plan', async ({ app, agent, screen }) => {
+  await app.open('/plans');
+  await agent.act('open the Pro plan');
+  await agent.act('set the seats to {seats}', { params: { seats: 3 } });
+  await agent.waitFor('the cart shows the Pro plan with 3 seats');
+
+  await agent.act('check out');
+
+  await expect(screen.getByText('Order confirmed')).toBeVisible();
+  await expect(screen.getByText('Pro plan, 3 seats')).toBeVisible();
+});
 ```
+
+Choosing the seats is its own behavior, so it gets its own test that ends
+after `set the seats` and asserts the seat count. Tests follow arrange, act,
+assert, one behavior each (topic `writing-tests`, "Structure").
 
 - Use the words on screen: `'open the Billing tab'`, not `'upgrade'`.
 - Values go in `params`, never expanded: `act('rename to {name}', { params })`.
 - Do not describe mechanics the runner handles: waiting, scrolling, retries.
-- Pin every `act` outcome right after it; that check lets the cache record:
+- End the test with a check of the outcome. A passing locator or engine
+  matcher, `agent.assert`, or wait confirms every `act` before it, which
+  lets the cache record them; close an arrange block of `act` goals with a
+  wait for its state, so a failure later in the test keeps them recorded:
 
 ```ts
 await agent.act('create a workspace named "Atlas" on the Pro plan');
+
 await expect(screen.getByRole('status')).toHaveText('Created "Atlas" on the Pro plan');
 ```
 
@@ -302,10 +361,11 @@ of sleeping.
 
 A redacted snapshot of the screen (roles, names, text, states), prior-step
 summaries, and your context; never raw HTML, cookies, headers, environment
-values, or a `Secret`'s value; password fields masked. The first
-screen of a step arrives whole; later action results report what changed,
-keyed by node ids stable while an element exists, or the whole screen when
-most changed. Pixels arrive through `vision` on a judgment or the act loop's
+values, or a `Secret`'s value; password fields masked, unless a page
+script hides one from e2e. The first screen of a step arrives whole; later
+action results report what changed, keyed by node ids stable while an
+element exists, or the whole screen when most changed.
+Pixels arrive through `vision` on a judgment or the act loop's
 `screenshot` and point tools, with secure fields masked. When
 the browser engine's tree capture times out, the model gets a screenshot and
 a warning, a judgment needs `vision: true`, and no control may be inferred
@@ -315,6 +375,9 @@ its content, so the agent reaches it only through pixels: script steps
 there with `browser.frameLocator`, and judge it with `vision`. Nothing the
 model returns runs as code or
 selectors: the runner validates and authorizes every tool call first.
+
+Project tool results and tool or engine errors are secret-redacted before the
+model reads them. Text is redacted before it is cut to the output limit.
 
 ## Budgets and cost
 
@@ -407,7 +470,8 @@ npx unbox-ai summary .e2e/ai-trace.json --run 0             # turns, tokens, too
 
 Never read the trace directly: megabytes of resent context, images replaced
 by byte counts. `--no-cache` traces the whole flow, since replayed steps
-make no model calls.
+make no model calls. The recorder redacts serialized tool results and errors
+before writing the AI trace.
 
 ## Make the agent yours
 
@@ -432,9 +496,18 @@ make no model calls.
 - `tools: { seedCart }` on an agents entry adds AI SDK tools wrapped with
   `defineTool(tool({ ... }), { mutates: true })` from `e2e/agent` for a
   test API a flow calls mid-step.
+- A `mutates: false` tool can call `getToolContext(options).read({ id },
+  { style: ['color', 'font-weight'] })` for a node in its newest observation.
+  Web reads return redacted `{ style }` under the step deadline, use no action
+  slot, and never relocate stale IDs. Use `requires: ['computed-style']` to
+  skip engines without support. Allowed properties and errors:
+  https://e2e.com/docs/tools#read-a-nodes-computed-style.
 - `createToolLoopExecutor` keeps the loop and replaces prompt and tool
   vocabulary; spread `createGrammarTools(ctx, { guard })` into its tools and
-  start its `system` with `BASE_RULES` to keep the built-in actions.
+  start its `system` with `BASE_RULES` to keep the built-in actions. A
+  `complete_step` sent in the same turn as other calls waits for the calls
+  before it, and is refused when one failed or the last one changed
+  nothing; calls after it don't run.
 - Any `StepExecutor` (`{ name, version?, cache?, runStep(ctx) }`) goes under
   `executor`; the runner still owns observations, actions, budgets, and the
   report, and `system` or `tools` beside `executor` is `INVALID_CONFIG`.
