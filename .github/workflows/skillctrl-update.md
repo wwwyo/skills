@@ -308,10 +308,17 @@ safe-outputs:
             git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $credential" \
               push origin "HEAD:refs/heads/automation/skillctrl-update"
             existing="$(jq -r '.existing_pr // empty' "$CI_DIR/plan.json" 2>/dev/null || true)"
+            body="$(printf '%s\n' 'Automated upstream skill refresh reconciled with saved intents by the skillctrl update workflow.' '' '## QA' '- `skillctrl check` passed with the accepted lock unchanged, and the repository tests (`tests/*.test.sh`, `.agents/skillctrl/*.test.sh`) passed in this workflow before publishing.' '' '## Blast Radius' '- Skill bodies and the skillctrl lock only. pr-auto-merge judges and merges this PR; compare the SKILL.md changes with `.agents/skillctrl/intents/`.')"
             if [[ -z "$existing" ]]; then
               GH_TOKEN="$APP_TOKEN" gh pr create --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
-                --title "chore(skills): weekly upstream refresh" \
-                --body "$(printf '%s\n' 'Automated upstream skill refresh reconciled with saved intents by the skillctrl update workflow.' '' '## QA' '- `skillctrl check` passed with the accepted lock unchanged, and the repository tests (`tests/*.test.sh`, `.agents/skillctrl/*.test.sh`) passed in this workflow before publishing.' '' '## Blast Radius' '- Skill bodies and the skillctrl lock only. pr-auto-merge judges and merges this PR; compare the SKILL.md changes with `.agents/skillctrl/intents/`.')"
+                --title "chore(skills): weekly upstream refresh" --body "$body"
+            else
+              # A PR opened as a draft before this change, or by hand, must become
+              # ready with QA evidence, or the pr-auto-merge lane never merges it.
+              GH_TOKEN="$APP_TOKEN" gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/${existing##*/}" -f body="$body" > /dev/null
+              if [[ "$(GH_TOKEN="$APP_TOKEN" gh pr view "$existing" --json isDraft --jq .isDraft)" == true ]]; then
+                GH_TOKEN="$APP_TOKEN" gh pr ready "$existing"
+              fi
             fi
         - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
           if: always()
@@ -600,10 +607,16 @@ jobs:
           plan = json.loads(Path('/tmp/skillctrl/input/plan.json').read_text())
           Path('/tmp/skillctrl/existing-pr.txt').write_text(plan.get('existing_pr') or '')
           PY
-            if [[ ! -s /tmp/skillctrl/existing-pr.txt ]]; then
+            body="$(printf '%s\n' 'Automated upstream skill refresh; no saved intents required re-adaptation.' '' '## QA' '- `skillctrl check` passed with the accepted lock unchanged, and the repository tests (`tests/*.test.sh`, `.agents/skillctrl/*.test.sh`) passed in this workflow before publishing.' '' '## Blast Radius' '- Skill bodies and the skillctrl lock only. pr-auto-merge judges and merges this PR; compare the SKILL.md changes with `.agents/skillctrl/intents/`.')"
+            existing="$(cat /tmp/skillctrl/existing-pr.txt)"
+            if [[ -z "$existing" ]]; then
               GH_TOKEN="$APP_TOKEN" gh pr create --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
-                --title "chore(skills): weekly upstream refresh" \
-                --body "$(printf '%s\n' 'Automated upstream skill refresh; no saved intents required re-adaptation.' '' '## QA' '- `skillctrl check` passed with the accepted lock unchanged, and the repository tests (`tests/*.test.sh`, `.agents/skillctrl/*.test.sh`) passed in this workflow before publishing.' '' '## Blast Radius' '- Skill bodies and the skillctrl lock only. pr-auto-merge judges and merges this PR; compare the SKILL.md changes with `.agents/skillctrl/intents/`.')"
+                --title "chore(skills): weekly upstream refresh" --body "$body"
+            else
+              GH_TOKEN="$APP_TOKEN" gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/${existing##*/}" -f body="$body" > /dev/null
+              if [[ "$(GH_TOKEN="$APP_TOKEN" gh pr view "$existing" --json isDraft --jq .isDraft)" == true ]]; then
+                GH_TOKEN="$APP_TOKEN" gh pr ready "$existing"
+              fi
             fi
           fi
           cp "$CI_DIR/check.json" /tmp/skillctrl-lock-state.json

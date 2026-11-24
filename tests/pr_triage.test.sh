@@ -195,7 +195,8 @@ assert ".github/workflows/build.lock.yml" in r["classes"]
 # skillctrl の週次 upstream 更新は skill 本体と lock だけなら hold → judge
 meta_sc = {"author": {"login": "app/wwwyo-skillctrl-update", "is_bot": True},
            "headRefName": "automation/skillctrl-update",
-           "url": "https://github.com/wwwyo/skills/pull/54"}
+           "url": "https://github.com/wwwyo/skills/pull/54",
+           "skillctrl_managed": ["learn", "e2e"]}
 sc_files = [".agents/skills/learn/SKILL.md",
             ".agents/skills/learn/scripts/am.mjs",
             ".agents/skillctrl/lock.json", "skills-lock.json"]
@@ -207,6 +208,11 @@ for files, meta in [
         (sc_files + ["AGENTS.md"], meta_sc),
         ([".agents/skills/.codex-plugin/plugin.json"], meta_sc),
         ([".agents/skillctrl/intents/learn.md"], meta_sc),
+        # upstream 管理外の skill（merge gate 自身など）は hold のまま
+        ([".agents/skills/pr-auto-merge/tools/pr_triage.py",
+          ".agents/skillctrl/lock.json"], meta_sc),
+        (sc_files, {k: v for k, v in meta_sc.items()
+                    if k != "skillctrl_managed"}),
         (sc_files, dict(meta_sc, headRefName="feat/x")),
         (sc_files, dict(meta_sc, url="https://github.com/wwwyo/dotfiles/pull/1")),
         (sc_files, dict(meta_sc, author={"login": "wwwyo", "is_bot": False})),
@@ -214,6 +220,9 @@ for files, meta in [
                                          "is_bot": True}))]:
     r = pt.classify_pr(files, meta, "")
     assert r["lane"] == "hold", (files, meta)
+# 名前による hold（auth 等）も管理 skill の配下なら judge に回す
+r = pt.classify_pr([".agents/skills/learn/scripts/oauth.mjs"], meta_sc, "")
+assert r["lane"] == "judge"
 # rename 元に他の hold path があっても抜けない
 r = pt.classify_pr(sc_files, meta_sc, "", renamed_from=["AGENTS.md"])
 assert r["lane"] == "hold"

@@ -757,7 +757,11 @@ def _is_bot(a):
 # repo テストを通った後に専用 App が出すもので、hold にすると誰も merge せず
 # 更新が届かない（2026-11 に 2 週間止まった）。author・head branch・repo・
 # 変更 path の全部が一致するときだけ hold から judge へ回す。人の skill 編集や
-# 他の file を混ぜた PR は従来どおり hold。
+# 他の file を混ぜた PR は従来どおり hold。対象 skill は base の
+# `.agents/skillctrl/lock.json` の upstreams に載る skill だけ — 手書き skill
+# （この merge gate 自身を含む）を engine が書き換えても judge に回さない。
+# 許可した path は `.agents` に加えて名前（auth 等）による hold も外す。
+# upstream の script 名で恒久的に止まるのを避け、内容は judge が見る。
 SKILLCTRL_UPDATE_REPO = "wwwyo/skills"
 SKILLCTRL_UPDATE_HEAD = "automation/skillctrl-update"
 SKILLCTRL_UPDATE_AUTHORS = {"app/wwwyo-skillctrl-update",
@@ -772,15 +776,32 @@ def _pr_repo(meta):
     return m.group(1).lower() if m else ""
 
 
-def is_skillctrl_update(touched, meta):
-    """週次 upstream 更新 PR で、skill 本体と lock だけを変えているか。"""
+def _skillctrl_update_head(meta):
+    """author・head branch・repo が週次 upstream 更新 PR のものか。"""
     login = ((meta or {}).get("author") or {}).get("login") or ""
-    if login not in SKILLCTRL_UPDATE_AUTHORS or not _is_bot(meta.get("author")):
+    return login in SKILLCTRL_UPDATE_AUTHORS and _is_bot(meta.get("author")) \
+        and (meta.get("headRefName") or "") == SKILLCTRL_UPDATE_HEAD \
+        and _pr_repo(meta) == SKILLCTRL_UPDATE_REPO
+
+
+def skillctrl_managed_skills(repo, base_sha):
+    """base commit の lock にある upstream 管理 skill。取れなければ空（hold 側）。"""
+    try:
+        raw = gh(["api", "-H", "Accept: application/vnd.github.raw",
+                  f"repos/{repo}/contents/.agents/skillctrl/lock.json"
+                  f"?ref={base_sha}"]).stdout
+        return sorted((json.loads(raw or "{}").get("upstreams") or {}).keys())
+    except Exception:  # noqa: BLE001 — 取れないときは例外を使わず hold に倒す
+        return []
+
+
+def is_skillctrl_update(touched, meta):
+    """週次 upstream 更新 PR で、upstream 管理 skill の本体と lock だけを
+    変えているか。meta["skillctrl_managed"] は ensure_facts が base の lock から
+    入れる（無ければ何も許可しない）。"""
+    if not _skillctrl_update_head(meta):
         return False
-    if (meta.get("headRefName") or "") != SKILLCTRL_UPDATE_HEAD:
-        return False
-    if _pr_repo(meta) != SKILLCTRL_UPDATE_REPO:
-        return False
+    managed = set(meta.get("skillctrl_managed") or ())
 
     def allowed(path):
         if path in SKILLCTRL_UPDATE_FILES:
@@ -788,6 +809,7 @@ def is_skillctrl_update(touched, meta):
         segs = _segments(path)
         # plugin manifest（.codex-plugin 等）は生成物で、更新 PR が触る理由が無い
         return path.startswith(".agents/skills/") and len(segs) >= 4 and \
+            segs[2] in managed and \
             not any(s.startswith(".") for s in segs[2:]) and \
             ".." not in segs
     return bool(touched) and all(allowed(f) for f in touched)
@@ -1854,8 +1876,12 @@ def ensure_facts(repo, number, facts):
     if facts.get("files") is None:
         facts["files"], facts["renamed_from"] = pr_files(repo, number)
     touched = (facts["files"] or []) + (facts.get("renamed_from") or [])
+    view = facts.get("view") or {}
+    if _skillctrl_update_head(view) and "skillctrl_managed" not in view:
+        view["skillctrl_managed"] = skillctrl_managed_skills(
+            repo, view.get("baseRefOid") or view.get("baseRefName") or "main")
     if any(classify_path(p) == "hold" for p in touched) and \
-            not is_skillctrl_update(touched, facts.get("view") or {}):
+            not is_skillctrl_update(touched, view):
         return
     if facts.get("diff") is None:
         facts["diff"] = pr_diff(repo, number)
