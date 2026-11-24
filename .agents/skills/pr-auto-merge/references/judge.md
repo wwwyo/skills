@@ -117,9 +117,13 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   残ったら「一意に決まらない（未取得）」と書く。
   対象 check-run が見つからない（未取得）・403（権限不足）・annotation が 0 件は区別して書き、
   どれも「annotation が無い」と同一視しない。
-  annotation・API 応答・status page・billing の実測（[Pullfrog 導入手順 4 の billing 確認](../../project-setup/references/pullfrog.md)）
-  のいずれにも理由が無ければ「原因未取得」と書き、原因を断定しない
-  （`SKILL.md` の report 規約と同じ水準）
+  annotation・API 応答・status page・billing の実測のいずれにも理由が無ければ「原因未取得」と書き、原因を断定しない
+  （`SKILL.md` の report 規約と同じ水準）。
+  billing の実測: private repo で Actions minutes が使えないと workflow 自体が走らず、run も error も残らない。
+  run が無いときもこの確認を経てから「原因未取得」と書く。
+  - Actions タブの billing warning か、`gh api users/<owner>/settings/billing/usage`（org は `organizations/<org>/settings/billing/usage`）で見る
+  - usage は消費量で、止まった根拠ではない。budget の上限到達か明示的な billing error があって初めて billing を原因とする
+  - billing API の 403・404 は権限不足（user scope・org admin が要る）で、「billing に理由が無い」とは扱わない
 - **代替根拠**: 対象 job を実行できない場合も、公式 release / migration guide / compare との照合、
   bump した action の outputs・token の永続化・trigger/permissions の差分有無、その action の id を
   workflow が参照しているか、既存成果物の sha・代表値の一致、revert 手順で影響を判定できる。
