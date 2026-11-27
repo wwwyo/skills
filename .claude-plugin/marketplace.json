@@ -73,6 +73,10 @@
         "mcphub": {
           "type": "http",
           "url": "https://mcp.wwwyo.dev/mcp"
+        },
+        "mcp-media": {
+          "type": "http",
+          "url": "https://mcp-media.wwwyo.dev/mcp"
         }
       }
     },
