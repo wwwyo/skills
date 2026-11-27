@@ -1,6 +1,6 @@
 # 個人の MCP を MCP Server Portal に集約する
 
-ChatGPT・claude.ai（web・スマホ）とローカル agent から、公開 remote MCP（context7・fudoki・queria・Cloudflare API・Buffer）、Composio 経由の外部サービス（Google Search Console・Google Analytics）を portal の入口から使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。この Mac の loopback で動く OpenScreen も portal（Gateway・Tunnel 経由）に載せていたが、2026-11-17 に外し、Claude Code の local plugin から直接つなぐ形にした（[skill-plugins](skill-plugins.md)）。
+ChatGPT・claude.ai（web・スマホ）とローカル agent から、公開 remote MCP（context7・fudoki・queria・Cloudflare API・Buffer）、Composio 経由の外部サービス（Google Search Console・Google Analytics）を portal の入口から使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。この Mac の loopback で動く OpenScreen も portal（Gateway・Tunnel 経由）に載せていたが、2026-11-17 に外し、Claude Code の local plugin から直接つなぐ形にした（[skill-plugins](skill-plugins.md)）。2026-11-27 からは、同じ Gateway・Tunnel の経路で wwwyo/personal-mcp のカメラ（server `camera`、`camera/`）を載せている。
 
 portal は 2 つある。
 
@@ -54,6 +54,7 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 
 - **載せる**: 個人で常用する MCP。credential を隠せるもの（context7）・認証の無い公開 MCP（fudoki）・upstream の OAuth 同意で scope を絞れるもの（queria）も同じ portal に入れる。Cloudflare API は以前 `mcphub` に載せていたが、2026-11-13 時点では `mcp-marketing` の server `cloudflare-small` にしか無い。Access・Cloudflare の障害でまとめて使えなくなるのは受け入れている
 - **載せない**: 手元のアプリを操作する MCP（Blender の `blender`、OpenScreen の `openscreen`）。そのアプリが動く Mac の agent でしか意味が無く、外部 agent に出す理由が無いため、Claude Code の local plugin から直接つなぐ（[skill-plugins](skill-plugins.md)）。OpenScreen は 2026-11-17 まで Gateway・Tunnel 経由で portal に載せていたが、アプリを起動していないと server が `error` のまま残り、Tunnel・Gateway の構成も OpenScreen のためだけにあった
+- **手元の MCP でも、Mac の外の client から使う理由があれば載せる**: personal-mcp のカメラ（`camera`）は電子工作中の手元を claude.ai・スマホからも見せるために載せている。手元を撮れる server なので、Access は本人のメールだけ・session 1h にし、使わないときは server を止める（止めている間は `error` のまま残るのは受け入れている）
 - **自動実行はこの Mac では人の grant を継承する**: CI・他のマシンからは service token で server の tool が見えず（下記）、token も無いので portal は使えない。一方この Mac の無人実行（Orca automation の pi・codex）は、人が一度ログインした grant をそのまま使う — Managed OAuth は refresh token を背景で更新するので「人のログインが無い経路」にはならない。scheduled task は今のところ MCP を使っていないが、無人の実行から portal の全 upstream に届く状態は残る。止めたいときは client 側で切る（pi は `--no-mcp`、Codex は `[mcp_servers.mcphub] enabled = false` を local に置く。base が持たない key なので `chezmoi apply` で戻らない）
 - **各 client の初回は OAuth ログインが要る**: `codex mcp login mcphub` / `pi mcp login mcphub` / `devin mcp login mcphub`、Claude Code は `/mcp`。redirect が localhost・loopback になるため portal Access app の DCR で `allow_any_on_localhost`・`allow_any_on_loopback` を有効にしている（Access policy で本人のメールに限るので、登録できても本人以外は通らない）。grant の `session_duration` は 720h（30 日。2026-10-21 に 24h から延長 — ローカル 4 client の日次再ログインを避ける）で、切れたら再ログインする。access token は 15m のまま
   - Codex は `oauth_resource` を設定しなくても `resource` を送る（discovery の protected resource metadata、無ければ server URL。`codex mcp login mcphub --no-browser` が出す authorization URL に `resource=https%3A%2F%2Fmcp.wwwyo.dev%2Fmcp` が入るのを確認済み）。`oauth_resource` を足すと `resource` が二重に付くので設定しない
@@ -65,7 +66,7 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 
 ## 手元（dotfiles 管理）
 
-Tunnel・Gateway network policy・CIDR route は loopback の upstream（OpenScreen）のために作ったもので、2026-11-17 以降は載せている server が無い。次に loopback の MCP を portal に出すときのために残している。
+Tunnel・Gateway network policy・CIDR route は loopback の upstream のための経路で、OpenScreen のために作り、2026-11-27 から personal-mcp のカメラ（`127.0.0.1:47822`）が使っている。Tunnel 名 `openscreen-mcp-proxy` は作成時のまま。
 
 - Tunnel の常駐: `home/Library/LaunchAgents/dev.wwwyo.mcp-tunnel.plist`。ログは `~/Library/Logs/mcp-tunnel.log`。
 - token: `MCP_PORTAL_TUNNEL_TOKEN`（`home/dot_config/mise/config.mcp-tunnel.toml`、age）。`MISE_ENV=mcp-tunnel` のときだけ読まれる global config に置き、通常の shell へ注入しない。
@@ -80,7 +81,8 @@ portal・MCP server・それらの Access app の正本は dotfiles の [`mcp/cl
 | --- | --- |
 | Tunnel | リモート管理。ingress は `http_status:404` だけ、`warp-routing` 有効 |
 | Tunnel CIDR route | `127.0.0.1/32` → 上の Tunnel（default virtual network） |
-| Gateway network policy | L4 block: `net.dst.ip in {127.0.0.1/32} and not(net.dst.port in {<公開する port>})` |
+| Gateway network policy | L4 block: `net.dst.ip in {127.0.0.1} and not(net.dst.port in {47822})`（名前 `Loopback via tunnel: only camera MCP port`。2026-11-27 に 47821 から変更） |
+| MCP server | `camera`: `http://127.0.0.1:47822/mcp`、`auth_type: bearer`（token は camera サーバーと共有し、dotfiles の `config.camera-mcp.toml`（age、`MISE_ENV=camera-mcp`）の `CAMERA_MCP_TOKEN`）、`secure_web_gateway: true`。portal `wwwyo` に `on_behalf: false`。Access app は本人のメールだけ・session 1h。起動手順は personal-mcp の `docs/camera.md` |
 | MCP server | `openscreen` は 2026-11-17 に portal `wwwyo` から外し、server と Access app を削除した（OpenScreen は Claude Code の local plugin から直接つなぐ） |
 | MCP server | `context7`: `https://mcp.context7.com/mcp`、`auth_type: bearer`（`CONTEXT7_API_KEY` を Cloudflare に保存。context7 は `Authorization: Bearer` で key を受ける）、`secure_web_gateway: false`（公開 upstream なので Gateway・Tunnel を通さない） |
 | MCP server | `fudoki`: `https://api.fudoki.dev/mcp`、`auth_type: unauthenticated`、`secure_web_gateway: false` |
@@ -89,9 +91,10 @@ portal・MCP server・それらの Access app の正本は dotfiles の [`mcp/cl
 | MCP server | `cloudflare-small`: `https://mcp.cloudflare.com/mcp`、`auth_type: oauth`（DCR。client 登録は portal が自動で行い、手動の client_id は持たない）、`secure_web_gateway: false`。tool は `docs` `search` `execute` `whoami`。portal `marketing` にだけ載せている（以前 `wwwyo` にあった server `cloudflare` は今は無い） |
 | MCP server | `buffercom`: `https://mcp.buffer.com/mcp`、`auth_type: bearer`（Buffer の key。mise の `BUFFER_API_KEY`（age）にもあり、宣言の `credential_env`）、`secure_web_gateway: false`。tool は投稿・アイデア・テンプレートの読み書きで、削除も含む。登録時に hostname の先頭へ入っていた空白は、2026-11-13 に dotfiles の `apply.py --recreate buffercom` で作り直して消した（Access app は残り、利用者ごとの portal 接続は認可し直しが要った） |
 | MCP server | `composio`: portal `marketing` 用の Composio tool router session の `mcp.url`（`https://backend.composio.dev/tool_router/<session_id>/mcp`）、`auth_type: bearer`（`x-api-key` header に Platform の `ak_` key）、`secure_web_gateway: false`。toolkit は GSC と GA。GSC は読み取りの `LIST_SITES` `GET_SITE` `SEARCH_ANALYTICS_QUERY` `INSPECT_URL` `LIST_SITEMAPS` `GET_SITEMAP` と、書き込みの `SUBMIT_SITEMAP`。auth config は `gsc-sitemap`（scope `webmasters`）。GA は readOnlyHint の tool 60 件で、auth config は `ga-readonly`（scope `analytics.readonly`）。Composio 側の user_id は `wwwyo`。旧 `gsc-readonly` は 2026-11-13 に無効化した。tool の一覧は dotfiles の `mcp/composio/sessions/marketing.json` にある |
+| MCP server | `paper`: `https://mcp.paper.design`（Paper の公式 remote MCP）、`auth_type: oauth`（利用者ごとの OAuth）、`secure_web_gateway: false`。portal `wwwyo` に `on_behalf: true` で載せている |
 | MCP portal | `marketing`: `mcp-marketing.wwwyo.dev`、`code_mode: default_on`、portal 側 `secure_web_gateway: false`、server は `composio`・`buffercom`（`on_behalf: false`）と `cloudflare-small`（`on_behalf: true`）。Access policy は `Cloudflare account members` |
-| MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: default_on`（2026-10-21 に `off` から変更。client は `?codemode=off` で従来の tool 一覧に戻せる）、portal 側 `secure_web_gateway: false`、server は `context7`・`fudoki`・`trustmrr`（`on_behalf: false`）と `queria`（`on_behalf: true`） |
-| Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback・claude.ai の `https://claude.ai/api/mcp/auth_callback`・任意の localhost/loopback）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`、server ごとに 1 つ）。`wwwyo` portal と `context7`・`fudoki` の app は、本人のメールだけを Allow する app 専用の policy（session 1h）。`marketing` portal と、`composio`・`cloudflare-small`・`buffercom`・`queria`・`trustmrr` の server 用 app は reusable policy `Cloudflare account members`（session 24h）。`marketing` portal の app にも 2026-11-13 に `wwwyo` と同じ Managed OAuth・DCR（`oauth_configuration`）を入れた |
+| MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: default_on`（2026-10-21 に `off` から変更。client は `?codemode=off` で従来の tool 一覧に戻せる）、portal 側 `secure_web_gateway: false`、server は `camera`・`context7`・`fudoki`・`trustmrr`（`on_behalf: false`）と `queria`・`paper`（`on_behalf: true`） |
+| Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback・claude.ai の `https://claude.ai/api/mcp/auth_callback`・任意の localhost/loopback）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`、server ごとに 1 つ）。`wwwyo` portal と `context7`・`fudoki`・`camera` の app は、本人のメールだけを Allow する app 専用の policy（session 1h）。`marketing` portal と、`composio`・`cloudflare-small`・`buffercom`・`queria`・`trustmrr`・`paper` の server 用 app は reusable policy `Cloudflare account members`（session 24h）。`marketing` portal の app にも 2026-11-13 に `wwwyo` と同じ Managed OAuth・DCR（`oauth_configuration`）を入れた |
 | DNS | `mcp` CNAME → `gateway.agents.cloudflare.com`（proxied） |
 
 ## MCP を追加するとき
