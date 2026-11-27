@@ -730,6 +730,22 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/heydamir/unslop.git",
       "updatedAt": "2026-11-22T00:03:54.344Z"
+    },
+    "void": {
+      "computedHash": "39e4741b17adc5cab30d3a31b6a557bdc6479355458c71bc89173c51ae36d3c9",
+      "installedAt": "2026-11-27T05:27:36.198Z",
+      "native": {
+        "computedHash": "39e4741b17adc5cab30d3a31b6a557bdc6479355458c71bc89173c51ae36d3c9",
+        "skillPath": "packages/void/skills/void/SKILL.md",
+        "source": "voidzero-dev/void",
+        "sourceType": "github"
+      },
+      "skillFolderHash": "96e22e47094e598e4a46acecbe97c4529c54dc0d",
+      "skillPath": "packages/void/skills/void/SKILL.md",
+      "source": "voidzero-dev/void",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/voidzero-dev/void.git",
+      "updatedAt": "2026-11-27T05:27:36.198Z"
     }
   },
   "version": 1
