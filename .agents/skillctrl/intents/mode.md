@@ -11,4 +11,5 @@ pstack の poteto-mode を `mode` の名前で取り込み、コード作業の�
 - prototype playbook は UI の試作が主。動きを比べるときだけ emil-design-eng の基準に揃え、コード品質は問わない
 - review-triage は bot と人間の両方のレビューコメントを同じ基準で裁く（原本の bugbot-triage を一般化）
 - PR は ready で開き、pr-auto-merge の対象にしてよい
-- watch-pr の bootstrap は原本どおり frozen な bun.lock を使い、dev 依存の "latest" は lock で固定される
+- watch-pr の bootstrap は原本どおり frozen な bun.lock を使う。dev 依存は `latest` ではなく lock が解決した版を exact で書く（repo の exact ピンの規約）。test と型検査は `tests/mode-watch-pr.test.sh` で CI に載せる
+- playbook から watcher を指す path は `../scripts/watch-pr/watch-pr` と playbook からの相対で書く
