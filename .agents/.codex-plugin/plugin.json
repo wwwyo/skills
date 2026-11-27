@@ -19,6 +19,7 @@
     "./skills/pr-auto-merge",
     "./skills/secret-env",
     "./skills/skillctrl",
+    "./skills/statechart",
     "./skills/typesafe-ai",
     "./skills/void"
   ]

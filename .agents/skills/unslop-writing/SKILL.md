@@ -1,5 +1,5 @@
 ---
-name: unslop
+name: unslop-writing
 description: Cut AI tells from any writing.
 disable-model-invocation: true
 ---
@@ -9,6 +9,8 @@ disable-model-invocation: true
 Edit text to remove AI patterns. Scan for the patterns below, then rewrite. Preserve meaning and match the intended tone.
 
 Rule numbers are stable ids that other skills cite. A removed rule leaves a gap.
+
+For Japanese text, also apply [references/japanese.md](references/japanese.md) and its word-level checklist [references/ai-tone-checklist.md](references/ai-tone-checklist.md).
 
 3. No trailing "-ing" phrases that add no fact ("highlighting...", "ensuring...").
 5. No vague attributions ("experts believe"). Name the source or delete.

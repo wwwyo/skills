@@ -15,13 +15,13 @@ README、設計書、ADR、提案書、技術仕様、意思決定文書など�
 
 ## ドキュメントガイドライン
 
-以下は、文書全般に適用する。日本語の文章は `japanese-tech-writing` skill も参照する。文書構造は本ファイルに従う。
+以下は、文書全般に適用する。日本語の文章は `technical-writing` skill の [japanese.md](../technical-writing/references/japanese.md) も参照する。文書構造は本ファイルに従う。
 
 ### 簡潔で明確に書く
 
 すべての文書で [ASD-STE100](https://www.asd-ste100.org/about.html) を80%程度意識する。
 80%は、この skill での取り入れ方の目安であり、公式の準拠率ではない。
-英語では簡潔な語彙と文構造を使う。日本語の明確さの原則は `japanese-tech-writing` skill を正本とし、文書には特に次を適用する。
+英語では簡潔な語彙と文構造を使う。日本語の明確さの原則は [technical-writing の japanese.md](../technical-writing/references/japanese.md) を正本とし、文書には特に次を適用する。
 
 - 手順は1ステップにつき1つの操作を示す。条件は、その条件がかかる操作の前に書く。
 - 資料にない実行者を補わない。

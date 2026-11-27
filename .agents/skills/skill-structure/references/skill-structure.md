@@ -1,6 +1,6 @@
 # 学び skill をどう構造化するか
 
-新しい学び skill を作る / 既存の学び skill の構造そのものを変える ときに読む。既存 skill にエントリを追記するだけなら読む必要はない（構造は既にあるため）。対象は repo に置いて session-consolidate が育てる学び skill で、dotfiles の汎用 skill（design-md / この skill 自体）は対象外。原型は [Vercel の product-design skill](https://vercel.com/blog/teaching-agents-product-design-at-vercel)。
+新しい学び skill を作る / 既存の学び skill の構造そのものを変える ときに読む。既存 skill にエントリを追記するだけなら読む必要はない（構造は既にあるため）。対象は repo に置いてセッション記録からの還元（`correct`）が育てる学び skill で、dotfiles の汎用 skill（design-md / この skill 自体）は対象外。原型は [Vercel の product-design skill](https://vercel.com/blog/teaching-agents-product-design-at-vercel)。
 
 ## なぜ skill に置くのか
 
@@ -57,7 +57,7 @@ skill 自身の AGENTS.md に還元の規約を書く。収集と判断を分け
 repo の起動時 index は「いつこの skill を load するか」を agent に伝える trigger（skill 自身の AGENTS.md=保守規約 とは別物）。エージェントが起動時に無条件で読み込む index ファイルに、今回書き込んだ skill への参照が 1 行あることを保証する（無ければ追記）。どのファイルが起動時 index かは repo を見て判断する — `AGENTS.md` が基本、repo によっては `CLAUDE.md` / `CLAUDE.local.md` 等。学び skill を新設 or 追記したときはその skill への index を、既存のトピック skill に追記したときはその skill が自動発火するなら index 不要（発火語が description にある前提）:
 
 ```markdown
-- 学び・ハマりどころ・過去の失敗は `.agents/skills/<topic>/`（session-consolidate が維持）を参照
+- 学び・ハマりどころ・過去の失敗は `.agents/skills/<topic>/`（セッション記録からの還元で維持）を参照
 ```
 
 旧運用の `## 学び・ハマりどころ` セクションが index ファイルに残っていたら、エントリを skill へ移設し、上の index 1 行に置き換える（移行）。

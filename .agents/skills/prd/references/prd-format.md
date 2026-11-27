@@ -12,7 +12,7 @@
 - **Success Metrics** — 期待する変化を何で確かめるか。実際のコアアクションや継続利用など、目的に合う指標を選ぶ。測定期間・集計仕様・実験手順は必要なら別の検証記録へ置く。
 - **Glossary / Domain Model** — 整理した用語・概念・関係・境界・ルールがある場合に残す。文章、図、表から理解しやすい表現を選ぶ。実装の型やDB schemaへ展開しない。重要な未決事項は明示する。
 
-既存の関連PRDへリンクする。必要に応じてMigrationなどの節を足してよいが、網羅するためには足さない。日本語本文は `japanese-tech-writing` を参考にする。
+既存の関連PRDへリンクする。必要に応じてMigrationなどの節を足してよいが、網羅するためには足さない。日本語本文は [technical-writing の japanese.md](../../technical-writing/references/japanese.md) を参考にする。
 
 ## 書き分け
 

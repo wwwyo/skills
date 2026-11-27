@@ -56,13 +56,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
-    "ce-simplify-code": {
-      "computedHash": "10b3639265eabf61c7bf7c2f97a867271a9c56c05bc180e3ab67b21d957d1f72",
-      "skillPath": "skills/ce-simplify-code/SKILL.md",
-      "source": "everyinc/compound-engineering-plugin",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/everyinc/compound-engineering-plugin.git"
-    },
     "choreograph": {
       "computedHash": "01ac79c1e42400e9cf6a52ba65dbccbedee615db4736f6748425a333af07839d",
       "skillPath": "skills/choreograph/SKILL.md",
@@ -379,13 +372,6 @@
       "source": "cursor/plugins",
       "sourceType": "github",
       "sourceUrl": "https://github.com/cursor/plugins.git"
-    },
-    "prototype": {
-      "computedHash": "0a59ba7e30d4c1d778d1fbc6da8bbaef3c106aa4e7f81203088ebfedfb616495",
-      "skillPath": "skills/prototype/SKILL.md",
-      "source": "emilkowalski/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
     "reframe": {
       "computedHash": "aaf31ac68b4cd1867e551b5caaad4a2582216ab30caeb4b1eb0104902f7d7a48",

@@ -36,7 +36,7 @@ Reach for agent-browser as a fallback when at least one of these holds:
 - **Another browser was explicitly requested** by the user or the surrounding task.
 
 The specialized procedures below (HAR/API derivation, Electron, Slack, Vercel Sandbox,
-Bedrock AgentCore) and `.agents/skills/pr/references/screenshots.md` remain available under
+Bedrock AgentCore) remain available under
 these conditions. Preserve their CLI steps when required; do not infer an Orca limitation
 from their presence. File upload alone is not a reason to bypass Orca.
 

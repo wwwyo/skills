@@ -111,6 +111,7 @@ On every other host the token is left as it stands or comes out empty. There, be
 
 Keep the default output; it needs no flag. If the session cannot write to `~/.answer-me-with-html/pages` (a sandbox that allows writes only in the workspace), the CLI saves the page in a private folder in the system temporary folder and says so on a `!` line; the system may clear that folder. Add `-o "<absolute-workspace-path>/.tmp/answers/topic.html"` to `render -` before the heredoc only when the user wants the page in the workspace or the render fails with `Cannot write the page`. `-o` names an HTML file, not a folder; the CLI creates missing parent directories. Use `AM_HOME` only when the whole data directory must move.
 
+0. コードや仕組みの「どう動くか」「なぜこうなったか」を説明するときは、書く前に実物を調べる。実装を読み、経緯は commit・PR・issue・ADR の記録から確かめる。説明には確かめた記録（ファイルと行、commit、PR）を添え、記録で裏付けられない部分は推測と明記する。
 1. First list 3–8 panels in your head. Each panel answers one sub-question only. Layout advice for a new answer, not a content budget (see section 4).
    The draft language follows the language of the user's question: an English question gets an English draft, a Chinese question a Chinese draft, a Japanese question a Japanese draft. The page button labels, `<html lang>` and the STE check rules switch automatically by the draft language (a draft containing kana counts as Japanese); STE applies the English or Chinese rules to each sentence by its language (Japanese sentences get only the sentence-length and paragraph-length checks, with the same character limits as Chinese; any other language gets only those two checks, counted in words). To set the language yourself, write `lang:` in the frontmatter: `en`, `zh` (Simplified Chinese), `zh-Hant` or `zh-TW` (Traditional Chinese), `ja`, or any other language tag such as `fr` or `ko`. Detection reads Chinese (Simplified, or Traditional when the text has characters written in only one form), Japanese, Korean, and Cyrillic, Arabic, Hebrew, Thai and Greek text, and reads all Latin-script text as English. Declare the language when the user writes a Latin-script language other than English, when a Chinese text is too short or too plain to show Traditional characters, or when an exact tag matters (Arabic script also writes Persian, Cyrillic also Ukrainian). A language without its own labels still gets the right `<html lang>`, with English page labels.
 2. Choose components by the shape of the information (see section 4).
@@ -225,7 +226,7 @@ Selection rules:
 
 ## 5. STE controlled writing (the text in the draft)
 
-語彙は読者が知る具体的な言葉を選び、専門用語は初出で意味を添える。同じ概念には同じ名前を使う。日本語の原稿は [japanese-tech-writing](../japanese-tech-writing/SKILL.md) に従う。以下のSTE検査はその補助であり、日本語の論理・語彙・不確実性の点検を代替しない。
+語彙は読者が知る具体的な言葉を選び、専門用語は初出で意味を添える。同じ概念には同じ名前を使う。日本語の原稿は [technical-writing の japanese.md](../technical-writing/references/japanese.md) と [unslop-writing の japanese.md](../unslop-writing/references/japanese.md) に従う。以下のSTE検査はその補助であり、日本語の論理・語彙・不確実性の点検を代替しない。
 
 `am render` checks automatically and only warns by default (`style: 80`); with `style: strict` a draft that fails produces no page; `style: off` turns the check off.
 
@@ -235,7 +236,7 @@ Selection rules:
 - 文の長さの検査基準：日本語・中国語では手順（番号付きリスト）は35文字、説明は45文字。英語では手順は20語、説明は25語。
 - No more than 6 sentences per paragraph. Use lists for complex content.
 - In English, use common short words: use, not utilize; start, not commence; before, not prior to.
-- 日本語の文体例：「最適化を行う」→「最適化する」、「説明を加える」→「説明する」のように動詞で直接書く。「の」が重なる長い修飾句は文を分ける。中身を示さない強調や常套句は上記の `japanese-tech-writing` に従って直す。これらは執筆時の規範で、自動検査がすべてを検出するわけではない。
+- 日本語の文体例：「最適化を行う」→「最適化する」、「説明を加える」→「説明する」のように動詞で直接書く。「の」が重なる長い修飾句は文を分ける。中身を示さない強調や常套句は上記の unslop-writing の japanese.md に従って直す。これらは執筆時の規範で、自動検査がすべてを検出するわけではない。
 - For counter-examples shown on purpose, use `~~strikethrough~~` or put them in a table row whose status is `no`; the check skips them.
 
 ## 6. When the user pastes a reply from a page

@@ -20,11 +20,11 @@ PRDは、なぜ作るかと、利用者が何をできるようになるかを�
 
 1. 依頼と既存のStory・PRDを読み、同じ課題なら既存PRDを更新する。関連するPRDへリンクする。
 2. 判断に必要な不明点だけ確認する。十分な文脈があれば質問やヒアリングを繰り返さない。課題が曖昧なら `grill-with-docs`、Storyを新たに整理するなら [story-format](references/story-format.md) を使う。
-3. [prd-format](references/prd-format.md) と [雛形](templates/prd.md) を参考に、必要な節だけ書く。解の形が不明で触ると判断できる場合は `prototype` を使う。既に形が決まっている場合や文章で判断できる場合は、試作品や複数案を必須にしない。
-4. 目的と要件の整合性、受入条件の検証可能性、howへの踏み込み、冗長さを見直す。複雑な要件や重要な変更では `delegate` で内容・文章の独立レビューを受ける。
+3. [prd-format](references/prd-format.md) と [雛形](templates/prd.md) を参考に、必要な節だけ書く。解の形が不明で触ると判断できる場合は `mode` の Prototype playbook を使う。既に形が決まっている場合や文章で判断できる場合は、試作品や複数案を必須にしない。
+4. 目的と要件の整合性、受入条件の検証可能性、howへの踏み込み、冗長さを見直す。複雑な要件や重要な変更では、親と同じ model の subagent に内容・文章の独立レビューをさせる。
 5. 必要な判断が済み、実装に進められる要件になったら `status: ready` にする。未解決の重要な判断は未決と明記し、`draft` を保つ。
 
-このskillでは実装を始めない。実装は `implement`、実装の設計書は `document`、用語の整理は `domain-modeling` を使う。
+このskillでは実装を始めない。実装は `mode`（Feature playbook）、実装の設計書は `document`、用語の整理は `domain-modeling` を使う。
 
 ## 置き場と状態
 

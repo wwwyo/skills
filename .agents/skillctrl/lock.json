@@ -1,16 +1,27 @@
 {
   "acceptedHashes": {
-    "agent-browser": "8f399ac9101c7fa76ee1363a524e045e0acd7be9",
-    "ce-simplify-code": "e62d8d043021e0c7a44fb855b98cca109bedc81a",
+    "agent-browser": "8ae1da6cbcdd3877dc207691fd13bd6d115f5576",
+    "architect": "73337263abcb5ea580820c57c42358a66a32aaad",
+    "blast-radius": "763be55297df7905221780e9f70fea02a862b3a8",
+    "catch-up": "0cdb1b2ae3bfd5d5816ff6741425b5af5286767c",
     "cloudflare": "aeea5a45701ac077377985a22f233f9d3da07278",
+    "create-formal-verification-skill": "ea2b2c4ba1df358a9b8bccd117b1690fa3f3f3d5",
+    "create-verification-skill": "8ccd25a46eb2c1f0e0fc353cc4d416fb676f78a4",
     "domain-modeling": "ee7bc9f9e4971125c8252d1b824a98983d9844b2",
     "e2e": "d35c6f36a4e19f9788c12ab48c2b1bd2d09cbd34",
+    "figure-it-out": "99bbf9564b1e563ad9cdf9226ffd1a06120ca89c",
     "grill-with-docs": "8aa67ae654f28fb6a9098a3dd287536438fc2092",
+    "interrogate": "0a87d986f90e43f5274cb379b45e65cedd5b0a3b",
     "langfuse": "1f4efa271b10a127fa56e876ce2861eb28aba00a",
-    "learn": "d326d001f6d0971c61a0ca4e3b8890a83aad51d5",
-    "prototype": "9cb645f2387dbb6e34439b2ecb418b9d81e1290f",
+    "learn": "a97742de472ad5b8740b8965a6e78d33839eb725",
+    "maintain-verification-skill": "98314b90313c13daab2b0ef090145ab94d176e04",
+    "mode": "8a0dd1c59f8a2c4e2c7b947937a6e873789c13e0",
+    "no-comments": "c60d05861c42f8321c3bc5e3d4865ad62f270e7e",
     "skillctrl": "37872ff011ae3fa468a81c6f470b4dbc73b63f4e",
-    "unslop": "7b87213f808441fa03defbed096e19887f2f2bbe"
+    "technical-writing": "e180f643e8ed5d7676594e2c8e4645e1df058004",
+    "typescript-best-practices": "62e1195c2c83d0cd950207529e9c1b95a01bdcd2",
+    "unslop": "7b87213f808441fa03defbed096e19887f2f2bbe",
+    "unslop-writing": "9469127ea2ad0507233d81636b3aa85a938ce57c"
   },
   "upstreams": {
     "agent-browser": {
@@ -169,24 +180,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/cursor/plugins.git",
       "updatedAt": "2026-11-27T11:07:59.588Z"
-    },
-    "ce-simplify-code": {
-      "computedHash": "10b3639265eabf61c7bf7c2f97a867271a9c56c05bc180e3ab67b21d957d1f72",
-      "installedAt": "2026-09-25T06:53:52.986Z",
-      "native": {
-        "computedHash": "10b3639265eabf61c7bf7c2f97a867271a9c56c05bc180e3ab67b21d957d1f72",
-        "skillPath": "skills/ce-simplify-code/SKILL.md",
-        "source": "everyinc/compound-engineering-plugin",
-        "sourceType": "github",
-        "sourceUrl": "https://github.com/everyinc/compound-engineering-plugin.git"
-      },
-      "skillFolderHash": "aa3a892fc4a1b1dd491f20aa06f596f4253c13e0",
-      "skillPath": "skills/ce-simplify-code/SKILL.md",
-      "source": "everyinc/compound-engineering-plugin",
-      "sourceCommit": "dd9b7921c9c80498eba84994ff1b8e1e81dbc1db",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/everyinc/compound-engineering-plugin.git",
-      "updatedAt": "2026-11-10T03:45:24.476Z"
     },
     "choreograph": {
       "computedHash": "01ac79c1e42400e9cf6a52ba65dbccbedee615db4736f6748425a333af07839d",
@@ -1026,24 +1019,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/cursor/plugins.git",
       "updatedAt": "2026-11-27T11:07:59.766Z"
-    },
-    "prototype": {
-      "computedHash": "0a59ba7e30d4c1d778d1fbc6da8bbaef3c106aa4e7f81203088ebfedfb616495",
-      "installedAt": "2026-08-23T03:06:38.503Z",
-      "native": {
-        "computedHash": "0a59ba7e30d4c1d778d1fbc6da8bbaef3c106aa4e7f81203088ebfedfb616495",
-        "skillPath": "skills/prototype/SKILL.md",
-        "source": "emilkowalski/skills",
-        "sourceType": "github",
-        "sourceUrl": "https://github.com/emilkowalski/skills.git"
-      },
-      "skillFolderHash": "4ea5b3b58efecc83751b275fb58b516bbf42010b",
-      "skillPath": "skills/prototype/SKILL.md",
-      "source": "emilkowalski/skills",
-      "sourceCommit": "64eb3deb9a5fbfa041faf783e0bc3fd635872e9c",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/emilkowalski/skills.git",
-      "updatedAt": "2026-11-22T00:03:51.932Z"
     },
     "reframe": {
       "computedHash": "aaf31ac68b4cd1867e551b5caaad4a2582216ab30caeb4b1eb0104902f7d7a48",

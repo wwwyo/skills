@@ -358,6 +358,7 @@ script の依存自動 ok で LLM judge を省ける。
 |---------|---------------|
 | `references/judge.md` | plan に `judge` action があるとき |
 | `references/repair.md` | dispatch 先が競合・依存 CI・major 更新の追従を調査/修正するとき |
+| `references/auto-approve.md` | ready の PR に push した・ready にしたとき（Orca Auto Approve への再レビュー依頼）、lane を通さず merge したとき |
 | `tools/pr_triage.py` の docstring / `schema` subcommand | script の挙動を確認したいとき |
 
 ## 運用上の前提

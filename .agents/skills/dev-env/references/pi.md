@@ -56,7 +56,7 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 - **config を置かないと `enabled: true` になる**（`DEFAULT_CONFIG.enabled = true`）。無効で使うなら `{"enabled": false}` を必ず置く
 - **既存環境の移行**: base から外しただけでは `~/.pi/agent/npm` に `pi-sandbox` と依存（`@carderne/sandbox-runtime`・`zod`・`node-forge`）が残る。`npm uninstall pi-sandbox --prefix ~/.pi/agent/npm` では推移的依存が orphan で残るので、`rm -rf ~/.pi/agent/npm/node_modules ~/.pi/agent/npm/package-lock.json` の後、settings の pin を `pi install npm:<pkg>@<version>` で入れ直す（`pi update --extensions` は pin 変更を反映しない）。完了後は 2 package・`cd ~/.pi/agent/npm && npm audit` が 0 件
 - Orca の launcher args（`--no-sandbox` の残骸）の移行は [orca.md](orca.md) が正本
-- `--no-sandbox` は extension が提供する引数で、pi 本体の flag ではない。付けたまま extension を外すと `Error: Unknown option: --no-sandbox` で**起動しない**（delegate・session-consolidate・pr_triage の起動 command からも消した）
+- `--no-sandbox` は extension が提供する引数で、pi 本体の flag ではない。付けたまま extension を外すと `Error: Unknown option: --no-sandbox` で**起動しない**（delegate・pr_triage の起動 command からも消した）
 - sandbox-init 時に `rg` を要求する（無いと `Sandbox dependencies not available: ripgrep (rg) not found`）
 - Orca CLI を sandbox 内から使うには `network.allowUnixSockets` に `~/Library/Application Support/orca` を許可する（Orca は `orca-runtime.json` の `o-<pid>-<suffix>.sock` に接続する）。`allowAllUnixSockets` は使わない
 - git の SSH 署名を通すには `~/.ssh` を `filesystem.denyRead` の対象外にし、ssh-agent socket の親 dir を許可する（private key は `**/id_rsa`・`**/id_ed25519` のみ deny）
