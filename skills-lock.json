@@ -274,6 +274,12 @@
       "source": "heydamir/unslop",
       "sourceType": "github",
       "sourceUrl": "https://github.com/heydamir/unslop.git"
+    },
+    "void": {
+      "computedHash": "39e4741b17adc5cab30d3a31b6a557bdc6479355458c71bc89173c51ae36d3c9",
+      "skillPath": "packages/void/skills/void/SKILL.md",
+      "source": "voidzero-dev/void",
+      "sourceType": "github"
     }
   },
   "version": 3
