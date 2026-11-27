@@ -1582,9 +1582,10 @@ def build_dispatch_message(repo, pr, items):
         "返信し、thread を resolve してください（レビュー指摘を常に採用する"
         "わけではありません）。merge はこちらで行うので不要です。",
         "",
-        "既存 PR への対応は ~/src/github.com/wwwyo/skills/.agents/skills/pr/SKILL.md の flow に従う"
-        "（push 後の CI・レビュー監視、指摘対応が終わったら draft なら "
-        "ready にするところまで）。",
+        "既存 PR への対応は ~/src/github.com/wwwyo/skills/.agents/skills/mode/playbooks/babysit.md の "
+        "drive mode に従う（push 後の CI・レビュー監視、指摘対応が終わったら draft なら "
+        "ready にするところまで）。ready の PR に push したら "
+        "~/src/github.com/wwwyo/skills/.agents/skills/pr-auto-merge/references/auto-approve.md の依頼もする。",
         "",
         "未対応の指摘・障害:",
     ]

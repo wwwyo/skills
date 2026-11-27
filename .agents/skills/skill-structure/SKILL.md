@@ -20,5 +20,5 @@ description: "repo-local の学び skill を新設する、構造を変える、
 
 ## 関連 skill
 
-- [session-consolidate](../../scheduled-tasks/session-consolidate/SKILL.md) — この規約に従って学び skill を育てる batch（新設・構造変更のときだけこの skill を読む）
+- セッション記録からの還元（dotfiles の automation が repo ごとに `correct` を走らせる）— この規約に従って学び skill を育てる（新設・構造変更のときだけこの skill を読む）
 - [design-md](../design-md/SKILL.md) — repo root の design.md（視覚正本）を起こす。デフォルトは 0 からの作成、既存プロダクトからの抽出も扱う

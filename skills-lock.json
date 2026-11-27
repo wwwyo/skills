@@ -28,19 +28,33 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
+    "architect": {
+      "computedHash": "31a2f5974d7de7ee001123e9ff65be1e3ab2a0a56fe950be7df0657e767a7b98",
+      "skillPath": "pstack/skills/architect/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "benchmark-checklist": {
+      "computedHash": "4b4a6bdeddb7bd94c1a36ef5fcbb4f058b144c9fbce40355cef15f1d1553307d",
+      "skillPath": "pstack/skills/benchmark-checklist/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "blast-radius": {
+      "computedHash": "2d3a5300788bfd4e4dd2ffde5b2904e97cfa0d350e67f4e3a632f5920221dcc1",
+      "skillPath": "pstack/skills/blast-radius/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
     "break-ui": {
       "computedHash": "ab458c0ede6bf4bec5335b8c609cde26206597748db3bfb8c86d99d43837d89a",
       "skillPath": "skills/break-ui/SKILL.md",
       "source": "emilkowalski/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
-    },
-    "ce-simplify-code": {
-      "computedHash": "10b3639265eabf61c7bf7c2f97a867271a9c56c05bc180e3ab67b21d957d1f72",
-      "skillPath": "skills/ce-simplify-code/SKILL.md",
-      "source": "everyinc/compound-engineering-plugin",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/everyinc/compound-engineering-plugin.git"
     },
     "choreograph": {
       "computedHash": "01ac79c1e42400e9cf6a52ba65dbccbedee615db4736f6748425a333af07839d",
@@ -55,6 +69,27 @@
       "source": "cloudflare/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/cloudflare/skills.git"
+    },
+    "correct": {
+      "computedHash": "b7e0850f6e5370007dd560aca2a728b49891208b8782da67212b49638105827e",
+      "skillPath": "pstack/skills/correct/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "create-formal-verification-skill": {
+      "computedHash": "ecccfa683447517ba3ebcfbd3099e1f8b05b4b41875a0194942182564d553997",
+      "skillPath": "pstack/skills/create-formal-verification-skill/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "create-verification-skill": {
+      "computedHash": "ea190ea806525b150b8db19316b2636af152301135a0d2e106575cf1a930554e",
+      "skillPath": "pstack/skills/create-verification-skill/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
     },
     "domain-modeling": {
       "computedHash": "b3eb40152b81f0c98fd2095a023c019452dbdce56f7540cc67fece2972db8369",
@@ -77,6 +112,13 @@
       "source": "emilkowalski/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
+    },
+    "figure-it-out": {
+      "computedHash": "a5796f2e7c9a865e4e2e3139431202bd05fc3debfd5087398032a5ac475ccbcb",
+      "skillPath": "pstack/skills/figure-it-out/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
     },
     "find-animation-opportunities": {
       "computedHash": "06efa7916c6c6996b5a8162d1ce1be7b3006f1de0c0a372aa065a57b19a0de7d",
@@ -121,12 +163,33 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
+    "interrogate": {
+      "computedHash": "36d72cec7e0f25fc0641df0c19f002e07a72641d44f7f49df8158499e82542e3",
+      "skillPath": "pstack/skills/interrogate/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
     "langfuse": {
       "computedHash": "c1dc8c4e847791c62a3145894be9ec318220e76fdf0ee1a13422842f9908a48b",
       "skillPath": "skills/langfuse/SKILL.md",
       "source": "langfuse/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/langfuse/skills.git"
+    },
+    "maintain-formal-verification-skill": {
+      "computedHash": "a41b8cffadbd598e4e06dbe57e0ee5c4307f3252814257ccaef198363b359d6c",
+      "skillPath": "pstack/skills/maintain-formal-verification-skill/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "maintain-verification-skill": {
+      "computedHash": "283083c9547641392a58c38edeb147e75aa99912e7fba55edaa7b1a02021ffec",
+      "skillPath": "pstack/skills/maintain-verification-skill/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
     },
     "mobile-native": {
       "computedHash": "19a47e318bfcb2a1c2be346b79219758b296437800cc6226d2cb467233403d17",
@@ -135,6 +198,13 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
+    "no-comments": {
+      "computedHash": "990102b5f8433d3cffd4626ad90736ad543e77b8165e69e47082544b7df84c77",
+      "skillPath": "pstack/skills/no-comments/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
     "pick-ui-library": {
       "computedHash": "c678a31d4b61cba9c8cda8e897bb7f1b0348011a59b67fc9fd0d431a2a0501aa",
       "skillPath": "skills/pick-ui-library/SKILL.md",
@@ -142,12 +212,173 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
-    "prototype": {
-      "computedHash": "0a59ba7e30d4c1d778d1fbc6da8bbaef3c106aa4e7f81203088ebfedfb616495",
-      "skillPath": "skills/prototype/SKILL.md",
-      "source": "emilkowalski/skills",
+    "principle-attack-the-premise": {
+      "computedHash": "b27584275c626f74c0dfdb8e9e901e14c3e831f79365a821525fac7d1c437113",
+      "skillPath": "pstack/skills/principle-attack-the-premise/SKILL.md",
+      "source": "cursor/plugins",
       "sourceType": "github",
-      "sourceUrl": "https://github.com/emilkowalski/skills.git"
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-boundary-discipline": {
+      "computedHash": "ef292604df212a6f27632173ff0bbd2d78080d47cb5f073df5da8071193d72ca",
+      "skillPath": "pstack/skills/principle-boundary-discipline/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-build-the-lever": {
+      "computedHash": "bbb5737684a915c82a96f68c9c71c5865e37dc03e3535e66b5961629582dc59e",
+      "skillPath": "pstack/skills/principle-build-the-lever/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-encode-lessons-in-structure": {
+      "computedHash": "200f578bf772cff030e7b18c582c935686375ddb6ebfe96b97bfee663434da21",
+      "skillPath": "pstack/skills/principle-encode-lessons-in-structure/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-exhaust-the-design-space": {
+      "computedHash": "af0db9d13eb02db3bdab6e3ecb02bc44196c82dd7c487e1897bce4db11c8e37b",
+      "skillPath": "pstack/skills/principle-exhaust-the-design-space/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-experience-first": {
+      "computedHash": "bd0254d8a460c145a148214cbc136f84dbba6edc9acc48c00a8af660efc88856",
+      "skillPath": "pstack/skills/principle-experience-first/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-explain-the-number": {
+      "computedHash": "759ca6ef46ed490a549477a9c0e72c3500d421aaf8bf21ecddc225dba746952e",
+      "skillPath": "pstack/skills/principle-explain-the-number/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-fix-root-causes": {
+      "computedHash": "8765301148b527f0273c0d041019cc1b64ab61b44567c95d4c8936726a5ecb82",
+      "skillPath": "pstack/skills/principle-fix-root-causes/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-foundational-thinking": {
+      "computedHash": "550da9547aa95af75ac914aa4d23548898808db4c9132103cb3f0a604e118beb",
+      "skillPath": "pstack/skills/principle-foundational-thinking/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-laziness-protocol": {
+      "computedHash": "abf419046bf6635136cb4b30d3d7e9263967b30c3a8f1fe3ed831776b1e5e67a",
+      "skillPath": "pstack/skills/principle-laziness-protocol/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-make-operations-idempotent": {
+      "computedHash": "b155ebd3026c162dbead20f48ab33e1ffe96576f072873167d016214eb3e0ff8",
+      "skillPath": "pstack/skills/principle-make-operations-idempotent/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-migrate-callers-then-delete-legacy-apis": {
+      "computedHash": "78cd7712383c2d891c614d68eb7f9b2ed2cd11f34928a947b458325549b0c423",
+      "skillPath": "pstack/skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-minimize-reader-load": {
+      "computedHash": "0d332ea202036679491afab5581432400ad2cf146657c9e3ec0debe3139e1352",
+      "skillPath": "pstack/skills/principle-minimize-reader-load/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-model-the-domain": {
+      "computedHash": "470954c575637c842aef7c847cc45517f539541173c63a83049f068f997465d3",
+      "skillPath": "pstack/skills/principle-model-the-domain/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-never-block-on-the-human": {
+      "computedHash": "2b684f3d6eb8ba1144d095217a0ccc68a66686a2fe0db01745a21e335207e0f4",
+      "skillPath": "pstack/skills/principle-never-block-on-the-human/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-outcome-oriented-execution": {
+      "computedHash": "c6ba3d622fe1e3d28a83d391ceaa150aaeafac9c935c154df9b1826f6423bc0b",
+      "skillPath": "pstack/skills/principle-outcome-oriented-execution/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-prove-it-works": {
+      "computedHash": "188868e9d4d1f12009d8b0aa80d2190607f9795acc8dcaad8fa46c3d78f838f4",
+      "skillPath": "pstack/skills/principle-prove-it-works/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-redesign-from-first-principles": {
+      "computedHash": "f627292d04bdd447c5e1dcce7b8fbd28906d9cbab44498c81a9d8c017d055ae4",
+      "skillPath": "pstack/skills/principle-redesign-from-first-principles/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-separate-before-serializing-shared-state": {
+      "computedHash": "0879d2f6a3f027e30454e3d32b04404872117fa80b06adbaf7048fd175782da0",
+      "skillPath": "pstack/skills/principle-separate-before-serializing-shared-state/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-sequence-verifiable-units": {
+      "computedHash": "3fd1ed99532488bb5428682f69556087d8c62fbd24104d13de26fb0c9272babc",
+      "skillPath": "pstack/skills/principle-sequence-verifiable-units/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-subtract-before-you-add": {
+      "computedHash": "93ef4445c6dc6c71256f4c5d3e965097dccd037019041468298095670c112fe7",
+      "skillPath": "pstack/skills/principle-subtract-before-you-add/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-test-behavior-not-implementation": {
+      "computedHash": "63bfe5deb5b1b1905a4310ea9befac316f691426af4411ed80f176eefa0f8175",
+      "skillPath": "pstack/skills/principle-test-behavior-not-implementation/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "principle-type-system-discipline": {
+      "computedHash": "8c1e648ea5779097df7ca6eafbe4258a5b3b7a2f617e12e54720e99fd95dc49a",
+      "skillPath": "pstack/skills/principle-type-system-discipline/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "reframe": {
+      "computedHash": "aaf31ac68b4cd1867e551b5caaad4a2582216ab30caeb4b1eb0104902f7d7a48",
+      "skillPath": "pstack/skills/reframe/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
     },
     "remove-animations": {
       "computedHash": "19beb2b9fccba7528e4c41c40aff02ac8916f4669708305e57c8e6d36c10d149",
@@ -163,12 +394,40 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
+    "sharpen": {
+      "computedHash": "61d64e8e7a7de89c18f0ce44eb365773bdefbd6027a692c0a5fb70170131e34f",
+      "skillPath": "pstack/skills/sharpen/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
     "skillctrl": {
       "computedHash": "1ea4384978728e25168b39c2303ef1981f69c1007159c8f229a7ca39279c2207",
       "skillPath": ".agents/skills/skillctrl/SKILL.md",
       "source": "wwwyo/skillctrl",
       "sourceType": "github",
       "sourceUrl": "https://github.com/wwwyo/skillctrl.git"
+    },
+    "statechart": {
+      "computedHash": "8bf2b8c8f6e7fdb44427d9bd83633dd340fc94b9d754f8ad4ce1537dac6d5d05",
+      "skillPath": "pstack/skills/statechart/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "tdd": {
+      "computedHash": "d3316fbb89ac596c91bb8d529180393c3b69fb6408f7d5cdccb74ead97cbf188",
+      "skillPath": "pstack/skills/tdd/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
+    },
+    "technical-writing": {
+      "computedHash": "7af3499f2e7214684bce1e66bf4022772cef94c8cbbdbe401069a16bd8392caf",
+      "skillPath": "pstack/skills/technical-writing/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
     },
     "threejs-animation": {
       "computedHash": "52acf24ba76b47b094e5734622947fcc85deebf2469bb5c8ef77a1f1dcfc3e5c",
@@ -267,6 +526,13 @@
       "source": "typesafe-ai/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/typesafe-ai/skills.git"
+    },
+    "typescript-best-practices": {
+      "computedHash": "2ef9e9307b23e38676b122330079a68315f87182e7fc308e263e3d2381090cb3",
+      "skillPath": "pstack/skills/typescript-best-practices/SKILL.md",
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cursor/plugins.git"
     },
     "unslop": {
       "computedHash": "9a185defd7c852782c0c8d9b5445e8c62742a1c8148b0aae6e06c57c84547bed",
