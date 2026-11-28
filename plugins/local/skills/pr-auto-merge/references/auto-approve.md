@@ -20,7 +20,7 @@ gh pr comment <PR URL> --body "@orca-bots 再レビュー: ${sha}（修正を pu
 
 失敗しても（Orca が無い環境・`gh` が使えないなど）作業は止めず、依頼できなかったことを報告に残す。
 
-依頼したら PR の監視（mode の babysit playbook）に戻り、Auto Approve のレビューを「開始されたレビュー」として終了条件に数える。bot は依頼の直後に `orca-bots` 名義で `Working…` とだけ書いたコメントを付け、レビューが終わると結果（must / should / nit）を新しいコメントとして投稿する。返信なしで終わった run では `Working…` が残るので、`Working…` の有無では判定しない。依頼より後に `Working…` 以外の `orca-bots` のコメントが付いたら終了とみなし、指摘は AI レビューボットのコメントとして babysit の review triage で扱う。依頼から 15 分たっても結果のコメントが無ければ、`Working…` が残っていても未確認としてユーザーに報告して先へ進む。
+依頼したら PR の監視に戻り、Auto Approve のレビューを「開始されたレビュー」として終了条件に数える。bot は依頼の直後に `orca-bots` 名義で `Working…` とだけ書いたコメントを付け、レビューが終わると結果（must / should / nit）を新しいコメントとして投稿する。返信なしで終わった run では `Working…` が残るので、`Working…` の有無では判定しない。依頼より後に `Working…` 以外の `orca-bots` のコメントが付いたら終了とみなし、指摘は AI レビューボットのコメントとして扱う。依頼から 15 分たっても結果のコメントが無ければ、`Working…` が残っていても未確認としてユーザーに報告して先へ進む。
 
 ## 手動 merge の後
 

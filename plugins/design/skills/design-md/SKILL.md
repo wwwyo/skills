@@ -18,7 +18,7 @@ prototype は大枠の UI/UX（構図・密度・雰囲気）を人間に選ば�
 
 **候補はすべて実 UI に適用した状態で選ばせる。** font・logo・icon・palette anchor など値レベルの候補を人間に提案するとき、抽象的な見本帳（specimen）や説明文だけで並べて選ばせない — 実際のプロダクト画面に実文言・実サイズで適用した姿を全候補ぶん用意してから選択させる（例: query param やトグルで切り替わる live preview、候補ごとの iframe）。人間が見て選べるのは「適用された結果」だけであり、孤立した見本からの選択は step 4 の re-skin で必ず齟齬として再浮上する。
 
-1. **発散**: core plugin の `mode` skill の Prototype playbook で、実成果物（月次レポート、提案書、設定画面など）を3〜4案作る。案は値でなく構図で分ける（例: 帳票様式 / dashboard 様式 / 通帳様式）。prototype には「色や角丸の違いでなく、情報の並べ方と区切り方を変えろ」と指示する
+1. **発散**: 実成果物（月次レポート、提案書、設定画面など）を3〜4案の prototype として作る。案は値でなく構図で分ける（例: 帳票様式 / dashboard 様式 / 通帳様式）。prototype には「色や角丸の違いでなく、情報の並べ方と区切り方を変えろ」と指示する
 2. **選択**: 人間が picker で1案選ぶ。選んだ理由・落とした案の「何が嫌か」・見た目の方向性（warm/cool、serif/sans、chroma 高低、密度）を書き留める。これが設計フェーズの brief であり、product-design 型 skill の references の最初の bullet と「避ける生成パターン」の種になる
 3. **設計**: 方向 brief に従い、値を一から設計する
    - **tokens**: palette の anchor を決め、そこから色 scale（oklch）・type scale・spacing scale・radius・motion（easing / duration / reveal 方針）を設計する

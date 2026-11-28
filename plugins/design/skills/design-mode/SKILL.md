@@ -13,7 +13,6 @@ design plugin の入口。design 系の skill（unslop・design-md・emil 系・
 - 見た目はスクリーンショットで確かめてから終える。コードを読んだだけで「直った」と言わない。動きは録画か、複数フレームのスクリーンショットで見る
 - 動きは「そもそも動かすべきか」から決める。`prefers-reduced-motion` を必ず扱う
 - ライブラリを足す前に **pick-ui-library** を見る
-- 実装に入ったら、コードの書き方・検証・PR は core plugin の **mode** skill に従う。mode の Feature・Prototype playbook からもここへ来る
 
 ## playbook
 

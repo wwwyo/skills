@@ -26,7 +26,7 @@ plugin は `core`（cloud と local の両方。環境に依存しない汎用 s
 
 - skill の所属は置き場所で決まる。足す・plugin を移すときは `plugins/<plugin>/skills/<name>/` に置く・`git mv` し、`scripts/sync-plugin-manifests.py` で Claude・Codex・pi・skillctrl の定義を再生成する。`tests/plugin-manifests.test.sh` が生成物の一致と、skill 名が plugin をまたいで重複しないことを検査する。skillctrl で新しい skill を入れるときは `--root <plugin>` で置き場所を選ぶ
 - cloud に載せてよいかで core・design / local を決める。UI デザイン・動き・3D の skill は design、それ以外の汎用 skill は core に置く。手元の path・CLI・secret を前提にする skill は local
-- **plugin の横断参照は原則禁止**（ユーザー判断）。plugin は自分の dir だけがコピーされ、cloud には local が届かないので、別 plugin の skill を相対 path・canonical path で指すと届かない環境で切れる。別 plugin の skill に触れるときは path を書かずに名前で言い（「core plugin の mode skill」）、手順が要るなら自分の skill に書く。`tests/plugin-boundaries.test.sh` が、plugin の外へ出る相対 path と、別 plugin・旧 layout（`.agents/skills/<name>`）の path を検出する
+- **plugin の横断参照は禁止**（ユーザー判断）。plugin は自分の dir だけがコピーされ、cloud には local が届かないので、別 plugin の skill に頼ると届かない環境で手順が切れる。相対 path・canonical path だけでなく、名前での言及（「core plugin の mode skill」「`unslop` で監査」）も依存として扱う。別 plugin の skill の手順が要るなら自分の skill に書くか、その skill を同じ plugin に移す。`tests/plugin-boundaries.test.sh` が、plugin の外へ出る相対 path、別 plugin・旧 layout（`.agents/skills/<name>`）の path、別 plugin の skill 名（`` `name` ``・`**name**`・`name skill`・`/name`・`$name`）と「<plugin> plugin」の言及を検出する
 - Codex は local plugin を cache へコピーし、symlink を落とす。plugin root に skill を symlink で集めず、root からの相対 path で列挙する
 - plugin で配る MCP は、Claude の marketplace の entry に `mcpServers` で inline に書く（core に MCP portal の `mcphub`（Code Mode）と `mcp-media`（Code Mode off、画像を返す tool 用）、local に手元でしか動かない `blender`・`openscreen`）。credential は書かず、要るものは plugin の `userConfig`（sensitive）で受ける。運用は dev-env の skill-plugins を参照する
 - tool が自分で配って自動更新する skill（Orca の `orca-cli`・`orchestration`・`orca-computer-use` 等）はこの repo に置かない（dotfiles の `.agents/skills` で追跡する）。plugin に入れると、tool が書く `~/.agents/skills` の copy と二重に読まれ、tool の更新にも追従しなくなる。手元の方針は dev-env の reference に置く
@@ -54,7 +54,7 @@ skill の検索・追加・作成・改善・更新・削除は `skillctrl` に�
 - upstream 管理 skill を意図的に変えるときは、保ちたい振る舞いの理由を `.agents/skillctrl/intents/<name>.md` に書き、検証後に `skillctrl record <name>` で受理する。意図ファイルを差分や patch の正本にしない
 - 手書き skill（`memo` `project-setup` 等）は upstream lock に載らず、受理 hash の対象外
 - PR では [skillctrl](.github/workflows/skillctrl.md) が hash drift のときだけ AI に intent 適合を審査させる。土曜 09:00 JST の [skillctrl-update](.github/workflows/skillctrl-update.md) が upstream 更新を取り込み draft PR を作る。AI engine は pi / OpenCode Go を固定し、repo secret `OPENCODE_API_KEY` を使う
-- 自動で読まれる skill（`disable-model-invocation` を付けない）は入口と、コード・デザイン作業の外で話題が出たときに使う skill だけにする。作業の一手順になる skill は command only にし、入口（core は mode、design は design-mode）の playbook から `../<name>/SKILL.md` で辿る。command only の skill は名前を書いても起動できないので、他の skill から参照するときは同じ plugin 内の相対 path のリンクにする。別 plugin の command only skill は辿れないので、その plugin の入口の名前を書くか、必要な手順を自分の skill に書く
+- 自動で読まれる skill（`disable-model-invocation` を付けない）は入口と、コード・デザイン作業の外で話題が出たときに使う skill だけにする。作業の一手順になる skill は command only にし、入口（core は mode、design は design-mode）の playbook から `../<name>/SKILL.md` で辿る。command only の skill は名前を書いても起動できないので、他の skill から参照するときは同じ plugin 内の相対 path のリンクにする
 - 独立 skill として残すかの基準は「その skill だけを目的に起動する場面があるか」。無ければ既存 skill の reference か節にする
 - 運用ルールの記載先は、情報の発生源（不具合の根拠・制約の由来）と適用時（操作を行う skill）で分ける。発生源にだけ書くと使う側が見ず、両方に全文書くと drift する
 - skill・reference の rename・移動・削除では、path だけでなく link の表示名・anchor も repo 全体と dotfiles・wwwyo/me を grep して残存参照を消す

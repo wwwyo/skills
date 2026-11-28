@@ -5,7 +5,7 @@
 Before step 1, settle what to build when it is unclear: **grill-with-docs** for an ambiguous ask, **prd** for the requirements, the **Prototype** playbook when the shape is unknown. When the user asked for the design only, stop after step 2 and reply with the design. When the work implements a PRD, set its status to `in-progress` at the start and `done` once its acceptance criteria pass.
 
 1. Trace the affected subsystem.
-2. `architect` for the shape. When the shape includes a domain model, a database schema, or an agent-facing CLI, read **domain-modeling**, **database-design**, or **agent-friendly-cli** first. UI work also goes through **design-mode**.
+2. `architect` for the shape. When the shape includes a domain model, a database schema, or an agent-facing CLI, read **domain-modeling**, **database-design**, or **agent-friendly-cli** first.
 3. Write the throughput checkpoint as four todo items. A dimension that genuinely does not apply (single file, no fan-out) keeps its item with `n/a: <reason>` rather than being dropped:
    - **Blocking first steps.** Gates run before fan-out.
    - **Independent workstreams.** Disjoint files, services, or layers parallelize. Shared writes serialize.

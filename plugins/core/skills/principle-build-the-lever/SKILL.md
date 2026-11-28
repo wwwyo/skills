@@ -10,5 +10,5 @@ When the work isn't trivial, build the tool that does it (a codemod, script, gen
 
 - Do the first unit by hand, then build the tool and prove it by rerunning it on that unit. Make it safe to rerun.
 - A deterministic tool beats fan-out. When you do fan out, write the recipe, the verification contract, and the fences as one skill the delegates read and cannot edit.
-- Applying this produces a file. No script, codemod, generator, or delegate skill in the diff means you didn't apply it. Commit it when the work outlives the session.
+- Applying this produces a file. No script, codemod, generator, or skill that hands the work to an agent in the diff means you didn't apply it. Commit it when the work outlives the session.
 - Build the smallest script that does or proves the job, never a framework.

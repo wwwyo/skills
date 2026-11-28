@@ -1,10 +1,10 @@
 # Project-local skill の導入
 
-ステップ2で合意した技術スタックに紐づくskillを `skillctrl` CLI（`skillctrl find`・`skillctrl add`）で探索・追加する。プロジェクト固有のskillをローカルにインストールし、使う予定の agent 全部（claude / codex / pi）から使えるようにする。
+ステップ2で合意した技術スタックに紐づくskillを skillctrl CLI（`skillctrl find`・`skillctrl add`）で探索・追加する。プロジェクト固有のskillをローカルにインストールし、使う予定の agent 全部（claude / codex / pi）から使えるようにする。
 
 #### 11.1. 候補探索（find）
 
-合意済み tech stack の各キーワードについて `skillctrl` の探索・候補評価の手順に従い `skillctrl find <query>` で候補を取得する。インストール先は以下の 11.3 でセットアップ対象 repo を明示する。
+合意済み tech stack の各キーワードについて `skillctrl find <query>` で候補を取得し、候補の SKILL.md・同梱ファイル・license・要求する tool を読んで適合を確かめる。インストール先は以下の 11.3 でセットアップ対象 repo を明示する。
 
 ```bash
 skillctrl find shadcn
@@ -48,7 +48,7 @@ find の結果をそのまま install してはいけない。以下を1 skill �
 
 #### 11.3. project-local skill インストール
 
-承認された skill は、セットアップ対象 repo の `.agents/skills/<name>/` に実体を置く。tech stack に応じた skill の採用はそのプロジェクトの判断なので、dotfiles の共通 skill には追加しない。`skillctrl` は cwd の repo を対象にするので、対象 repo の clean worktree に `cd` して実行する。
+承認された skill は、セットアップ対象 repo の `.agents/skills/<name>/` に実体を置く。tech stack に応じた skill の採用はそのプロジェクトの判断なので、dotfiles の共通 skill には追加しない。skillctrl CLI は cwd の repo を対象にするので、対象 repo の clean worktree に `cd` して実行する。
 
 対象 repo に `.agents/skills/` がなければ作成し、repo の承認済み commit 手順で clean にする。候補の `SKILL.md` と同梱ファイルを確認してから、名前を明示して取り込む。upstream の installer は実行しない。
 

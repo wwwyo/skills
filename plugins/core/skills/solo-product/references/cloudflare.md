@@ -78,7 +78,7 @@ Cloudflare 固有の設定・制約はこの reference に集約する。公開�
 
 人が書き込む・高コスト処理を呼ぶ公開フォームに入れる。**人間性確認であって、認証・権限・確実な支出上限ではない** — token を渡した人が大量に呼べば課金は増える（§4 と併用）。
 
-- sitekey は公開前提（HTML に出る）。secret key はサーバー側のみ — Worker の secret として管理し、フロントエンド・拡張・公開 repo に置かない（保管は secret-env skill）。
+- sitekey は公開前提（HTML に出る）。secret key はサーバー側のみ — Worker の secret として管理し、フロントエンド・拡張・公開 repo に置かない。
 - Siteverify は外部 subrequest なので、安い rate limit を先に適用してから呼ぶ。token の有無・形式など外部送信しない検証は先にしてよい。偽 token の連打を検証 API への増幅にしないための順序。
 - **server-side の Siteverify 呼出しは必須**。widget だけでは何も守れない: token は偽造できる・300 秒で失効・**1 回しか検証できない**（replay は `timeout-or-duplicate`）。
 - Siteverify 応答の `success` だけでなく `hostname`（意図した domain で発行されたか）・`action`/`cdata` を検証する。`idempotency_key` を付ければ検証呼出しを安全に retry できる。

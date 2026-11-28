@@ -23,7 +23,7 @@ The remaining triggers live only here:
 - Before review → **no-comments**.
 - Shipping UI → drive it the way a user would with the **e2e** skill. Shipping a CLI → run it.
 - A number you measured → **benchmark-checklist**.
-- Reviewing a PR → the **Review** playbook. PR status → the **Babysit** playbook. Landing a green stack → the **Shipping** playbook. Building or editing a stack → the **gh-stack** skill.
+- Reviewing a PR → the **Review** playbook. PR status → the **Babysit** playbook. Landing a green stack → the **Shipping** playbook. Building or editing a stack → [gh-stack](../gh-stack/SKILL.md).
 - Bot review comments → judge each on its merits.
 
 ## Principles

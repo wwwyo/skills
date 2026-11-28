@@ -15,4 +15,5 @@ pstack の poteto-mode を `mode` の名前で取り込み、コード作業の�
 - playbook から watcher を指す path は `../scripts/watch-pr/watch-pr` と playbook からの相対で書く
 - wwwyo 独自の Review playbook（`playbooks/review.md`）を持つ。PR を head の内容で判定する側の手順で、受けたレビューを捌く review-triage とは逆向き。観点は Principles の leaf と blast-radius に結び付け、wwwyo の must（平文の秘密・`*.local.*` の commit・依存の範囲指定）を持つ。投稿の仕方と approve の条件は呼び出し側（Orca の Auto Approve bot の pr-review など）に残す。Non-negotiables と playbook 一覧、description に Review を足す（2026-11-28、ユーザー判断）
 - Review playbook で書くレビューは、Non-negotiables の「返答で原則を名指しする」の例外にする（指摘は結果の重さで書く）
-- 自動で読まれる skill を減らすため（2026-11-28、ユーザー判断）、command only にした skill へ playbook から辿る。Feature の step 2 から domain-modeling・database-design・agent-friendly-cli と design-mode へ、Prototype から design-mode へ
+- 自動で読まれる skill を減らすため（2026-11-28、ユーザー判断）、command only にした skill へ playbook から辿る。Feature の step 2 から domain-modeling・database-design・agent-friendly-cli へ
+- design plugin の design-mode・emil-design-eng を名指ししない。UI の入口は design-mode が自分の description で拾う。gh-stack は core に移したので command only の skill として相対 path で辿る（2026-11-28、ユーザー判断: 別 plugin の skill は名前でも参照しない）

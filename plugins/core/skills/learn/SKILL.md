@@ -25,7 +25,7 @@ Reply to the user, and write the draft, in the user's language.
 動画・movie・解説動画などを明示的に依頼された場合だけ、第7節の `am video` を使う。通常の「教えて」「図で説明して」や `/learn` は動画生成の依頼として扱わない。
 動画を作る場合は学習の入口に置く。図解シートも作る場合は、動画プレイヤーのリンクを先に提示し、文章・図・操作教材を続ける。
 動画では状態遷移、処理の移動、分岐を図の段階表示や動きで説明する。色やフェードだけで動きを付けた動画で済ませない。
-教材制作のCLIはLLMを呼ばない。制作に使うagentのモデルと、音声生成モデルを区別する。別agentに委譲するときのモデル選択は環境の `delegate` skill に従う。
+教材制作のCLIはLLMを呼ばない。制作に使うagentのモデルと、音声生成モデルを区別する。
 
 ## 共有成果物の制作
 
@@ -63,7 +63,7 @@ When the user asks in natural language ("stop opening the browser", "turn off al
 
 When the arguments start with `clean`, or the user asks to clean up pages / the cache: first run `am clean --dry-run` and tell the user how many items and how much space will be deleted. Run `am clean` only after the user agrees (add `--all` to delete all pages, videos and saved drafts, `--days N` to change how many days to keep).
 
-skill の取得・更新は環境の `skillctrl` skill に従う。原本更新時もHTMLの既定・動画の明示依頼時のみの生成・理解確認を保つ。
+upstream の原本を更新するときも、HTMLの既定・動画の明示依頼時のみの生成・理解確認を保つ。
 
 ## 1. 判断：教材を作るか
 

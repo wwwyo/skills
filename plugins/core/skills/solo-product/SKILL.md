@@ -1,6 +1,6 @@
 ---
 name: solo-product
-description: "個人開発のサービスを公開・運用・緊急停止するときの安全確認の入口。インターネット公開・custom domain 設定・認証・rate limit・Turnstile・課金対策を設計するとき、公開前レビュー、abuse・請求異常の調査で参照する。実装一般・Cloudflare 製品選定は対象外（cloudflare skill 側）。"
+description: "個人開発のサービスを公開・運用・緊急停止するときの安全確認の入口。インターネット公開・custom domain 設定・認証・rate limit・Turnstile・課金対策を設計するとき、公開前レビュー、abuse・請求異常の調査で参照する。実装一般・Cloudflare 製品選定は対象外。"
 ---
 
 # Solo Product

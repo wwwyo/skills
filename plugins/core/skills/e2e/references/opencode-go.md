@@ -66,8 +66,8 @@ data retention 0 days とされている。モデルの開発元は Xiaomi だ�
 中国外での処理の保証として扱わない。
 
 GUI agent から起動するときは `mise x -- ...` で env を注入する。age の復号には
-通常の shell と同じ `MISE_AGE_KEY` が必要。キーが無ければ既存の secret-env 手順で
-Keychain から子プロセスに渡し、キーや環境変数一覧を表示しない。
+通常の shell と同じ `MISE_AGE_KEY` が必要。キーが無ければ手元の鍵の保管先（Keychain 等）から
+子プロセスに渡し、キーや環境変数一覧を表示しない。
 
 ## Telemetry と保存先
 

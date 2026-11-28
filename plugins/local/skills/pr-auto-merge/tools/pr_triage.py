@@ -1589,9 +1589,8 @@ def build_dispatch_message(repo, pr, items):
         "返信し、thread を resolve してください（レビュー指摘を常に採用する"
         "わけではありません）。merge はこちらで行うので不要です。",
         "",
-        "既存 PR への対応は core plugin の mode skill の babysit playbook の "
-        "drive mode に従う（push 後の CI・レビュー監視、指摘対応が終わったら draft なら "
-        "ready にするところまで）。ready の PR に push したら "
+        "push 後は CI とレビューを監視し、指摘対応が終わったら draft なら "
+        "ready にしてください。ready の PR に push したら "
         "~/src/github.com/wwwyo/skills/plugins/local/skills/pr-auto-merge/references/auto-approve.md の依頼もする。",
         "",
         "未対応の指摘・障害:",

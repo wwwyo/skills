@@ -36,3 +36,5 @@ agent の判断が必要な箇所に agent step を使う。cache の再生は�
 
 description は全 harness の skill 一覧に毎ターン載るため、発火条件に絞った短文に保つ。
 対応範囲の詳細は本文に任せ、上流の長い列挙を description に戻さない。
+
+鍵の受け渡しで local plugin の secret-env を名指ししない（2026-11-28、ユーザー判断: 別 plugin の skill は名前でも参照しない）。

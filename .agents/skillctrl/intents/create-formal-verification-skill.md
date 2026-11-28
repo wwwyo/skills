@@ -2,4 +2,4 @@
 
 pstack から取り込む。pack の名前（pstack）への言及だけを外し、それ以外は原本のまま保つ。
 
-statechart は local plugin に置いているので、この repo の plugin 横断参照の禁止に合わせて `/statechart` への path link を外し、名前だけで呼ぶ。原本も生成する skill には名前で書かせているので、振る舞いは変わらない。
+statechart は local plugin に置いているので、`/statechart` skill への言及を外し、TLA+ の反例を最短経路として平文で報告させる指示だけを残す（2026-11-28、ユーザー判断: 別 plugin の skill は名前でも参照しない）。

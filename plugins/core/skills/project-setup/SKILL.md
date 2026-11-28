@@ -101,7 +101,7 @@ repo を public にするなら、手元のデータ（他 repo の中身・個�
 
 ライセンスが未確定なら License 節とバッジは下書きに留め、ステップ 10 で採用条件が決まってから仕上げる。
 
-product・公開 PJ では**ロゴ・ワードマークを独立した完了項目**として扱う — README 規約への間接参照だけでは抜けやすい。作る場合は design plugin の入口 design-mode から辿る design-md の Logo 作成フロー（symbol → 人間選択 → wordmark → 字間調整）に従う。
+product・公開 PJ では**ロゴ・ワードマークを独立した完了項目**として扱う — README 規約への間接参照だけでは抜けやすい。作る場合は symbol を数案作って人間が選ぶ → wordmark を作る → 字間を調整する、の順で進める。
 
 ### 9. tech stack に合わせた skill 追加
 
@@ -173,7 +173,7 @@ lockfile を commit する JS/TS の package manager（bun / npm / pnpm / yarn�
 
 ### 12. 最初の PRD へ handoff
 
-setup 完了後、作成した repo を作業ディレクトリとする agent session へ handoff し、最初の `prd` skill を実行する。`delegate` skill の共通設定と `orca-cli` skill の Full Handoffs に従う。
+setup 完了後、作成した repo を作業ディレクトリとする agent session へ handoff し、最初の `prd` skill を実行する。
 
 - 引き継ぎ prompt に、対象 repo の絶対パス・GitHub URL・合意済みの目的と tech stack・選んだ `docs/` or `.agent/`・setup の完了状況を含める。wiki の PJ ページを作成した場合はその参照先も渡す
 - 対象 repo の `AGENTS.md` と `prd` skill を読み、最初の機能のヒアリングから PRD 作成を進めるよう依頼する。最初に扱う機能が未定なら、その確認から始める。playground の場合は最初に取り組む PoC を対象にする
