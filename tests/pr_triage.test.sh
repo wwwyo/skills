@@ -5,8 +5,8 @@
 set -euo pipefail
 
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PT="$repo_dir/.agents/skills/pr-auto-merge/tools/pr_triage.py"
-python3 "$repo_dir/.agents/skills/pr-auto-merge/tools/pr_triage_orca.test.py"
+PT="$repo_dir/plugins/local/skills/pr-auto-merge/tools/pr_triage.py"
+python3 "$repo_dir/plugins/local/skills/pr-auto-merge/tools/pr_triage_orca.test.py"
 TEST_ROOT=$(mktemp -d)
 trap 'rm -rf "$TEST_ROOT"' EXIT
 
@@ -105,6 +105,9 @@ c = pt.classify_path
 assert c(".github/CODEOWNERS") == "hold"        # workflows 以外の .github
 assert c("AGENTS.md") == "hold" and c("docs/x/CLAUDE.md") == "hold"
 assert c(".agents/skills/x/SKILL.md") == "hold"
+assert c("plugins/core/skills/x/SKILL.md") == "hold"
+assert c(".claude-plugin/marketplace.json") == "hold"
+assert c("plugins/core/.codex-plugin/plugin.json") == "hold"
 assert c(".claude/skills/x") == "hold"          # symlink entry も agent 面
 assert c(".env") == "hold" and c(".env.local") == "hold" and c("a/.envrc") == "hold"
 assert c("LICENSE") == "hold" and c("LICENSE-MIT") == "hold"
@@ -197,8 +200,8 @@ meta_sc = {"author": {"login": "app/wwwyo-skillctrl-update", "is_bot": True},
            "headRefName": "automation/skillctrl-update",
            "url": "https://github.com/wwwyo/skills/pull/54",
            "skillctrl_managed": ["learn", "e2e"]}
-sc_files = [".agents/skills/learn/SKILL.md",
-            ".agents/skills/learn/scripts/am.mjs",
+sc_files = ["plugins/core/skills/learn/SKILL.md",
+            "plugins/core/skills/learn/scripts/am.mjs",
             ".agents/skillctrl/lock.json", "skills-lock.json"]
 r = pt.classify_pr(sc_files, meta_sc, "")
 assert r["lane"] == "judge" and r.get("skillctrl_update") and not r["bot_dep_only"]
@@ -206,10 +209,11 @@ assert r["lane"] == "judge" and r.get("skillctrl_update") and not r["bot_dep_onl
 for files, meta in [
         (sc_files + [".github/workflows/skillctrl.md"], meta_sc),
         (sc_files + ["AGENTS.md"], meta_sc),
-        ([".agents/skills/.codex-plugin/plugin.json"], meta_sc),
+        (["plugins/core/.codex-plugin/plugin.json"], meta_sc),
+        (["plugins/core/skills/.hidden/SKILL.md"], meta_sc),
         ([".agents/skillctrl/intents/learn.md"], meta_sc),
         # upstream 管理外の skill（merge gate 自身など）は hold のまま
-        ([".agents/skills/pr-auto-merge/tools/pr_triage.py",
+        (["plugins/local/skills/pr-auto-merge/tools/pr_triage.py",
           ".agents/skillctrl/lock.json"], meta_sc),
         (sc_files, {k: v for k, v in meta_sc.items()
                     if k != "skillctrl_managed"}),
@@ -221,7 +225,7 @@ for files, meta in [
     r = pt.classify_pr(files, meta, "")
     assert r["lane"] == "hold", (files, meta)
 # 名前による hold（auth 等）も管理 skill の配下なら judge に回す
-r = pt.classify_pr([".agents/skills/learn/scripts/oauth.mjs"], meta_sc, "")
+r = pt.classify_pr(["plugins/core/skills/learn/scripts/oauth.mjs"], meta_sc, "")
 assert r["lane"] == "judge"
 # rename 元に他の hold path があっても抜けない
 r = pt.classify_pr(sc_files, meta_sc, "", renamed_from=["AGENTS.md"])
@@ -1256,7 +1260,8 @@ for manifest in ['mise.toml', '.config/mise/config.toml']:
 # 依存 manifest は hold path 配下でも置き場所で hold しない（Dependabot の
 # apps/api/package.json bump が always-hold で止まっていた）
 for manifest in ['apps/api/package.json', 'packages/auth/package.json',
-                 '.agents/skills/x/package.json', 'apps/api/go.mod']:
+                 '.agents/skills/x/package.json',
+                 'plugins/core/skills/x/package.json', 'apps/api/go.mod']:
     assert pt.classify_path(manifest) == 'judge', manifest
 api_cls = pt.classify_pr(['apps/api/package.json', 'pnpm-lock.yaml'], v, '')
 assert api_cls['lane'] == 'judge' and api_cls['bot_dep_only']

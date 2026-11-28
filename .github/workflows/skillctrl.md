@@ -7,7 +7,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - skills-lock.json
-      - .agents/skills/**
+      - plugins/*/skills/**
       - .agents/skillctrl/**
       - .github/pi/models.json
       - mise.toml
@@ -410,7 +410,7 @@ jobs:
                   'needs_review': local['needs_review'], 'lock_changed': local['lock_changed']}
           base = (ci / 'base.txt').read_text().strip()
           names = sorted({m.group(1) for m in
-                          (re.match(r'^\.agents/skills/([^/]+)/', line) for line in
+                          (re.match(r'^plugins/[^/]+/skills/([^/]+)/', line) for line in
                            (ci / 'diff.txt').read_text().splitlines()) if m})
           plan.update(comparison=base, skills=sorted(set(names) | set(local['skills'])))
           changed = local['lock_changed']
@@ -590,7 +590,8 @@ compare the base lock or re-review previously recorded hashes.
 For each skill in `review_skills`:
 
 1. Read `.agents/skillctrl/intents/<name>.md`, the pull-request diff for the
-   skill, and the complete directory `.agents/skills/<name>/`, including
+   skill, and the complete skill directory (`plugins/<plugin>/skills/<name>/`;
+   `skillctrl list` maps each skill to its root), including
    references, scripts, and file modes.
 2. Decide whether the installed content satisfies its current intent:
    - Satisfied: cite the intent requirements and the verified content as

@@ -21,7 +21,7 @@ skillctrl remove agent-browser
 
 ## repo に保持するデータ
 
-- `.agents/skills/<name>/`: skill 本体と付属資源。
+- `plugins/<plugin>/skills/<name>/`: skill 本体と付属資源。skill root の一覧は `config.json`（`scripts/sync-plugin-manifests.py` の生成物）。新しい skill は `skillctrl add --root <plugin>` で置き場所を選ぶ。
 - `skills-lock.json`: upstream 登録。`npx skills` 互換の native lock で repo root に置く。独自 entry・field は追加しない。
 - `.agents/skillctrl/lock.json`: upstream provenance（alias・merge の inputs・補足情報）と受理 hash の unified private state。native entry に紐付き、native 側の独立した変更が優先される。
 - `.agents/skillctrl/intents/<name>.md`: 原本更新時に維持する文脈・意図。patch や実装手順の正本にしない。

@@ -1,0 +1,41 @@
+{
+  "name": "design",
+  "version": "0.1.0",
+  "description": "UI の見た目・動き・モバイルの挙動・3D を扱う skill（入口は design-mode。unslop・design-md・emilkowalski/skills・CloudAI-X/threejs-skills）。claude.ai アカウントと local の両方で使う",
+  "author": {
+    "name": "wwwyo",
+    "url": "https://github.com/wwwyo"
+  },
+  "repository": "https://github.com/wwwyo/skills",
+  "skills": [
+    "./skills/animate",
+    "./skills/animation-performance",
+    "./skills/apple-design",
+    "./skills/break-ui",
+    "./skills/choreograph",
+    "./skills/design-md",
+    "./skills/design-mode",
+    "./skills/emil-design-eng",
+    "./skills/find-animation-opportunities",
+    "./skills/gestures",
+    "./skills/improve-animations",
+    "./skills/mobile-native",
+    "./skills/pick-ui-library",
+    "./skills/remove-animations",
+    "./skills/review-animations",
+    "./skills/threejs-animation",
+    "./skills/threejs-asset-pipeline",
+    "./skills/threejs-fundamentals",
+    "./skills/threejs-geometry",
+    "./skills/threejs-interaction",
+    "./skills/threejs-lighting",
+    "./skills/threejs-loaders",
+    "./skills/threejs-materials",
+    "./skills/threejs-performance",
+    "./skills/threejs-postprocessing",
+    "./skills/threejs-react-three-fiber",
+    "./skills/threejs-shaders",
+    "./skills/threejs-textures",
+    "./skills/unslop"
+  ]
+}

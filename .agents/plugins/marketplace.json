@@ -8,7 +8,7 @@
       "name": "core",
       "source": {
         "source": "local",
-        "path": "./"
+        "path": "./plugins/core"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -20,7 +20,7 @@
       "name": "design",
       "source": {
         "source": "local",
-        "path": "./.agents/skills"
+        "path": "./plugins/design"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -32,7 +32,7 @@
       "name": "local",
       "source": {
         "source": "local",
-        "path": "./.agents"
+        "path": "./plugins/local"
       },
       "policy": {
         "installation": "AVAILABLE",

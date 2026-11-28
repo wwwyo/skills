@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
-"""Claude の marketplace.json を正本に、Codex の plugin 定義を生成・検査する。
+"""plugins/<plugin>/skills/ の実 dir を正本に、Claude・Codex の plugin 定義を生成・検査する。
 
 usage: scripts/sync-plugin-manifests.py [--check]
 
-- 正本: .claude-plugin/marketplace.json（plugin ごとの skills 一覧）
-- 生成: .agents/plugins/marketplace.json と各 plugin root の .codex-plugin/plugin.json
-- 検査: .agents/skills/ の実 dir（symlink の alias は除く）がどれか 1 つの plugin に
-  ちょうど 1 回載り、載っている skill は SKILL.md の name と dir 名が一致すること
+- 正本: plugins/<plugin>/skills/<name>/（どの plugin に載るかは置き場所で決まる）と、
+  .claude-plugin/marketplace.json の plugin entry（description・mcpServers 等は手で書く）
+- 生成: marketplace.json の各 entry の source・strict・skills、
+  .agents/plugins/marketplace.json、各 plugin の .codex-plugin/plugin.json
+- 検査: plugin entry と plugins/ の dir が一致し、各 skill dir は symlink でなく
+  SKILL.md の name と dir 名が一致し、skill 名が plugin をまたいで重複しないこと
 
-Codex は local plugin を ~/.codex/plugins/cache へコピーし、その際に symlink を落とす。
-そのため plugin root は実ファイルを含む dir にし（core = repo root、design = .agents/skills、
-local = .agents）、
-skills は root からの相対 path で 1 つずつ列挙する。root にできる dir はこの 3 つで尽きるので、
-plugin を増やすときは既存の plugin に skill を足す。
+Codex は local plugin を ~/.codex/plugins/cache へコピーし、その際に symlink を落とすので、
+plugin root（plugins/<plugin>）には実ファイルを置き、skills は root からの相対 path で列挙する。
+Claude も plugin root だけを cache へコピーするので、skill は自分の plugin の外を参照できない
+（tests/plugin-boundaries.test.sh が検査する）。
 
 --check は差分・検査違反があれば stderr に理由を出して exit 1。書き込まない。
 stdout には 1 行の JSON（{"changed": [...], "ok": bool}）を出す。
@@ -26,11 +27,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SKILLS = ROOT / ".agents/skills"
+PLUGINS = ROOT / "plugins"
 CLAUDE = ROOT / ".claude-plugin/marketplace.json"
 CODEX_MARKETPLACE = ROOT / ".agents/plugins/marketplace.json"
-# plugin 名 → Codex の plugin root（repo root からの相対）
-CODEX_ROOTS = {"core": ".", "design": ".agents/skills", "local": ".agents"}
+SKILLCTRL_CONFIG = ROOT / ".agents/skillctrl/config.json"
+PI = ROOT / "package.json"
 VERSION = "0.1.0"
 
 
@@ -44,6 +45,23 @@ def skill_name(skill_dir: Path) -> str | None:
     return match.group(1) if match else None
 
 
+def plugin_skills(plugin: str, errors: list[str]) -> list[str]:
+    skills_dir = PLUGINS / plugin / "skills"
+    names = []
+    for path in sorted(skills_dir.iterdir()) if skills_dir.is_dir() else []:
+        if path.name.startswith("."):
+            continue
+        if path.is_symlink() or not (path / "SKILL.md").is_file():
+            errors.append(f"{path.relative_to(ROOT)}: must be a real skill dir with SKILL.md")
+        elif skill_name(path) != path.name:
+            errors.append(f"{path.relative_to(ROOT)}: SKILL.md name {skill_name(path)!r} differs from dir name")
+        else:
+            names.append(path.name)
+    if not names:
+        errors.append(f"plugins/{plugin}/skills: has no skills")
+    return names
+
+
 def main() -> int:
     check = sys.argv[1:] == ["--check"]
     if sys.argv[1:] not in ([], ["--check"]):
@@ -52,65 +70,49 @@ def main() -> int:
 
     errors: list[str] = []
     marketplace = json.loads(CLAUDE.read_text(encoding="utf-8"))
-    plugins = marketplace["plugins"]
-    names = [p["name"] for p in plugins]
-    if sorted(names) != sorted(CODEX_ROOTS):
-        errors.append(f"plugins {names} must match CODEX_ROOTS")
+    plugins = [p["name"] for p in marketplace["plugins"]]
+    dirs = sorted(p.name for p in PLUGINS.iterdir() if p.is_dir())
+    if sorted(plugins) != dirs:
+        errors.append(f"marketplace plugins {sorted(plugins)} must match plugins/ dirs {dirs}")
 
     seen: dict[str, str] = {}
-    for plugin in plugins:
-        if plugin.get("source") != "./" or plugin.get("strict") is not False:
-            errors.append(f"{plugin['name']}: source must be './' and strict false")
-        for entry in plugin["skills"]:
-            prefix = "./.agents/skills/"
-            if not entry.startswith(prefix) or "/" in entry[len(prefix):]:
-                errors.append(f"{plugin['name']}: {entry} must be {prefix}<name>")
-                continue
-            name = entry[len(prefix):]
-            path = SKILLS / name
-            if name in seen:
-                errors.append(f"{name}: listed in both {seen[name]} and {plugin['name']}")
-            seen[name] = plugin["name"]
-            if path.is_symlink() or not (path / "SKILL.md").is_file():
-                errors.append(f"{name}: must be a real skill dir with SKILL.md (alias symlinks are not listed)")
-            elif skill_name(path) != name:
-                errors.append(f"{name}: SKILL.md name {skill_name(path)!r} differs from dir name")
-
-    for path in sorted(SKILLS.iterdir()):
-        if path.is_dir() and not path.is_symlink() and (path / "SKILL.md").is_file() and path.name not in seen:
-            errors.append(f"{path.name}: not listed in any plugin of {CLAUDE.relative_to(ROOT)}")
-
     expected: dict[Path, str] = {}
     codex_entries = []
-    for plugin in plugins:
-        root = CODEX_ROOTS.get(plugin["name"])
-        if root is None:
-            continue
-        root_dir = (ROOT / root).resolve()
-        description = plugin["description"]
-        skills = []
-        for entry in plugin["skills"]:
-            rel = (ROOT / entry).resolve().relative_to(root_dir).as_posix()
-            skills.append(f"./{rel}")
-        expected[root_dir / ".codex-plugin/plugin.json"] = dump({
-            "name": plugin["name"],
+    for entry in marketplace["plugins"]:
+        name = entry["name"]
+        skills = plugin_skills(name, errors)
+        for skill in skills:
+            if skill in seen:
+                errors.append(f"{skill}: found in both {seen[skill]} and {name}")
+            seen[skill] = name
+        entry["source"] = f"./plugins/{name}"
+        entry["strict"] = False
+        entry["skills"] = [f"./skills/{skill}" for skill in skills]
+        expected[PLUGINS / name / ".codex-plugin/plugin.json"] = dump({
+            "name": name,
             "version": VERSION,
-            "description": description,
+            "description": entry["description"],
             "author": {"name": marketplace["owner"]["name"], "url": marketplace["owner"]["url"]},
             "repository": "https://github.com/wwwyo/skills",
-            "skills": skills,
+            "skills": entry["skills"],
         })
         codex_entries.append({
-            "name": plugin["name"],
-            "source": {"source": "local", "path": "./" if root == "." else f"./{root}"},
+            "name": name,
+            "source": {"source": "local", "path": f"./plugins/{name}"},
             "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
             "category": "Productivity",
         })
+    expected[CLAUDE] = dump(marketplace)
     expected[CODEX_MARKETPLACE] = dump({
         "name": marketplace["name"],
         "interface": {"displayName": "wwwyo skills"},
         "plugins": codex_entries,
     })
+    roots = {name: f"plugins/{name}/skills" for name in plugins}
+    expected[SKILLCTRL_CONFIG] = dump({"version": 1, "skillRoots": roots})
+    pi = json.loads(PI.read_text(encoding="utf-8"))
+    pi["pi"]["skills"] = [f"./{root}" for root in roots.values()]
+    expected[PI] = dump(pi)
 
     changed = []
     for path, content in expected.items():

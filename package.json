@@ -3,6 +3,10 @@
   "private": true,
   "description": "wwwyo の agent skills（pi package）",
   "pi": {
-    "skills": ["./.agents/skills"]
+    "skills": [
+      "./plugins/core/skills",
+      "./plugins/design/skills",
+      "./plugins/local/skills"
+    ]
   }
 }

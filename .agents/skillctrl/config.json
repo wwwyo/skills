@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "skillRoots": {
+    "core": "plugins/core/skills",
+    "design": "plugins/design/skills",
+    "local": "plugins/local/skills"
+  }
+}

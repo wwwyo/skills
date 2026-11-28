@@ -2,7 +2,7 @@
 # project-setup の home-wiki.ts: 骨組みを置き、再実行で domain を足し、既存 file を壊さないこと
 set -euo pipefail
 repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
-TOOL="$repo_dir/.agents/skills/project-setup/tools/home-wiki.ts"
+TOOL="$repo_dir/plugins/core/skills/project-setup/tools/home-wiki.ts"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }

@@ -81,7 +81,7 @@ assert ".local.lock_changed | if type == \"boolean\"" in upd_workflow
 assert 'add-comment:' in pr_workflow
 assert "add_comment" in pr_workflow
 assert "allowed = re.compile(r'^(?:\\.agents/skillctrl/lock\\.json|\\.agents/skillctrl/upstreams\\.json|\\.agents/skillctrl/intents/lock\\.json)$')" in pr_workflow
-assert "allowed = re.compile(r'^(?:\\.agents/skills/|skills-lock\\.json$|\\.agents/skillctrl/lock\\.json$|\\.agents/skillctrl/upstreams\\.json$|\\.agents/skillctrl/intents/lock\\.json$)')" in upd_workflow
+assert "allowed = re.compile(r'^(?:plugins/[^/]+/skills/|skills-lock\\.json$|\\.agents/skillctrl/lock\\.json$|\\.agents/skillctrl/upstreams\\.json$|\\.agents/skillctrl/intents/lock\\.json$)')" in upd_workflow
 # Both update publish lanes supersede an existing update branch tip so the
 # push stays fast-forward when a previous draft PR is still open.
 assert upd_workflow.count('merge -s ours') == 2
@@ -147,7 +147,7 @@ with tempfile.TemporaryDirectory(prefix='skillctrl-workflow-') as tmp:
     lock_text = (source / 'mise.lock').read_text()
     toolchain = tomllib.loads(lock_text)['tools']['go'][0]['version']
     config = '''[tools]
-"go:github.com/wwwyo/skillctrl" = "a580cf051ee4b01aebbee9c07d8a97acd1b3c17a"
+"go:github.com/wwwyo/skillctrl" = "ba18581c16128f193f5c90094cf8e2bd5b3814c8"
 go = "GO_FIXTURE_VERSION"
 node = "24.21.0"
 "npm:@earendil-works/pi-coding-agent" = "1.0.0"
@@ -165,7 +165,8 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     write('mise.lock', trusted_lock + trusted_go_lock + '[[tools.unrelated]]\nversion = "9.9.9"\n')
     write('.github/pi/models.json', '{"fixture": true}')
     for name in ['imported', 'handwritten']:
-        write('.agents/skills/' + name + '/SKILL.md', 'original body\n')
+        write('plugins/core/skills/' + name + '/SKILL.md', 'original body\n')
+    write('.agents/skillctrl/config.json', json.dumps({'version': 1, 'skillRoots': {'core': 'plugins/core/skills'}}))
     write('skills-lock.json', json.dumps({'version': 3, 'skills': {
         'imported': {'source': 'fixture/source', 'sourceType': 'github',
                      'sourceUrl': 'https://example.invalid/source.git',
@@ -180,7 +181,7 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     # The trusted pin step rejects mutable refs and strips unrelated settings.
     run_step(pr_workflow, 'Read the trusted skillctrl pin')
     selected = tomllib.loads((cli_dir / 'mise.toml').read_text())
-    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': 'a580cf051ee4b01aebbee9c07d8a97acd1b3c17a', 'go': toolchain},
+    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': 'ba18581c16128f193f5c90094cf8e2bd5b3814c8', 'go': toolchain},
                         'settings': {'pin': True, 'minimum_release_age': '7d'}}
     assert (cli_dir / 'mise.toml').read_text().count('pi-coding-agent') == 0
     assert (cli_dir / 'node.txt').read_text() == '24.21.0'
@@ -251,7 +252,7 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
 
     # Drift on an intent-bearing registered skill routes to the reviewer.
     write('.agents/skillctrl/intents/imported.md', 'preserve this criterion\n')
-    write('.agents/skills/imported/SKILL.md', 'unaccepted edit\n')
+    write('plugins/core/skills/imported/SKILL.md', 'unaccepted edit\n')
     head = commit()
     env['PR_HEAD'] = head
     outputs.write_text('')
@@ -262,12 +263,12 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
 
     # The PR publish scope admits only accepted-lock changes: a reviewer patch
     # that edits skill content is rejected before it can be applied.
-    write('.agents/skills/imported/SKILL.md', 'auto-fix attempt\n')
+    write('plugins/core/skills/imported/SKILL.md', 'auto-fix attempt\n')
     git('add', '-A')
     diff = git('diff', '--cached', 'HEAD')
     (artifacts / 'repair.patch').write_text(diff + '\n')
     git('reset', '--hard', '-q', 'HEAD')
-    assert '.agents/skills/imported/SKILL.md' in diff
+    assert 'plugins/core/skills/imported/SKILL.md' in diff
     result = run_step(pr_workflow, 'Validate repair scope and apply the patch', check=False)
     assert result.returncode != 0
     assert 'out-of-scope' in result.stderr + result.stdout
