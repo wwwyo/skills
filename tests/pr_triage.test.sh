@@ -106,6 +106,7 @@ assert c(".github/CODEOWNERS") == "hold"        # workflows 以外の .github
 assert c("AGENTS.md") == "hold" and c("docs/x/CLAUDE.md") == "hold"
 assert c(".agents/skills/x/SKILL.md") == "hold"
 assert c("plugins/core/skills/x/SKILL.md") == "hold"
+assert c("skills/x/SKILL.md") != "hold"         # skill 集の repo は形が違うので止めない
 assert c(".claude-plugin/marketplace.json") == "hold"
 assert c("plugins/core/.codex-plugin/plugin.json") == "hold"
 assert c(".claude/skills/x") == "hold"          # symlink entry も agent 面

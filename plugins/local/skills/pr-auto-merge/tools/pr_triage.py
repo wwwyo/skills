@@ -462,11 +462,9 @@ def pr_diff(repo, number):
 # .github/workflows/ はこの集合の例外 — dependabot の github-actions
 # ecosystem が更新する依存の置き場で、judge 側に回す（is_actions_workflow
 # と classify_path のコメント参照）。
-# skills: wwwyo/skills の plugins/<plugin>/skills/ のように .agents の外に置いた
-# skill も agent の振る舞いを変えるので、.agents と同じく hold にする。
 # .claude-plugin/.codex-plugin: どの skill・MCP server を読むかを決める manifest。
 HOLD_SEGMENTS = {".github", ".agents", ".claude", ".codex", ".pi",
-                 ".cursor", "terraform", ".changeset", "skills",
+                 ".cursor", "terraform", ".changeset",
                  ".claude-plugin", ".codex-plugin"}
 HOLD_API_SEGMENTS = {"api", "routes", "graphql"}
 HOLD_SEGMENT_PREFIXES = ("license", "licence", "notice", "copying",
@@ -683,6 +681,11 @@ def classify_path(path):
            if not (in_workflows and s == ".github")):
         return "hold"
     if any(s.startswith(HOLD_SEGMENT_PREFIXES) for s in segs):
+        return "hold"
+    # plugin の skill（wwwyo/skills の plugins/<plugin>/skills/）も .agents 配下と
+    # 同じく agent の振る舞いを変える。`skills` の segment だけで hold にすると、
+    # skill 集そのものの repo（marketingskills 等）の PR が全部止まるので形で見る
+    if len(segs) >= 4 and segs[0] == "plugins" and segs[2] == "skills":
         return "hold"
     if base in HOLD_BASENAMES or base.startswith(HOLD_BASENAME_PREFIXES):
         return "hold"
