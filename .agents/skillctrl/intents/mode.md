@@ -8,7 +8,7 @@ pstack の poteto-mode を `mode` の名前で取り込み、コード作業の�
 - 文章は unslop-writing、UI の確認は e2e skill、stack の構築は gh-stack を使う
 - playbook から authoring-a-skill・worktree-cleanup（と worktree-audit.sh）・session-pickup を外す。環境ごとの手順はこの repo の他 skill が持つ
 - feature playbook は機能設計も担う。不明確な依頼は grill-with-docs、要件は prd、形が不明なら Prototype playbook で詰めてから architect へ進む。設計だけ頼まれたら architect で止める。PRD を実装するときは status を更新する。テストは E2E・API・unit の順で選ぶ
-- prototype playbook は UI の試作が主。動きを比べるときだけ emil-design-eng の基準に揃え、コード品質は問わない
+- prototype playbook は UI の試作が主。動きを比べるときだけ各案の動きを方向の比較に耐える程度に整え、コード品質は問わない。試作は捨てる前提なので確認に e2e skill は使わず、ブラウザで各案のスクリーンショットを撮って操作するだけにする（2026-11-28、ユーザー判断）
 - review-triage は bot と人間の両方のレビューコメントを同じ基準で裁く（原本の bugbot-triage を一般化）
 - PR は ready で開き、pr-auto-merge の対象にしてよい
 - watch-pr の bootstrap は原本どおり frozen な bun.lock を使う。dev 依存は `latest` ではなく lock が解決した版を exact で書く（repo の exact ピンの規約）。test と型検査は `tests/mode-watch-pr.test.sh` で CI に載せる
