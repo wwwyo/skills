@@ -6,7 +6,7 @@ wwwyo が日々の開発で使う agent skill 集です。Claude Code・Codex・
 - `design`: UI の見た目・動き・モバイルの挙動・3D を扱う skill（入口の `design-mode`・unslop・design-md・emilkowalski/skills・CloudAI-X/threejs-skills 由来）。claude.ai でも使えます
 - `local`: Orca・mise・ローカル CLI など、作者の開発環境を前提にする skill
 
-skill の一覧は [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json) にあります。third-party の skill を含み、取得元は [skills-lock.json](skills-lock.json) に記録しています。
+skill は plugin ごとに [plugins/core/skills](plugins/core/skills)・[plugins/design/skills](plugins/design/skills)・[plugins/local/skills](plugins/local/skills) にあります。third-party の skill を含み、取得元は [skills-lock.json](skills-lock.json) に記録しています。
 
 ## 使い方
 
@@ -34,7 +34,7 @@ pi:
 pi install git:github.com/wwwyo/skills
 ```
 
-pi は `.agents/skills/` の skill をすべて読み込みます。一部だけ使う場合は `settings.json` の package filter（`skills`）で絞ってください。
+pi は 3 つの plugin の skill をすべて読み込みます。一部だけ使う場合は `settings.json` の package filter（`skills`）で絞ってください。
 
 ## 開発
 

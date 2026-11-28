@@ -5,7 +5,7 @@ if ! command -v bun >/dev/null; then echo "skip: bun が無いので watch-pr �
 repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
 # skill フォルダに node_modules を作ると skillctrl check が mode を drift と見るので、複製先で動かす
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
-cp -R "$repo_dir/.agents/skills/mode/scripts/." "$work/"
+cp -R "$repo_dir/plugins/core/skills/mode/scripts/." "$work/"
 cd "$work"
 bun install --frozen-lockfile >/dev/null
 bun test watch-pr

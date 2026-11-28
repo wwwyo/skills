@@ -2,7 +2,7 @@
 # domain-modeling の可視化生成器が例の入力を読み、3部のデータと HTML を出すことを検査する。
 set -euo pipefail
 cd "$(dirname "$0")/.."
-SKILL=.agents/skills/domain-modeling
+SKILL=plugins/core/skills/domain-modeling
 TOOL=$SKILL/tools/domain_viz.py
 EX=$SKILL/assets/domain-viz-example
 tmp=$(mktemp -d)

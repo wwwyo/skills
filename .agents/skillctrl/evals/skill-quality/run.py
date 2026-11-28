@@ -56,9 +56,20 @@ def snapshot(ref, destination):
     oid = subprocess.check_output(["git", "rev-parse", ref], cwd=REPO, text=True).strip()
     if not destination.exists():
         destination.mkdir(parents=True)
-        data = subprocess.check_output(["git", "archive", oid, ".agents/skills"], cwd=REPO)
+        # Older commits keep every skill in .agents/skills; newer ones split them
+        # into plugins/<plugin>/skills. Snapshots always flatten into .agents/skills.
+        layout = "plugins" if subprocess.run(
+            ["git", "cat-file", "-e", f"{oid}:plugins"], cwd=REPO, capture_output=True).returncode == 0 else ".agents/skills"
+        data = subprocess.check_output(["git", "archive", oid, layout], cwd=REPO)
         with tarfile.open(fileobj=io.BytesIO(data)) as archive:
             archive.extractall(destination, filter="data")
+        if layout == "plugins":
+            flat = destination / ".agents/skills"
+            flat.mkdir(parents=True)
+            for skill in sorted((destination / "plugins").glob("*/skills/*")):
+                if skill.is_dir() and not skill.name.startswith("."):
+                    skill.rename(flat / skill.name)
+            shutil.rmtree(destination / "plugins")
         (destination / ".snapshot-ref").write_text(oid + "\n")
     if (destination / ".snapshot-ref").read_text().strip() != oid:
         raise ValueError("Snapshot ref changed; use a fresh workspace")

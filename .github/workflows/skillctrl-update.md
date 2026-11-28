@@ -256,7 +256,7 @@ safe-outputs:
                 m = re.match(r'^diff --git [^/]+/(\S+) [^/]+/(\S+)$', line)
                 if m:
                     paths.update(m.groups())
-            allowed = re.compile(r'^(?:\.agents/skills/|skills-lock\.json$|\.agents/skillctrl/lock\.json$|\.agents/skillctrl/upstreams\.json$|\.agents/skillctrl/intents/lock\.json$)')
+            allowed = re.compile(r'^(?:plugins/[^/]+/skills/|skills-lock\.json$|\.agents/skillctrl/lock\.json$|\.agents/skillctrl/upstreams\.json$|\.agents/skillctrl/intents/lock\.json$)')
             bad = [p for p in paths if not allowed.match(p)]
             if bad:
                 raise SystemExit('repair touches out-of-scope paths: ' + ', '.join(sorted(bad)))
@@ -699,11 +699,12 @@ its update `status` needs. Do not read whole skills when a diff suffices:
 
 Then:
 
-1. Edit only `.agents/skills/<name>/`. Keep immutable bundled upstream
+1. Edit only the skill's directory, `plugins/<plugin>/skills/<name>/` (the
+   `path` in the update report). Keep immutable bundled upstream
    snapshots under `references/` intact. Do not edit intent documents,
    workflows, or policy.
 2. Confirm no conflict markers remain, for example with
-   `git grep -n -e '^<<<<<<< local' -- .agents/skills/<name>`.
+   `git grep -n -e '^<<<<<<< local' -- plugins/*/skills/<name>`.
 3. Verify the result, then run `"$SKILLCTRL_BIN" record <name>` for that
    verified skill only. `record` writes `.agents/skillctrl/lock.json`;
    it accepts content, it does not review it.

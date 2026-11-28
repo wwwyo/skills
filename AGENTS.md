@@ -6,17 +6,16 @@ wwwyo の共有 agent skill の正本。Claude Code・Codex・pi へは plugin /
 
 ```
 skills/
+├── plugins/<plugin>/           plugin root（core・design・local）。Claude・Codex はこの dir だけを cache へコピーする
+│   ├── skills/<name>/          skill 本体。置いた plugin がそのまま配布先になる
+│   └── .codex-plugin/          Codex の plugin 定義。生成物
+├── .claude-plugin/marketplace.json  Claude の marketplace。plugin の説明・MCP は手で書き、source・skills は生成
 ├── .agents/
-│   ├── skills/<name>/          skill 本体（skillctrl が固定で使う場所）
-│   ├── skillctrl/              upstream provenance・受理 hash・intent・評価
-│   ├── .codex-plugin/          Codex の local plugin（root = .agents）。生成物
-│   ├── skills/.codex-plugin/   Codex の design plugin（root = .agents/skills）。生成物
+│   ├── skillctrl/              upstream provenance・受理 hash・intent・評価。config.json（skill root の一覧）は生成物
 │   └── plugins/marketplace.json  Codex の marketplace。生成物
-├── .claude-plugin/marketplace.json  Claude の marketplace。plugin と skill の対応の正本
-├── .codex-plugin/plugin.json   Codex の core plugin（root = repo root）。生成物
-├── package.json                pi package（pi.skills = ./.agents/skills）
+├── package.json                pi package（pi.skills は各 plugin の skills。生成）
 ├── skills-lock.json            upstream 登録（npx skills 互換の native lock）
-├── scripts/sync-plugin-manifests.py  Claude の marketplace から Codex の定義を生成・検査
+├── scripts/sync-plugin-manifests.py  plugins/ の dir から各 tool の定義を生成・検査
 ├── tests/                      repo 固有の検査（*.test.sh）
 └── .github/workflows/          test・skillctrl の gh-aw workflow・Pullfrog
 ```
@@ -25,13 +24,14 @@ skills/
 
 plugin は `core`（cloud と local の両方。環境に依存しない汎用 skill）、`design`（cloud と local の両方。UI の見た目・動き・モバイルの挙動・3D を扱う skill。入口の design-mode と、unslop・design-md、emilkowalski/skills・CloudAI-X/threejs-skills 由来の skill）、`local`（Orca・dotfiles・mise・ローカル CLI を前提にする skill）の 3 つ。marketplace 名は Claude・Codex とも `wwwyo`。
 
-- skill を足す・plugin を移すときは `.claude-plugin/marketplace.json` の `skills` を編集し、`scripts/sync-plugin-manifests.py` で Codex の定義を再生成する。`tests/plugin-manifests.test.sh` が、全 skill がちょうど 1 つの plugin に載っていることと生成物の一致を検査する
+- skill の所属は置き場所で決まる。足す・plugin を移すときは `plugins/<plugin>/skills/<name>/` に置く・`git mv` し、`scripts/sync-plugin-manifests.py` で Claude・Codex・pi・skillctrl の定義を再生成する。`tests/plugin-manifests.test.sh` が生成物の一致と、skill 名が plugin をまたいで重複しないことを検査する。skillctrl で新しい skill を入れるときは `--root <plugin>` で置き場所を選ぶ
 - cloud に載せてよいかで core・design / local を決める。UI デザイン・動き・3D の skill は design、それ以外の汎用 skill は core に置く。手元の path・CLI・secret を前提にする skill は local
-- Codex は local plugin を cache へコピーし、symlink を落とす。plugin root に skill を symlink で集めず、root からの相対 path で列挙する（core = repo root、design = `.agents/skills`、local = `.agents`）。root にできる dir はこの 3 つで尽きるので、plugin は増やさない
-- plugin で配る MCP は、Claude の marketplace の entry に `mcpServers` で inline に書く（core に MCP portal の `mcphub`（Code Mode）と `mcp-media`（Code Mode off、画像を返す tool 用）、local に手元でしか動かない `blender`・`openscreen`）。credential は書かず、要るものは plugin の `userConfig`（sensitive）で受ける。全 plugin が source `./` を共有しているため、repo root に `.mcp.json` を置くと cloud に届く core・design にも載ってしまう。運用は dev-env の skill-plugins を参照する
+- **plugin の横断参照は禁止**（ユーザー判断）。plugin は自分の dir だけがコピーされ、cloud には local が届かないので、別 plugin の skill に頼ると届かない環境で手順が切れる。相対 path・canonical path だけでなく、名前での言及（「core plugin の mode skill」「`unslop` で監査」）も依存として扱う。別 plugin の skill の手順が要るなら自分の skill に書くか、その skill を同じ plugin に移す。`tests/plugin-boundaries.test.sh` が、plugin の外へ出る相対 path、別 plugin・旧 layout（`.agents/skills/<name>`）の path、別 plugin の skill 名（`` `name` ``・`**name**`・`name skill`・`/name`・`$name`）と「<plugin> plugin」の言及を検出する
+- Codex は local plugin を cache へコピーし、symlink を落とす。plugin root に skill を symlink で集めず、root からの相対 path で列挙する
+- plugin で配る MCP は、Claude の marketplace の entry に `mcpServers` で inline に書く（core に MCP portal の `mcphub`（Code Mode）と `mcp-media`（Code Mode off、画像を返す tool 用）、local に手元でしか動かない `blender`・`openscreen`）。credential は書かず、要るものは plugin の `userConfig`（sensitive）で受ける。運用は dev-env の skill-plugins を参照する
 - tool が自分で配って自動更新する skill（Orca の `orca-cli`・`orchestration`・`orca-computer-use` 等）はこの repo に置かない（dotfiles の `.agents/skills` で追跡する）。plugin に入れると、tool が書く `~/.agents/skills` の copy と二重に読まれ、tool の更新にも追従しなくなる。手元の方針は dev-env の reference に置く
-- skill から同梱の tools を呼ぶ手順は SKILL.md の dir からの相対 path で書く。`~/.agents/skills/...` は存在しない。scheduled task・hook など agent 以外の呼び出し元は canonical checkout（`~/src/github.com/wwwyo/skills`）を指す
-- **main への merge は即本番**。手元の pi・Devin と Claude Code の local はこの repo の canonical checkout を直接読む。Codex は `codex plugin add` で cache を更新するまで古い copy を読み、Claude Code の core と claude.ai は marketplace の自動同期で取り込んだ copy を読む（tool ごとの反映は dev-env の skill-plugins を参照）。skill の rename・削除は、それを読む consumer（dotfiles の scheduled task・hook、他 repo の orca.yaml）の切替と同じタイミングで merge する
+- skill から同梱の tools を呼ぶ手順は SKILL.md の dir からの相対 path で書く。`~/.agents/skills/...` は存在しない。hook など agent 以外の呼び出し元は canonical checkout（`~/src/github.com/wwwyo/skills/plugins/<plugin>/skills/...`）を指す
+- **main への merge は即本番**。手元の pi・Devin と Claude Code の local はこの repo の canonical checkout を直接読む。Codex は `codex plugin add` で cache を更新するまで古い copy を読み、Claude Code の core と claude.ai は marketplace の自動同期で取り込んだ copy を読む（tool ごとの反映は dev-env の skill-plugins を参照）。skill の rename・削除・plugin 間の移動は、それを読む consumer（dotfiles の hook・Devin の link、他 repo の orca.yaml）の切替と同じタイミングで merge する
 
 tool ごとの読み込み方・編集の反映・確認コマンドは [dev-env の skill-plugins](https://github.com/wwwyo/dotfiles/blob/main/.agents/skills/dev-env/references/skill-plugins.md) を参照する。
 
@@ -42,19 +42,19 @@ tool ごとの読み込み方・編集の反映・確認コマンドは [dev-env
 ```bash
 mise install
 skillctrl check                                  # 受理 hash の drift を offline で確認
-python3 scripts/sync-plugin-manifests.py         # Codex の plugin 定義を再生成（--check で検査のみ）
+python3 scripts/sync-plugin-manifests.py         # plugin 定義を再生成（--check で検査のみ）
 for t in tests/*.test.sh .agents/skillctrl/*.test.sh; do bash "$t"; done
 claude plugin validate .
 ```
 
 ## Skills 管理
 
-skill の検索・追加・作成・改善・更新・削除は `skillctrl` に統一し、手順は [skillctrl skill](.agents/skills/skillctrl/SKILL.md) と [.agents/skillctrl/README.md](.agents/skillctrl/README.md) に従う。CLI は cwd の Git repo を対象にするので、この repo の worktree で実行する。skill の追加・削除をしたら `.claude-plugin/marketplace.json` も同じ変更で更新する。
+skill の検索・追加・作成・改善・更新・削除は `skillctrl` に統一し、手順は [skillctrl skill](plugins/local/skills/skillctrl/SKILL.md) と [.agents/skillctrl/README.md](.agents/skillctrl/README.md) に従う。CLI は cwd の Git repo を対象にするので、この repo の worktree で実行する。skill の追加・削除・移動をしたら `scripts/sync-plugin-manifests.py` の生成物も同じ変更に含める。
 
 - upstream 管理 skill を意図的に変えるときは、保ちたい振る舞いの理由を `.agents/skillctrl/intents/<name>.md` に書き、検証後に `skillctrl record <name>` で受理する。意図ファイルを差分や patch の正本にしない
 - 手書き skill（`memo` `project-setup` 等）は upstream lock に載らず、受理 hash の対象外
 - PR では [skillctrl](.github/workflows/skillctrl.md) が hash drift のときだけ AI に intent 適合を審査させる。土曜 09:00 JST の [skillctrl-update](.github/workflows/skillctrl-update.md) が upstream 更新を取り込み draft PR を作る。AI engine は pi / OpenCode Go を固定し、repo secret `OPENCODE_API_KEY` を使う
-- 自動で読まれる skill（`disable-model-invocation` を付けない）は入口と、コード・デザイン作業の外で話題が出たときに使う skill だけにする。作業の一手順になる skill は command only にし、入口（core は mode、design は design-mode）の playbook から `../<name>/SKILL.md` で辿る。command only の skill は名前を書いても起動できないので、他の skill から参照するときは相対 path のリンクにする
+- 自動で読まれる skill（`disable-model-invocation` を付けない）は入口と、コード・デザイン作業の外で話題が出たときに使う skill だけにする。作業の一手順になる skill は command only にし、入口（core は mode、design は design-mode）の playbook から `../<name>/SKILL.md` で辿る。command only の skill は名前を書いても起動できないので、他の skill から参照するときは同じ plugin 内の相対 path のリンクにする
 - 独立 skill として残すかの基準は「その skill だけを目的に起動する場面があるか」。無ければ既存 skill の reference か節にする
 - 運用ルールの記載先は、情報の発生源（不具合の根拠・制約の由来）と適用時（操作を行う skill）で分ける。発生源にだけ書くと使う側が見ず、両方に全文書くと drift する
 - skill・reference の rename・移動・削除では、path だけでなく link の表示名・anchor も repo 全体と dotfiles・wwwyo/me を grep して残存参照を消す
