@@ -17,4 +17,4 @@ pstack の poteto-mode を `mode` の名前で取り込み、コード作業の�
 - Review playbook で書くレビューは、Non-negotiables の「返答で原則を名指しする」の例外にする（指摘は結果の重さで書く）
 - 自動で読まれる skill を減らすため（2026-11-28、ユーザー判断）、command only にした skill へ playbook から辿る。Feature の step 2 から domain-modeling・database-design・agent-friendly-cli へ
 - design plugin の design-mode・emil-design-eng を名指ししない。UI の入口は design-mode が自分の description で拾う。gh-stack は core に移したので command only の skill として相対 path で辿る（2026-11-28、ユーザー判断: 別 plugin の skill は名前でも参照しない）
-- Opening a PR を終えたら Babysit を `drive` で続けて起動する（原本の「Opening a PR does not start a babysit.」を置き換える）。ユーザーが別のモードや不要と言ったらそれに従う。Autopilot-full・Autopilot-stack は owner がすでに babysit を回すので二重に起動しない。babysit はマージしないので、マージは pr-auto-merge かユーザーに残る（2026-11-28、ユーザー判断）
+- Opening a PR を終えたら Babysit を `drive` で続けて起動する（原本の「Opening a PR does not start a babysit.」を置き換える）。ユーザーが別のモードや不要と言ったらそれに従う。stack は下段から babysit し、下段の修正で上段の base が古くなったら PR を開いた側が gh-stack で restack する（Babysit は rebase しないため）。Autopilot-full・Autopilot-stack は owner がすでに babysit を回すので二重に起動しない。babysit はマージしないので、マージは pr-auto-merge かユーザーに残る（2026-11-28、ユーザー判断）
