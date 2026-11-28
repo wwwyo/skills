@@ -9,11 +9,11 @@
     "break-ui": "2f2962ac0bc855ba3b574a9b6b129a8b63be2794",
     "catch-up": "0cdb1b2ae3bfd5d5816ff6741425b5af5286767c",
     "choreograph": "f933edce4dd0447606f20787e84bd36393014774",
-    "cloudflare": "aeea5a45701ac077377985a22f233f9d3da07278",
+    "cloudflare": "f16e81f1483e495a8ac1cf3765ff1237278f9928",
     "create-formal-verification-skill": "47933cce812c80ba3715d45523c106de33bff467",
     "create-verification-skill": "8ccd25a46eb2c1f0e0fc353cc4d416fb676f78a4",
     "domain-modeling": "f52e83aef61167933b5f047b12ef30c107abe411",
-    "e2e": "f4712ce97eddca51e6501a3ba32d82051f76b4d3",
+    "e2e": "d4d635e288c6ba97eb8a5c638f78d0b4ca6f5ba7",
     "emil-design-eng": "520e8a0c28c2f063191ab777106af8146b9a1978",
     "figure-it-out": "99bbf9564b1e563ad9cdf9226ffd1a06120ca89c",
     "find-animation-opportunities": "73d73199cdaf49bc991518f4c0bf88104685f334",
@@ -22,7 +22,7 @@
     "grill-with-docs": "246bf89252bae8764d76d1b2b8a9ab8121156a6f",
     "improve-animations": "8016fc935ef753041a1dbfbe3ab5bbf446af65ce",
     "interrogate": "0a87d986f90e43f5274cb379b45e65cedd5b0a3b",
-    "learn": "7c18724e700ffe0f15fbca863facdda75a4959fe",
+    "learn": "dff458b3729409071d2368cc4abdfc852df637ed",
     "maintain-verification-skill": "98314b90313c13daab2b0ef090145ab94d176e04",
     "mobile-native": "e8c91e3ffb0475e37f7a60c8afe5a3bc1f5a3552",
     "mode": "c131c8a38931971f1ec236c2bab666adcdf20a61",
@@ -225,22 +225,22 @@
       "updatedAt": "2026-11-15T05:22:50.678Z"
     },
     "cloudflare": {
-      "computedHash": "1cce94a0fea413a5d5f9dd18d2a72cd90e925017c791eb6554be14f5bb777576",
+      "computedHash": "af3180fcf7fddb37894fe937b961e1251f0e1580584e957b885f1049e81a6b12",
       "installedAt": "2026-10-02T04:54:12.554Z",
       "native": {
-        "computedHash": "1cce94a0fea413a5d5f9dd18d2a72cd90e925017c791eb6554be14f5bb777576",
+        "computedHash": "af3180fcf7fddb37894fe937b961e1251f0e1580584e957b885f1049e81a6b12",
         "skillPath": "skills/cloudflare/SKILL.md",
         "source": "cloudflare/skills",
         "sourceType": "github",
         "sourceUrl": "https://github.com/cloudflare/skills.git"
       },
-      "skillFolderHash": "600913aa4edcffe1cc389b8757b586979a13bc47",
+      "skillFolderHash": "6eb1e83fc674d5e52e56b61cf2873aa32eb44317",
       "skillPath": "skills/cloudflare/SKILL.md",
       "source": "cloudflare/skills",
-      "sourceCommit": "6eb6c781aa9b6438e0c7307bd102788a75fe1a6d",
+      "sourceCommit": "ff191de7d903788eceaf516a514ae7d3b56b924a",
       "sourceType": "github",
       "sourceUrl": "https://github.com/cloudflare/skills.git",
-      "updatedAt": "2026-11-10T03:45:26.059Z"
+      "updatedAt": "2026-11-28T07:27:42.826Z"
     },
     "correct": {
       "computedHash": "b7e0850f6e5370007dd560aca2a728b49891208b8782da67212b49638105827e",
@@ -297,10 +297,10 @@
       "updatedAt": "2026-11-27T11:07:59.604Z"
     },
     "domain-modeling": {
-      "computedHash": "b3eb40152b81f0c98fd2095a023c019452dbdce56f7540cc67fece2972db8369",
+      "computedHash": "29ca53865366196cd83d51e6f960ba2abc7a8ec57328a8495bd4a55cbeddb200",
       "installedAt": "2026-09-12T07:00:14.861Z",
       "native": {
-        "computedHash": "b3eb40152b81f0c98fd2095a023c019452dbdce56f7540cc67fece2972db8369",
+        "computedHash": "29ca53865366196cd83d51e6f960ba2abc7a8ec57328a8495bd4a55cbeddb200",
         "pluginName": "mattpocock-skills",
         "skillPath": "skills/engineering/domain-modeling/SKILL.md",
         "source": "mattpocock/skills",
@@ -308,31 +308,31 @@
         "sourceUrl": "https://github.com/mattpocock/skills.git"
       },
       "pluginName": "mattpocock-skills",
-      "skillFolderHash": "ea30ee454ba264543dbe40737973b1a5afb9f0e6",
+      "skillFolderHash": "db8ef024fb9a7b2022d57289359ae96cff0d8483",
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
       "source": "mattpocock/skills",
-      "sourceCommit": "5beb35b040e3de97e54fa9e386d7e42d15c295c2",
+      "sourceCommit": "bbadaa631c37af594e5a05c9cefacd9956136b18",
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
-      "updatedAt": "2026-10-25T04:02:57.630Z"
+      "updatedAt": "2026-11-28T07:27:43.326Z"
     },
     "e2e": {
-      "computedHash": "4cbbe1f5f781fb15561248f67b116efe21f81e352f3f357e4a40f93153a1548c",
+      "computedHash": "75092c36ef14209c5ead4822501ebd5b851043dc03c89ebe891c008ceb662e91",
       "installedAt": "2026-10-03T04:52:03.957Z",
       "native": {
-        "computedHash": "4cbbe1f5f781fb15561248f67b116efe21f81e352f3f357e4a40f93153a1548c",
+        "computedHash": "75092c36ef14209c5ead4822501ebd5b851043dc03c89ebe891c008ceb662e91",
         "skillPath": "skills/e2e/SKILL.md",
         "source": "tester-army/e2e",
         "sourceType": "github",
         "sourceUrl": "https://github.com/tester-army/e2e.git"
       },
-      "skillFolderHash": "6331c2389ac53ec56db1bd35b109038256e0d6c8",
+      "skillFolderHash": "03b3899710c88079b91ded7529113a1ecbd87536",
       "skillPath": "skills/e2e/SKILL.md",
       "source": "tester-army/e2e",
-      "sourceCommit": "51cbd2ed5aaaa8cab9f6e99a99b3b138df7cbacd",
+      "sourceCommit": "aaf923188e5a96966f6a2861a2a69558cc421faa",
       "sourceType": "github",
       "sourceUrl": "https://github.com/tester-army/e2e.git",
-      "updatedAt": "2026-11-24T02:40:38.323Z"
+      "updatedAt": "2026-11-28T07:27:45.335Z"
     },
     "emil-design-eng": {
       "computedHash": "479c09fe9e574178112bbbcd8473c60064539b9687a3c1a6ebd36e1c2370898e",
@@ -498,17 +498,17 @@
       "updatedAt": "2026-11-27T11:07:59.615Z"
     },
     "learn": {
-      "computedHash": "a43372e887a501936a2c4c4210e821f9de768df8f268f1fc9b9c00ab47a6ca54",
+      "computedHash": "dac7779ee3f461c6efa809fd49aefe8f9d47cdbb12c871b494951825359eecf7",
       "installedAt": "2026-10-05T08:51:53.784Z",
       "nativeName": "answer-me-with-html",
       "skill": "answer-me-with-html",
-      "skillFolderHash": "87cd687d19d78c5e6486cd9ed4931873b5660138",
+      "skillFolderHash": "e7a5de9709207c576585778ca4e430ff0b5d20a8",
       "skillPath": "skills/answer-me-with-html/SKILL.md",
       "source": "QingYunA/answer-me-with-html",
-      "sourceCommit": "8411df37a9aecb62a6048f18ba63bd27bb74abec",
+      "sourceCommit": "4ad397361bcb59b0791b84783ed99ef91d4b2f07",
       "sourceType": "github",
       "sourceUrl": "https://github.com/QingYunA/answer-me-with-html.git",
-      "updatedAt": "2026-11-24T02:40:39.807Z"
+      "updatedAt": "2026-11-28T07:27:46.797Z"
     },
     "maintain-formal-verification-skill": {
       "computedHash": "a41b8cffadbd598e4e06dbe57e0ee5c4307f3252814257ccaef198363b359d6c",

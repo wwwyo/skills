@@ -64,7 +64,7 @@
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
     "cloudflare": {
-      "computedHash": "1cce94a0fea413a5d5f9dd18d2a72cd90e925017c791eb6554be14f5bb777576",
+      "computedHash": "af3180fcf7fddb37894fe937b961e1251f0e1580584e957b885f1049e81a6b12",
       "skillPath": "skills/cloudflare/SKILL.md",
       "source": "cloudflare/skills",
       "sourceType": "github",
@@ -92,7 +92,7 @@
       "sourceUrl": "https://github.com/cursor/plugins.git"
     },
     "domain-modeling": {
-      "computedHash": "b3eb40152b81f0c98fd2095a023c019452dbdce56f7540cc67fece2972db8369",
+      "computedHash": "29ca53865366196cd83d51e6f960ba2abc7a8ec57328a8495bd4a55cbeddb200",
       "pluginName": "mattpocock-skills",
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
       "source": "mattpocock/skills",
@@ -100,7 +100,7 @@
       "sourceUrl": "https://github.com/mattpocock/skills.git"
     },
     "e2e": {
-      "computedHash": "4cbbe1f5f781fb15561248f67b116efe21f81e352f3f357e4a40f93153a1548c",
+      "computedHash": "75092c36ef14209c5ead4822501ebd5b851043dc03c89ebe891c008ceb662e91",
       "skillPath": "skills/e2e/SKILL.md",
       "source": "tester-army/e2e",
       "sourceType": "github",
