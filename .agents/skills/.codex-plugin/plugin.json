@@ -1,7 +1,7 @@
 {
   "name": "design",
   "version": "0.1.0",
-  "description": "UI の見た目・動き・モバイルの挙動を扱う skill（unslop・design-md・emilkowalski/skills）。claude.ai アカウントと local の両方で使う。Codex では motion-graphics plugin の skill も同梱する",
+  "description": "UI の見た目・動き・モバイルの挙動・3D を扱う skill（入口は design-mode。unslop・design-md・emilkowalski/skills・CloudAI-X/threejs-skills）。claude.ai アカウントと local の両方で使う",
   "author": {
     "name": "wwwyo",
     "url": "https://github.com/wwwyo"
@@ -14,6 +14,7 @@
     "./break-ui",
     "./choreograph",
     "./design-md",
+    "./design-mode",
     "./emil-design-eng",
     "./find-animation-opportunities",
     "./gestures",
@@ -22,7 +23,6 @@
     "./pick-ui-library",
     "./remove-animations",
     "./review-animations",
-    "./unslop",
     "./threejs-animation",
     "./threejs-asset-pipeline",
     "./threejs-fundamentals",
@@ -35,6 +35,7 @@
     "./threejs-postprocessing",
     "./threejs-react-three-fiber",
     "./threejs-shaders",
-    "./threejs-textures"
+    "./threejs-textures",
+    "./unslop"
   ]
 }

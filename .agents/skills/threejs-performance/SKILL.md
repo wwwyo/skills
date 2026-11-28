@@ -1,6 +1,7 @@
 ---
 name: threejs-performance
 description: "Measuring and optimizing three.js speed: render statistics, memory counters, fewer draw calls via merging, instancing, batching and LOD, fill rate, shadows, CPU work per frame, shader stalls and GPU compute for particles, WebGL or WebGPU with TSL. Use when a scene is slow, janks or exceeds memory."
+disable-model-invocation: true
 ---
 
 # Three.js Performance

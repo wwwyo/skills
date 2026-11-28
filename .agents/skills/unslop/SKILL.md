@@ -6,6 +6,7 @@ metadata:
   author: Damir Sokolovsky
   x: https://x.com/heydamir
   site: https://heydamir.design/unslop
+disable-model-invocation: true
 ---
 
 # Unslop

@@ -14,3 +14,5 @@ pstack の poteto-mode を `mode` の名前で取り込み、コード作業の�
 - watch-pr の bootstrap は原本どおり frozen な bun.lock を使う。dev 依存は `latest` ではなく lock が解決した版を exact で書く（repo の exact ピンの規約）。test と型検査は `tests/mode-watch-pr.test.sh` で CI に載せる
 - playbook から watcher を指す path は `../scripts/watch-pr/watch-pr` と playbook からの相対で書く
 - wwwyo 独自の Review playbook（`playbooks/review.md`）を持つ。PR を head の内容で判定する側の手順で、受けたレビューを捌く review-triage とは逆向き。観点は Principles の leaf と blast-radius に結び付け、wwwyo の must（平文の秘密・`*.local.*` の commit・依存の範囲指定）を持つ。投稿の仕方と approve の条件は呼び出し側（Orca の Auto Approve bot の pr-review など）に残す。Non-negotiables と playbook 一覧、description に Review を足す（2026-11-28、ユーザー判断）
+- Review playbook で書くレビューは、Non-negotiables の「返答で原則を名指しする」の例外にする（指摘は結果の重さで書く）
+- 自動で読まれる skill を減らすため（2026-11-28、ユーザー判断）、command only にした skill へ playbook から辿る。Feature の step 2 から domain-modeling・database-design・agent-friendly-cli と design-mode へ、Prototype から design-mode へ

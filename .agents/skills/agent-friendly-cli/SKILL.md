@@ -1,6 +1,7 @@
 ---
 name: agent-friendly-cli
 description: "AI agent や自動化から呼ぶ CLI・script の設計指針。CLI の新設、subcommand・flag・JSON出力の追加、API の CLI 化、skill helper の作成、MCP と CLI の選択で使う。agent 向けと明示されない CLI 設計にも適用する。"
+disable-model-invocation: true
 ---
 
 # Agent-Friendly CLI Design Tips

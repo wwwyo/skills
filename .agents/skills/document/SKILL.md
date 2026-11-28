@@ -79,7 +79,7 @@ ADR は `references/adr-format.md` に両方を含む。他の形式は `assets/
 ### 3. 必要な情報を集める
 
 会話・対象 repo・資料から必要な情報を集める。
-設計判断や用語が未確定なら `grill-with-docs` を使う。
+設計判断や用語が未確定なら [grill-with-docs](../grill-with-docs/SKILL.md) を使う。
 材料が揃っている場合や軽微な修正では、ヒアリングを追加しない。
 
 ### 4. ドキュメント化する

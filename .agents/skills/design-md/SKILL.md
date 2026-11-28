@@ -1,6 +1,7 @@
 ---
 name: design-md
 description: "repo root の design.md に色・文字・余白・component・icon・logo・motion を定義する。新しい視覚システムの設計、明示指定されたサイト・コード・Figma からの値の抽出、design.md の token をアプリの lint（oxlint）に setup するときに使う。"
+disable-model-invocation: true
 ---
 
 # design-md Skill

@@ -1,6 +1,7 @@
 ---
 name: threejs-react-three-fiber
 description: "Building three.js scenes from React with React Three Fiber and drei: renderer setup, the scene graph as JSX, frame-loop, state and loading hooks, pointer events, and adaptive performance, on WebGL or with WebGPU and TSL. Use when writing React components that render three.js."
+disable-model-invocation: true
 ---
 
 # Three.js React Three Fiber

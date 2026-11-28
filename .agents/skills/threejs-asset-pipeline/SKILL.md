@@ -1,6 +1,7 @@
 ---
 name: threejs-asset-pipeline
 description: "Shrinking glTF assets for three.js with gltf-transform: inspect, validate and optimize commands, Draco, meshopt and quantization, KTX2, WebP and AVIF textures, the loader setup each output needs, and gltfjsx for React. Use when compressing, optimizing or validating 3D models before loading them."
+disable-model-invocation: true
 ---
 
 # Three.js Asset Pipeline

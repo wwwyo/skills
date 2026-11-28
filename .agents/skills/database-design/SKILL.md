@@ -2,6 +2,7 @@
 name: database-design
 description: "DB のスキーマ設計・migration の作成とレビュー・マルチテナント分離（RLS）・index と制約・DB 選定・公開前のスキーマレビューで使う。既定は PostgreSQL。本番テーブルをロックしない migration を書き、使い捨ての DB で流して検証してから返す。クエリのチューニングは対象外。"
 license: "MIT (adapted from davila7/claude-code-templates; see LICENSE.txt)"
+disable-model-invocation: true
 ---
 
 <!-- Adapted from davila7/claude-code-templates cli-tool/components/agents/database/database-architect.md

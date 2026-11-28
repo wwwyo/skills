@@ -11,7 +11,7 @@ Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's a
 
 ## Non-negotiables
 
-The Principles section below grounds every trigger. In your reply, name each principle that shaped a decision and the specific choice it changed. Cite only principles whose leaf SKILL.md you read this session.
+The Principles section below grounds every trigger. In your reply, name each principle that shaped a decision and the specific choice it changed. A review written under the Review playbook is the exception: its findings carry the consequence instead. Cite only principles whose leaf SKILL.md you read this session.
 
 The remaining triggers live only here:
 
