@@ -36,5 +36,4 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 
 - `delegate` — pi・Claude の選択・起動・非対話実行・session 再開
 - `orca-cli` — Orca CLI 操作の version-matched guide（Orca が配り自動更新する。dotfiles の `.agents/skills` で追跡し、この repo では持たない。local の知見は `references/orca.md` へ）
-- `skill-structure` — 学び skill の構造規約
 - `langfuse` — Langfuse の API・概念の upstream doc

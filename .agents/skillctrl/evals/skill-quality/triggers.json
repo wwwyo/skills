@@ -45,8 +45,6 @@
   {"id":"prototype-near-miss","skill":"prototype","should_trigger":false,"query":"前に選んだ検索カードの余白だけ修正して。比較用の新しい案は作らず、選択済みの1案を仕上げて。"},
   {"id":"creator-positive","skill":"skillctrl","should_trigger":true,"query":"自分の運用専用の新しいskillを作りたい。既存文章を根拠に短い入口と用途別referencesに分け、代表タスクで評価するところまで進めて。"},
   {"id":"creator-near-miss","skill":"skillctrl","should_trigger":false,"query":"このPythonのCLI実装をrefactorして。skillファイルの作成・更新・性能評価は必要ありません。"},
-  {"id":"structure-positive","skill":"skill-structure","should_trigger":true,"query":"repo固有の学びskillの構造を決めたい。references、tools、review loopをどこに分けるか、他skillに頼る部分も整理して。"},
-  {"id":"structure-near-miss","skill":"skill-structure","should_trigger":false,"query":"globalな既存skillのdescriptionを短く言い換えて。repo固有の学びskillの新設や構造変更はしない。"},
   {"id":"find-boundary-positive","skill":"skillctrl","should_trigger":true,"query":"PDF変換の能力をagentに追加したい。対応するskillを探して取得元を比較して。新しい独自skillを書く前に既存候補を知りたい。"},
   {"id":"find-boundary-negative","skill":"skillctrl","should_trigger":false,"query":"PDFの2ページ目の本文を読み、要点を3つ挙げて。能力拡張やskill導入をする場面ではありません。"},
   {"id":"ingest-boundary-positive","skill":"ingest-to-markdown","should_trigger":true,"query":"このYouTubeの技術講演をPJ資料として残して。URLだけでなく、あとから内容をgrepできる状態にしたい。"},

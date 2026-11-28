@@ -10,7 +10,7 @@ disable-model-invocation: true
 
 **デフォルトは 0 から設計する**。ライブURL・ローカルのコード・Figma が明示指定されたときだけ抽出モードに切り替わる。prompt に URL・ファイルパス・Figma link が含まれていれば抽出モード、含まれなければ default。どちらか判定しにくいときだけ人間に確認する（勝手に発散させない）。
 
-design.md のフォーマットとその check（`tools/`）はこの skill が正本です。置き場・語彙表の運用など consumer 側の規約は [skill-structure の product-design template](../skill-structure/templates/product-design.md) を参照します。
+design.md のフォーマットとその check（`tools/`）はこの skill が正本です。design.md は repo root に置き、consumer 側の skill・reference には「視覚値は `/design.md` を読む」と1行だけ書いて値を複製しません。
 
 ## デフォルトフロー: 0 から設計する
 
