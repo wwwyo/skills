@@ -11,8 +11,8 @@ usage: scripts/sync-plugin-manifests.py [--check]
 Codex は local plugin を ~/.codex/plugins/cache へコピーし、その際に symlink を落とす。
 そのため plugin root は実ファイルを含む dir にし（core = repo root、design = .agents/skills、
 local = .agents）、
-skills は root からの相対 path で 1 つずつ列挙する。root にできる dir はこの 3 つで尽きるため、
-Claude の motion-graphics plugin は Codex では design plugin に同梱する（CODEX_BUNDLED）。
+skills は root からの相対 path で 1 つずつ列挙する。root にできる dir はこの 3 つで尽きるので、
+plugin を増やすときは既存の plugin に skill を足す。
 
 --check は差分・検査違反があれば stderr に理由を出して exit 1。書き込まない。
 stdout には 1 行の JSON（{"changed": [...], "ok": bool}）を出す。
@@ -31,8 +31,6 @@ CLAUDE = ROOT / ".claude-plugin/marketplace.json"
 CODEX_MARKETPLACE = ROOT / ".agents/plugins/marketplace.json"
 # plugin 名 → Codex の plugin root（repo root からの相対）
 CODEX_ROOTS = {"core": ".", "design": ".agents/skills", "local": ".agents"}
-# Codex で別 plugin に同梱する Claude の plugin 名 → 同梱先の plugin 名
-CODEX_BUNDLED = {"motion-graphics": "design"}
 VERSION = "0.1.0"
 
 
@@ -56,8 +54,8 @@ def main() -> int:
     marketplace = json.loads(CLAUDE.read_text(encoding="utf-8"))
     plugins = marketplace["plugins"]
     names = [p["name"] for p in plugins]
-    if sorted(names) != sorted([*CODEX_ROOTS, *CODEX_BUNDLED]):
-        errors.append(f"plugins {names} must match CODEX_ROOTS and CODEX_BUNDLED")
+    if sorted(names) != sorted(CODEX_ROOTS):
+        errors.append(f"plugins {names} must match CODEX_ROOTS")
 
     seen: dict[str, str] = {}
     for plugin in plugins:
@@ -89,12 +87,9 @@ def main() -> int:
         if root is None:
             continue
         root_dir = (ROOT / root).resolve()
-        bundled = [p for p in plugins if CODEX_BUNDLED.get(p["name"]) == plugin["name"]]
         description = plugin["description"]
-        if bundled:
-            description += "。Codex では " + "・".join(p["name"] for p in bundled) + " plugin の skill も同梱する"
         skills = []
-        for entry in [e for p in [plugin, *bundled] for e in p["skills"]]:
+        for entry in plugin["skills"]:
             rel = (ROOT / entry).resolve().relative_to(root_dir).as_posix()
             skills.append(f"./{rel}")
         expected[root_dir / ".codex-plugin/plugin.json"] = dump({

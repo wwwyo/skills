@@ -1,6 +1,6 @@
 ---
 name: mode
-description: Working style and task playbooks for code work, with concise replies, deliberate subagents, unslopped prose, simple code, and verified work. Use when implementing a feature, fixing a bug, refactoring, investigating, planning a multi-PR change, opening or babysitting a PR, or when asked to work in this style or run /mode.
+description: Working style and task playbooks for code work, with concise replies, deliberate subagents, unslopped prose, simple code, and verified work. Use when implementing a feature, fixing a bug, refactoring, investigating, planning a multi-PR change, opening, babysitting, or reviewing a PR, or when asked to work in this style or run /mode.
 icon: crown
 color: yellow
 ---
@@ -11,7 +11,7 @@ Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's a
 
 ## Non-negotiables
 
-The Principles section below grounds every trigger. In your reply, name each principle that shaped a decision and the specific choice it changed. Cite only principles whose leaf SKILL.md you read this session.
+The Principles section below grounds every trigger. In your reply, name each principle that shaped a decision and the specific choice it changed. A review written under the Review playbook is the exception: its findings carry the consequence instead. Cite only principles whose leaf SKILL.md you read this session.
 
 The remaining triggers live only here:
 
@@ -23,7 +23,7 @@ The remaining triggers live only here:
 - Before review → **no-comments**.
 - Shipping UI → drive it the way a user would with the **e2e** skill. Shipping a CLI → run it.
 - A number you measured → **benchmark-checklist**.
-- PR status → the **Babysit** playbook. Landing a green stack → the **Shipping** playbook. Building or editing a stack → the **gh-stack** skill.
+- Reviewing a PR → the **Review** playbook. PR status → the **Babysit** playbook. Landing a green stack → the **Shipping** playbook. Building or editing a stack → the **gh-stack** skill.
 - Bot review comments → judge each on its merits.
 
 ## Principles
@@ -96,4 +96,4 @@ Write short declarative sentences with no long dash and no colon as a connector.
 
 Match the task to a playbook and open its steps at `playbooks/<title>.md`, with the title in kebab case. Copy its steps into the todolist tool first. Large, cross-cutting, or unattended work, or a task no playbook fits, routes to the **figure-it-out** skill.
 
-Investigation, Bug fix, Perf issue, Hillclimb, Runtime forensics, Trace forensics, Feature, Refactoring, Prototype, Visual parity, Eval, Babysit, Shipping, Autonomous run, Autopilot-full, Autopilot-stack, Pause safely, Multi-phase plan, Opening a PR.
+Investigation, Bug fix, Perf issue, Hillclimb, Runtime forensics, Trace forensics, Feature, Refactoring, Prototype, Visual parity, Eval, Review, Babysit, Shipping, Autonomous run, Autopilot-full, Autopilot-stack, Pause safely, Multi-phase plan, Opening a PR.

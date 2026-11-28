@@ -1,7 +1,7 @@
 ---
 name: grill-with-docs
 description: "設計・計画を質問で詰め、合意した用語と重要な判断を Glossary・ADR に記録する。「設計を詰めて」「grill-with-docs」など、ヒアリングとドメインモデルの整理を併せて進める依頼で使う。"
-disable-model-invocation: false
+disable-model-invocation: true
 ---
 
 # Grill with Docs

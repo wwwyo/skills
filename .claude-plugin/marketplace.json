@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "wwwyo",
-  "description": "wwwyo の agent skills。core は cloud（claude.ai）と local の両方、design は UI の見た目・動き・モバイル、motion-graphics は three.js の 3D・モーショングラフィックス（どちらも cloud と local の両方）、local は手元の開発環境専用",
+  "description": "wwwyo の agent skills。core は cloud（claude.ai）と local の両方、design は UI の見た目・動き・モバイル・3D（cloud と local の両方）、local は手元の開発環境専用",
   "owner": {
     "name": "wwwyo",
     "url": "https://github.com/wwwyo"
@@ -62,7 +62,6 @@
         "./.agents/skills/project-setup",
         "./.agents/skills/reframe",
         "./.agents/skills/sharpen",
-        "./.agents/skills/skill-structure",
         "./.agents/skills/solo-product",
         "./.agents/skills/tdd",
         "./.agents/skills/technical-writing",
@@ -84,7 +83,7 @@
       "name": "design",
       "source": "./",
       "strict": false,
-      "description": "UI の見た目・動き・モバイルの挙動を扱う skill（unslop・design-md・emilkowalski/skills）。claude.ai アカウントと local の両方で使う",
+      "description": "UI の見た目・動き・モバイルの挙動・3D を扱う skill（入口は design-mode。unslop・design-md・emilkowalski/skills・CloudAI-X/threejs-skills）。claude.ai アカウントと local の両方で使う",
       "skills": [
         "./.agents/skills/animate",
         "./.agents/skills/animation-performance",
@@ -92,6 +91,7 @@
         "./.agents/skills/break-ui",
         "./.agents/skills/choreograph",
         "./.agents/skills/design-md",
+        "./.agents/skills/design-mode",
         "./.agents/skills/emil-design-eng",
         "./.agents/skills/find-animation-opportunities",
         "./.agents/skills/gestures",
@@ -100,15 +100,6 @@
         "./.agents/skills/pick-ui-library",
         "./.agents/skills/remove-animations",
         "./.agents/skills/review-animations",
-        "./.agents/skills/unslop"
-      ]
-    },
-    {
-      "name": "motion-graphics",
-      "source": "./",
-      "strict": false,
-      "description": "three.js・React Three Fiber で 3D・モーショングラフィックスを作る skill（CloudAI-X/threejs-skills）。claude.ai アカウントと local の両方で使う",
-      "skills": [
         "./.agents/skills/threejs-animation",
         "./.agents/skills/threejs-asset-pipeline",
         "./.agents/skills/threejs-fundamentals",
@@ -121,7 +112,8 @@
         "./.agents/skills/threejs-postprocessing",
         "./.agents/skills/threejs-react-three-fiber",
         "./.agents/skills/threejs-shaders",
-        "./.agents/skills/threejs-textures"
+        "./.agents/skills/threejs-textures",
+        "./.agents/skills/unslop"
       ]
     },
     {
@@ -134,16 +126,13 @@
         "./.agents/skills/apple-container",
         "./.agents/skills/cloudflare",
         "./.agents/skills/delegate",
-        "./.agents/skills/dev-env",
         "./.agents/skills/gh-stack",
         "./.agents/skills/ingest-to-markdown",
-        "./.agents/skills/langfuse",
         "./.agents/skills/pr-auto-merge",
         "./.agents/skills/secret-env",
         "./.agents/skills/skillctrl",
         "./.agents/skills/statechart",
-        "./.agents/skills/typesafe-ai",
-        "./.agents/skills/void"
+        "./.agents/skills/typesafe-ai"
       ],
       "mcpServers": {
         "blender": {

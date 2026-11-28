@@ -1,6 +1,7 @@
 ---
 name: domain-modeling
 description: Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing the Glossary section of AGENTS.md, recording or editing an ADR, or writing the model as strict TS types and visualizing aggregates, types, and tables as one HTML page.
+disable-model-invocation: true
 ---
 
 # Domain Modeling

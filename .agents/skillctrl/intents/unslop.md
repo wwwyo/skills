@@ -7,3 +7,5 @@ UI の作り直しは unslop に一本化する（2026-11-11、hallmark から�
 原本の検証は描画して見比べるだけで、幅ごとの確認が無い。ユーザーのメイン端末は Android なので、320・375・414px で横スクロール・2行に折れるクリック可能な文字・11px 未満の文字・はみ出しが無いことを確かめてから報告させる。
 
 データの捏造禁止は足さない（ユーザー判断）。原本の「Do not invent features, claims or data」で足り、実データがあればそれを使う前提でよい。
+
+- 自動で読まれる skill を減らすため（2026-11-28、ユーザー判断）、`disable-model-invocation: true` を付けて command only にする。design-mode の playbook から辿られる

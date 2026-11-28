@@ -8,3 +8,5 @@ ADR の書式は document skill に置き、元の軽い形式（タイトルと
 型で決まる形（集約・root・PK/FK・任意・union・enum）は型ブロックを正とし、型で書けない責務・概要図の内部ノード・DB の表・案は別の JSON spec に置く。
 生成器は python3 標準ライブラリだけで動き、入力・出力のパスを引数で受ける。特定プロダクトの名前・表・データは template と生成器に持たせない。
 SKILL.md には「いつ可視化するか・型の書き方の要点・生成コマンド」だけを置き、入力形式の詳細は reference に置く。
+
+- 自動で読まれる skill を減らすため（2026-11-28、ユーザー判断）、`disable-model-invocation: true` を付けて command only にする。mode の Feature playbook と prd・document からリンクで辿られる

@@ -1,6 +1,6 @@
 # Langfuse telemetry opt-in
 
-ステップ 2 で Langfuse 収集 yes と答えた場合のみ実施。3 agent 全部をこの repo で有効化する。前提: `LANGFUSE_PUBLIC_KEY` / `SECRET_KEY` / `BASE_URL` が mise の global env に登録済み、かつ各マシンで `claude plugin install langfuse-observability@langfuse-observability`・`codex plugin marketplace add wwwyo/codex-observability-plugin && codex plugin add tracing@codex-observability-plugin` 済みであること（詳細は `~/src/github.com/wwwyo/skills/.agents/skills/dev-env/references/langfuse-telemetry.md` — この skill は新規 repo 内で実行されるため絶対 path で書く）。
+ステップ 2 で Langfuse 収集 yes と答えた場合のみ実施。3 agent 全部をこの repo で有効化する。前提: `LANGFUSE_PUBLIC_KEY` / `SECRET_KEY` / `BASE_URL` が mise の global env に登録済み、かつ各マシンで `claude plugin install langfuse-observability@langfuse-observability`・`codex plugin marketplace add wwwyo/codex-observability-plugin && codex plugin add tracing@codex-observability-plugin` 済みであること（詳細は `~/src/github.com/wwwyo/dotfiles/.agents/skills/dev-env/references/langfuse-telemetry.md` — この skill は新規 repo 内で実行されるため絶対 path で書く）。
 
 repo root で次を実行する。script は以下を置く。
 
@@ -15,6 +15,6 @@ repo root で次を実行する。script は以下を置く。
 
 既存 setup コマンドがある repo は `{ [ ! -x ... ] || ...; }; bun install` のように、local 設定のコピーを install より前に置く。コピーに失敗しても依存 install は継続し、同期結果はログとファイルの存在で別途確認する。`setupAgentStartupPolicy=start-immediately` では setup と Agent が並行に起動するため、この順序だけでは Agent 起動前のコピー完了は保証しない。setup 全体の完了待ち（`wait-for-setup`）は必須にしない。
 
-Orca の repo 設定は `orca repo show --repo path:<repo-root> --json` の `result.repo.hookSettings` を確認する。`commandSourcePolicy` が未設定なら local script がある場合は `local-only`、なければ `shared-only` に解決される。明示的な `local-only` では local setup が空でも `orca.yaml` は使われない（[解決規則の詳細](../../dev-env/references/orca.md)）。共有 setup を使う repo は Project Settings → Worktree Hooks の詳細設定で `orca.yaml のみ` を選ぶ。CLI に setter がなければ bundled computer-use で操作し、ユーザーから修正を依頼済みなら改めて許可を求めない。未登録の repo は初回 commit 後に `orca repo add --path <repo-root> --json` で登録し、handoff 前に同じ確認を行う。
+Orca の repo 設定は `orca repo show --repo path:<repo-root> --json` の `result.repo.hookSettings` を確認する。`commandSourcePolicy` が未設定なら local script がある場合は `local-only`、なければ `shared-only` に解決される。明示的な `local-only` では local setup が空でも `orca.yaml` は使われない（[解決規則の詳細](https://github.com/wwwyo/dotfiles/blob/main/.agents/skills/dev-env/references/orca.md)）。共有 setup を使う repo は Project Settings → Worktree Hooks の詳細設定で `orca.yaml のみ` を選ぶ。CLI に setter がなければ bundled computer-use で操作し、ユーザーから修正を依頼済みなら改めて許可を求めない。未登録の repo は初回 commit 後に `orca repo add --path <repo-root> --json` で登録し、handoff 前に同じ確認を行う。
 
 完了確認は main のファイル存在だけで終えない。収集対象の新規 Orca worktree で 3 agent の opt-in と `.pi/git/` の install を確認し、実 session の Langfuse 受信を照合する。guard による helper 不在の skip や setup の終了コードだけを成功の根拠にしない。収集を必要としない automation の `--setup skip` は不備として扱わない。実 session の照合はその agent を起動できることが前提 — この workflow でサポートする認証方式で `claude` の実 session を開始できない場合は Claude 分の live 検証を未完として扱い、「検証できなかった agent」を明示して成功扱いにしない。起動できる場合は live 検証を実施する。

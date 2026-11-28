@@ -1,26 +1,50 @@
 {
   "acceptedHashes": {
     "agent-browser": "8ae1da6cbcdd3877dc207691fd13bd6d115f5576",
+    "animate": "a95d016629a890020156fdd03899d72e6a1067e0",
+    "animation-performance": "5b61f4ba821d04475b8a85978d438c54674cb43e",
+    "apple-design": "ecdb32e36cad8474582e488a4888b51bf85c7be4",
     "architect": "73337263abcb5ea580820c57c42358a66a32aaad",
     "blast-radius": "763be55297df7905221780e9f70fea02a862b3a8",
+    "break-ui": "9405f55169b8e41d4211b728cd5eb50e3b1656ae",
     "catch-up": "0cdb1b2ae3bfd5d5816ff6741425b5af5286767c",
+    "choreograph": "f933edce4dd0447606f20787e84bd36393014774",
     "cloudflare": "aeea5a45701ac077377985a22f233f9d3da07278",
     "create-formal-verification-skill": "ea2b2c4ba1df358a9b8bccd117b1690fa3f3f3d5",
     "create-verification-skill": "8ccd25a46eb2c1f0e0fc353cc4d416fb676f78a4",
-    "domain-modeling": "ee7bc9f9e4971125c8252d1b824a98983d9844b2",
+    "domain-modeling": "f52e83aef61167933b5f047b12ef30c107abe411",
     "e2e": "d35c6f36a4e19f9788c12ab48c2b1bd2d09cbd34",
+    "emil-design-eng": "520e8a0c28c2f063191ab777106af8146b9a1978",
     "figure-it-out": "99bbf9564b1e563ad9cdf9226ffd1a06120ca89c",
-    "grill-with-docs": "8aa67ae654f28fb6a9098a3dd287536438fc2092",
+    "find-animation-opportunities": "73d73199cdaf49bc991518f4c0bf88104685f334",
+    "gestures": "e6b62d9ed1e1dddf7f09f6025ec656638ace6a83",
+    "gh-stack": "8a6678498a10fe2cd055135b09f235f23887eaea",
+    "grill-with-docs": "246bf89252bae8764d76d1b2b8a9ab8121156a6f",
+    "improve-animations": "8016fc935ef753041a1dbfbe3ab5bbf446af65ce",
     "interrogate": "0a87d986f90e43f5274cb379b45e65cedd5b0a3b",
-    "langfuse": "1f4efa271b10a127fa56e876ce2861eb28aba00a",
     "learn": "a97742de472ad5b8740b8965a6e78d33839eb725",
     "maintain-verification-skill": "98314b90313c13daab2b0ef090145ab94d176e04",
-    "mode": "5da678f0b014030b44949973b0b29a37164ce294",
+    "mobile-native": "e8c91e3ffb0475e37f7a60c8afe5a3bc1f5a3552",
+    "mode": "757ddce694cef371d65afbfb19eecbeae899897d",
     "no-comments": "c60d05861c42f8321c3bc5e3d4865ad62f270e7e",
+    "remove-animations": "30b23894f6b0aaaa88e89761a1e7b8a5e498445b",
     "skillctrl": "37872ff011ae3fa468a81c6f470b4dbc73b63f4e",
     "technical-writing": "e180f643e8ed5d7676594e2c8e4645e1df058004",
+    "threejs-animation": "89d4e16c8aa6b663e99f683c32367e93a80c8998",
+    "threejs-asset-pipeline": "9f91e6bcf0029fd280a0f8cce0c7c9bbe6c6f2ba",
+    "threejs-fundamentals": "edf6c862fcf5e8569475c12e18061213094efad8",
+    "threejs-geometry": "1a611469b996832d45675e6d1b9962318b243c14",
+    "threejs-interaction": "cd84028570dadf63b079bdb7859829647e3bde04",
+    "threejs-lighting": "b23e72438d90ab1c70871a004146ce9f347527e5",
+    "threejs-loaders": "69204d0d4d9e84fb7ece23db07feb7083450ccc0",
+    "threejs-materials": "93da6f011c02d443bac30655d3c7158c8194a534",
+    "threejs-performance": "523b11738d0b08d4859bb08bcb1d144fd4c24499",
+    "threejs-postprocessing": "9c554f89656bfda186bbd10e40831d0540bba766",
+    "threejs-react-three-fiber": "5391ad3a17b8e78be11c360f02fd43dd706ebd05",
+    "threejs-shaders": "9564a2b1279cbff81db00240986d91a1589bfe6b",
+    "threejs-textures": "246dbcabdb2bf962c4587a99b5fe28a0ccd13b91",
     "typescript-best-practices": "62e1195c2c83d0cd950207529e9c1b95a01bdcd2",
-    "unslop": "7b87213f808441fa03defbed096e19887f2f2bbe",
+    "unslop": "fc7f3b6c1e332850cbd8126cbcf387e5b780e36c",
     "unslop-writing": "9469127ea2ad0507233d81636b3aa85a938ce57c"
   },
   "upstreams": {
@@ -471,24 +495,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/cursor/plugins.git",
       "updatedAt": "2026-11-27T11:07:59.615Z"
-    },
-    "langfuse": {
-      "computedHash": "c1dc8c4e847791c62a3145894be9ec318220e76fdf0ee1a13422842f9908a48b",
-      "installedAt": "2026-09-24T07:04:52.152Z",
-      "native": {
-        "computedHash": "c1dc8c4e847791c62a3145894be9ec318220e76fdf0ee1a13422842f9908a48b",
-        "skillPath": "skills/langfuse/SKILL.md",
-        "source": "langfuse/skills",
-        "sourceType": "github",
-        "sourceUrl": "https://github.com/langfuse/skills.git"
-      },
-      "skillFolderHash": "42996c667c57b5762367c9e41c033e6039549765",
-      "skillPath": "skills/langfuse/SKILL.md",
-      "source": "langfuse/skills",
-      "sourceCommit": "6fb2baf4413719ec241916e25e4a0330372c9d49",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/langfuse/skills.git",
-      "updatedAt": "2026-11-10T03:45:30.128Z"
     },
     "learn": {
       "computedHash": "a43372e887a501936a2c4c4210e821f9de768df8f268f1fc9b9c00ab47a6ca54",
@@ -1464,22 +1470,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/cursor/plugins.git",
       "updatedAt": "2026-11-27T11:07:59.883Z"
-    },
-    "void": {
-      "computedHash": "39e4741b17adc5cab30d3a31b6a557bdc6479355458c71bc89173c51ae36d3c9",
-      "installedAt": "2026-11-27T05:27:36.198Z",
-      "native": {
-        "computedHash": "39e4741b17adc5cab30d3a31b6a557bdc6479355458c71bc89173c51ae36d3c9",
-        "skillPath": "packages/void/skills/void/SKILL.md",
-        "source": "voidzero-dev/void",
-        "sourceType": "github"
-      },
-      "skillFolderHash": "96e22e47094e598e4a46acecbe97c4529c54dc0d",
-      "skillPath": "packages/void/skills/void/SKILL.md",
-      "source": "voidzero-dev/void",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/voidzero-dev/void.git",
-      "updatedAt": "2026-11-27T05:27:36.198Z"
     }
   },
   "version": 1

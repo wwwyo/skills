@@ -6,7 +6,7 @@ pi は opencode Go サブスク（月 $10、5時間 $12 / 週 $30 / 月 $60 の�
 
 | やること | 読む reference |
 | --- | --- |
-| 設定を変える / 動かない / モデルや課金先を確認する | [pi の設定・認証](../../dev-env/references/pi.md) |
+| 設定を変える / 動かない / モデルや課金先を確認する | [pi の設定・認証](https://github.com/wwwyo/dotfiles/blob/main/.agents/skills/dev-env/references/pi.md) |
 
 ## モデル選択
 
@@ -14,7 +14,7 @@ pi は opencode Go サブスク（月 $10、5時間 $12 / 週 $30 / 月 $60 の�
 
 ## 対話 session の起動・継続
 
-[delegate](../SKILL.md) の「起動時の権限モード」に従う。この環境は sandbox extension を外しているので解除用の引数は付けない（`--no-sandbox` は pi 本体の flag ではなく、付けると `Unknown option` で起動しない）。`OPENCODE_API_KEY` の env 注入は不要 — `~/.pi/agent/auth.json` の `!` command credential が mise から都度解決する（[設定・認証](../../dev-env/references/pi.md)を参照）。
+[delegate](../SKILL.md) の「起動時の権限モード」に従う。この環境は sandbox extension を外しているので解除用の引数は付けない（`--no-sandbox` は pi 本体の flag ではなく、付けると `Unknown option` で起動しない）。`OPENCODE_API_KEY` の env 注入は不要 — `~/.pi/agent/auth.json` の `!` command credential が mise から都度解決する（[設定・認証](https://github.com/wwwyo/dotfiles/blob/main/.agents/skills/dev-env/references/pi.md)を参照）。
 
 sandbox extension を再導入した場合だけ、`pi --help` の Extension CLI Flags に `--no-sandbox` が出ることを確かめて付ける。未知の引数を付けたまま解除済みと判断しない。
 

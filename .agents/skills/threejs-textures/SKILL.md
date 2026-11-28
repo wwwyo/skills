@@ -1,6 +1,7 @@
 ---
 name: threejs-textures
 description: "Three.js textures: image loading, color spaces, UV channels and transforms, texture types from canvas to HDR and KTX2, render targets, texture memory. Use when working with images on materials, UV coordinates, cubemaps, render targets or texture optimization; on WebGL or with WebGPU and TSL."
+disable-model-invocation: true
 ---
 
 # Three.js Textures
