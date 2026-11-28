@@ -56,7 +56,7 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 | pi の対話 session を起動する / 継続する                 | [references/pi.md](references/pi.md)       |
 
 
-設定・認証・起動不調の調査は [dev-env](../dev-env/SKILL.md) から対象の reference を読む。Orca の terminal 操作と handoff・監督の使い分けは後述の「起動・連携は Orca 経由」に従う。
+設定・認証・起動不調の調査は [dev-env](https://github.com/wwwyo/dotfiles/blob/main/.agents/skills/dev-env/SKILL.md) から対象の reference を読む。Orca の terminal 操作と handoff・監督の使い分けは後述の「起動・連携は Orca 経由」に従う。
 
 ## subagent との使い分け
 

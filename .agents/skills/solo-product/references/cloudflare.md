@@ -14,7 +14,7 @@ Cloudflare 固有の設定・制約はこの reference に集約する。公開�
 - **Workers AI binding のキャンセルは伝播しない** — 呼び出し側を abort・timeout しても binding 側の推論は走り切る（課金と log に残る）
 - **`cf`（beta）では on/off・文字列などの scalar の `value` を取る zone 設定を変更できない** — `cf zones settings get always_use_https -z <zone>` で参照はできるが、`cf zones settings edit` に scalar の `value` を渡す専用 flag が無い（`cf schema zones settings edit` の requestBodyFields は `enabled`・`value-enabled`・`value-pool-id` 等の個別項目だけで `value` が無い。`cf` v1.0.0-beta.12 で確認 2026-10-13）。Always Use HTTPS（`always_use_https`）・min TLS version（`min_tls_version`）等を変えるにはダッシュボードか、認証付きの `PATCH /zones/{zone_id}/settings/{setting_id}` が要る（`cf` でやるなら `--body '{"value":"on"}'` に raw JSON を渡す形 — `--dry-run` で送出内容を確認済み）
 
-手元の AI Gateway 利用設定は [dev-env の AI Gateway 設定](../../dev-env/references/cloudflare.md)を参照する。
+手元の AI Gateway 利用設定は [dev-env の AI Gateway 設定](https://github.com/wwwyo/dotfiles/blob/main/.agents/skills/dev-env/references/cloudflare.md)を参照する。
 
 ## 1. Custom domain と TLS
 

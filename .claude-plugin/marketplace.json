@@ -126,7 +126,6 @@
         "./.agents/skills/apple-container",
         "./.agents/skills/cloudflare",
         "./.agents/skills/delegate",
-        "./.agents/skills/dev-env",
         "./.agents/skills/gh-stack",
         "./.agents/skills/ingest-to-markdown",
         "./.agents/skills/pr-auto-merge",

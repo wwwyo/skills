@@ -12,7 +12,6 @@
     "./skills/apple-container",
     "./skills/cloudflare",
     "./skills/delegate",
-    "./skills/dev-env",
     "./skills/gh-stack",
     "./skills/ingest-to-markdown",
     "./skills/pr-auto-merge",

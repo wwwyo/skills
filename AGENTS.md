@@ -1,6 +1,6 @@
 # skills
 
-wwwyo の共有 agent skill の正本。Claude Code・Codex・pi へは plugin / package として配り、claude.ai（cloud）には core・design plugin だけを届ける。開発環境の設定（各 tool への登録・hooks・chezmoi）は [wwwyo/dotfiles](https://github.com/wwwyo/dotfiles) が持つ。
+wwwyo の共有 agent skill の正本。Claude Code・Codex・pi へは plugin / package として配り、claude.ai（cloud）には core・design plugin だけを届ける。開発環境の設定（各 tool への登録・hooks・chezmoi）と、その知見を持つ dev-env・langfuse skill は [wwwyo/dotfiles](https://github.com/wwwyo/dotfiles) が持つ。
 
 ## ディレクトリ構造
 
@@ -33,7 +33,7 @@ plugin は `core`（cloud と local の両方。環境に依存しない汎用 s
 - skill から同梱の tools を呼ぶ手順は SKILL.md の dir からの相対 path で書く。`~/.agents/skills/...` は存在しない。scheduled task・hook など agent 以外の呼び出し元は canonical checkout（`~/src/github.com/wwwyo/skills`）を指す
 - **main への merge は即本番**。手元の pi・Devin と Claude Code の local はこの repo の canonical checkout を直接読む。Codex は `codex plugin add` で cache を更新するまで古い copy を読み、Claude Code の core と claude.ai は marketplace の自動同期で取り込んだ copy を読む（tool ごとの反映は dev-env の skill-plugins を参照）。skill の rename・削除は、それを読む consumer（dotfiles の scheduled task・hook、他 repo の orca.yaml）の切替と同じタイミングで merge する
 
-tool ごとの読み込み方・編集の反映・確認コマンドは [dev-env の skill-plugins](.agents/skills/dev-env/references/skill-plugins.md) を参照する。
+tool ごとの読み込み方・編集の反映・確認コマンドは [dev-env の skill-plugins](https://github.com/wwwyo/dotfiles/blob/main/.agents/skills/dev-env/references/skill-plugins.md) を参照する。
 
 ## セットアップ
 
@@ -58,7 +58,7 @@ skill の検索・追加・作成・改善・更新・削除は `skillctrl` に�
 - 独立 skill として残すかの基準は「その skill だけを目的に起動する場面があるか」。無ければ既存 skill の reference か節にする
 - 運用ルールの記載先は、情報の発生源（不具合の根拠・制約の由来）と適用時（操作を行う skill）で分ける。発生源にだけ書くと使う側が見ず、両方に全文書くと drift する
 - skill・reference の rename・移動・削除では、path だけでなく link の表示名・anchor も repo 全体と dotfiles・wwwyo/me を grep して残存参照を消す
-- gh-aw の `.md` を変えたら `gh aw compile` の生成物と、`uses:` が変われば `.github/workflows/actions.lock`（`gh-actions-lock --no-narrow`）も同じ変更に含める（[gh-aw](.agents/skills/dev-env/references/gh-aw.md)）
+- gh-aw の `.md` を変えたら `gh aw compile` の生成物と、`uses:` が変われば `.github/workflows/actions.lock`（`gh-actions-lock --no-narrow`）も同じ変更に含める（[gh-aw](https://github.com/wwwyo/dotfiles/blob/main/.agents/skills/dev-env/references/gh-aw.md)）
 
 ## 他 repo・他セッションから触るとき
 

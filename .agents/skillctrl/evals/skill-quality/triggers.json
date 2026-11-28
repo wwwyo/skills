@@ -11,8 +11,6 @@
   {"id":"codex-near-miss","skill":"codex","should_trigger":false,"query":"pi のセッションを再開して前の調査を続けたい。起動方法を確認して。Codex CLI に切り替える依頼ではありません。"},
   {"id":"design-positive","skill":"design-md","should_trigger":true,"query":"この新規アプリの design.md を作りたい。色、文字、余白、部品、icon、motion を統一する視覚システムを定義して。"},
   {"id":"design-near-miss","skill":"design-md","should_trigger":false,"query":"docs/design.md はAPI設計書です。HTTP endpoint とエラー処理の節を整理して。色やUIの設計は含みません。"},
-  {"id":"env-positive","skill":"dev-env","should_trigger":true,"query":"dotfiles の Codex user config が chezmoi apply 後に戻る理由と、永続化する正本の場所を確認して。Orca worktree で apply してよいかも知りたい。"},
-  {"id":"env-near-miss","skill":"dev-env","should_trigger":false,"query":"この Python プロジェクトだけの pytest 設定を整理して。ユーザー共通のagent設定やdotfilesの変更は不要です。"},
   {"id":"document-positive","skill":"document","should_trigger":true,"query":"repo の README が設定項目の一覧だけになっている。初めて読む人が目的と使い始め方をつかめるよう、短く再構成して。"},
   {"id":"document-near-miss","skill":"document","should_trigger":false,"query":"README を読んだところAPIの返り値にバグがあると分かった。JSONを生成する関数だけ修正して、文書は変更しないで。"},
   {"id":"find-positive","skill":"skillctrl","should_trigger":true,"query":"Google Calendar を操作できる既存の agent skill を探して。候補の取得元と導入方法を比較してから、使うものを決めたい。"},
