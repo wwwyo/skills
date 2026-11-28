@@ -77,6 +77,15 @@ def main() -> int:
     dirs = sorted(p.name for p in PLUGINS.iterdir() if p.is_dir())
     if sorted(plugins) != dirs:
         errors.append(f"marketplace plugins {sorted(plugins)} must match plugins/ dirs {dirs}")
+    names = [p.get("name") for p in marketplace["plugins"]]
+    for name in {n for n in names if names.count(n) > 1}:
+        errors.append(f"marketplace plugin {name!r}: listed more than once")
+    for entry in marketplace["plugins"]:
+        source = entry.get("source")
+        if isinstance(source, dict) and not (
+            entry.get("name") and source.get("source") == "github" and source.get("repo", "").count("/") == 1
+        ):
+            errors.append(f"marketplace plugin {entry.get('name')!r}: external source must be github with owner/repo")
 
     seen: dict[str, str] = {}
     expected: dict[Path, str] = {}
