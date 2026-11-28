@@ -12,11 +12,12 @@ Review triage (`../references/review-triage.md`) is the other direction: it hand
    - Types and reruns: **principle-type-system-discipline**, **principle-make-operations-idempotent**.
    - Risky surfaces (migrations, permissions, public APIs, CI workflows, shared config): run the **blast-radius** skill and follow the breakage past the diff.
    - Leftovers: debug output, dead code, commented-out code, stray files.
-3. **Hold the repository rules as must.**
-   - A plaintext secret, credential, or a committed `*.local.*` file.
-   - A dependency added with a version range instead of an exact pin. A release younger than the seven-day cooldown is a should.
-   - Injection, missing access control, or an unsafe default.
-   - A hand-written implementation of something a standard library already does is a should.
+3. **Hold the repository rules.** Each item carries its own severity.
+   - must: a plaintext secret, credential, or a committed `*.local.*` file.
+   - must: a dependency added with a version range instead of an exact pin.
+   - should: a release younger than the seven-day cooldown. A security fix is exempt from the cooldown, still pinned exactly, and the PR body states when the exemption can be lifted; flag only a missing date.
+   - must: injection, missing access control, or an unsafe default.
+   - should: a hand-written implementation of something a standard library already does.
 4. **Verify as deep as the environment allows.** Reading is the default. With a checkout of the head, run the change the way a user would, as the Shipping playbook's verifier does: the **e2e** skill for UI, the command itself for a CLI, the tests for a library. Report `PASS` or `FAIL` with what you ran. Without a checkout, say the review was read-only.
 5. **Write each finding with a severity and a consequence.** Start with `must`, `should`, or `nit`. Say what breaks, for whom, and when, and anchor it to `path:line`. `must` means it breaks behavior, data, or security for someone. Do not pad. "No findings" is a valid review.
 6. **End with one verdict line.** Order the findings by weight, then close with either "safe to merge" or "fix first" and the must items. The review is the reply, so skip restating the goal and naming principles.
