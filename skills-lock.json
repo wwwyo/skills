@@ -170,13 +170,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/cursor/plugins.git"
     },
-    "langfuse": {
-      "computedHash": "c1dc8c4e847791c62a3145894be9ec318220e76fdf0ee1a13422842f9908a48b",
-      "skillPath": "skills/langfuse/SKILL.md",
-      "source": "langfuse/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/langfuse/skills.git"
-    },
     "maintain-formal-verification-skill": {
       "computedHash": "a41b8cffadbd598e4e06dbe57e0ee5c4307f3252814257ccaef198363b359d6c",
       "skillPath": "pstack/skills/maintain-formal-verification-skill/SKILL.md",
@@ -540,12 +533,6 @@
       "source": "heydamir/unslop",
       "sourceType": "github",
       "sourceUrl": "https://github.com/heydamir/unslop.git"
-    },
-    "void": {
-      "computedHash": "39e4741b17adc5cab30d3a31b6a557bdc6479355458c71bc89173c51ae36d3c9",
-      "skillPath": "packages/void/skills/void/SKILL.md",
-      "source": "voidzero-dev/void",
-      "sourceType": "github"
     }
   },
   "version": 3

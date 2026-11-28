@@ -15,12 +15,10 @@
     "./skills/dev-env",
     "./skills/gh-stack",
     "./skills/ingest-to-markdown",
-    "./skills/langfuse",
     "./skills/pr-auto-merge",
     "./skills/secret-env",
     "./skills/skillctrl",
     "./skills/statechart",
-    "./skills/typesafe-ai",
-    "./skills/void"
+    "./skills/typesafe-ai"
   ]
 }

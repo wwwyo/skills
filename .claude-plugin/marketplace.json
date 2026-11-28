@@ -129,13 +129,11 @@
         "./.agents/skills/dev-env",
         "./.agents/skills/gh-stack",
         "./.agents/skills/ingest-to-markdown",
-        "./.agents/skills/langfuse",
         "./.agents/skills/pr-auto-merge",
         "./.agents/skills/secret-env",
         "./.agents/skills/skillctrl",
         "./.agents/skills/statechart",
-        "./.agents/skills/typesafe-ai",
-        "./.agents/skills/void"
+        "./.agents/skills/typesafe-ai"
       ],
       "mcpServers": {
         "blender": {

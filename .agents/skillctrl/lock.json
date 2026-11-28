@@ -22,7 +22,6 @@
     "grill-with-docs": "246bf89252bae8764d76d1b2b8a9ab8121156a6f",
     "improve-animations": "8016fc935ef753041a1dbfbe3ab5bbf446af65ce",
     "interrogate": "0a87d986f90e43f5274cb379b45e65cedd5b0a3b",
-    "langfuse": "1f4efa271b10a127fa56e876ce2861eb28aba00a",
     "learn": "a97742de472ad5b8740b8965a6e78d33839eb725",
     "maintain-verification-skill": "98314b90313c13daab2b0ef090145ab94d176e04",
     "mobile-native": "e8c91e3ffb0475e37f7a60c8afe5a3bc1f5a3552",
@@ -496,24 +495,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/cursor/plugins.git",
       "updatedAt": "2026-11-27T11:07:59.615Z"
-    },
-    "langfuse": {
-      "computedHash": "c1dc8c4e847791c62a3145894be9ec318220e76fdf0ee1a13422842f9908a48b",
-      "installedAt": "2026-09-24T07:04:52.152Z",
-      "native": {
-        "computedHash": "c1dc8c4e847791c62a3145894be9ec318220e76fdf0ee1a13422842f9908a48b",
-        "skillPath": "skills/langfuse/SKILL.md",
-        "source": "langfuse/skills",
-        "sourceType": "github",
-        "sourceUrl": "https://github.com/langfuse/skills.git"
-      },
-      "skillFolderHash": "42996c667c57b5762367c9e41c033e6039549765",
-      "skillPath": "skills/langfuse/SKILL.md",
-      "source": "langfuse/skills",
-      "sourceCommit": "6fb2baf4413719ec241916e25e4a0330372c9d49",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/langfuse/skills.git",
-      "updatedAt": "2026-11-10T03:45:30.128Z"
     },
     "learn": {
       "computedHash": "a43372e887a501936a2c4c4210e821f9de768df8f268f1fc9b9c00ab47a6ca54",
@@ -1489,22 +1470,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/cursor/plugins.git",
       "updatedAt": "2026-11-27T11:07:59.883Z"
-    },
-    "void": {
-      "computedHash": "39e4741b17adc5cab30d3a31b6a557bdc6479355458c71bc89173c51ae36d3c9",
-      "installedAt": "2026-11-27T05:27:36.198Z",
-      "native": {
-        "computedHash": "39e4741b17adc5cab30d3a31b6a557bdc6479355458c71bc89173c51ae36d3c9",
-        "skillPath": "packages/void/skills/void/SKILL.md",
-        "source": "voidzero-dev/void",
-        "sourceType": "github"
-      },
-      "skillFolderHash": "96e22e47094e598e4a46acecbe97c4529c54dc0d",
-      "skillPath": "packages/void/skills/void/SKILL.md",
-      "source": "voidzero-dev/void",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/voidzero-dev/void.git",
-      "updatedAt": "2026-11-27T05:27:36.198Z"
     }
   },
   "version": 1
