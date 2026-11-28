@@ -7,6 +7,8 @@ usage: scripts/sync-plugin-manifests.py [--check]
   .claude-plugin/marketplace.json の plugin entry（description・mcpServers 等は手で書く）
 - 生成: marketplace.json の各 entry の source・strict・skills、
   .agents/plugins/marketplace.json、各 plugin の .codex-plugin/plugin.json
+- 外部 plugin: source が object（github 等）の entry は別 repo の plugin として Claude の
+  marketplace にだけ載せ、生成・検査の対象から外す（marketing = wwwyo/marketingskills）
 - 検査: plugin entry と plugins/ の dir が一致し、各 skill dir は symlink でなく
   SKILL.md の name と dir 名が一致し、skill 名が plugin をまたいで重複しないこと
 
@@ -70,7 +72,8 @@ def main() -> int:
 
     errors: list[str] = []
     marketplace = json.loads(CLAUDE.read_text(encoding="utf-8"))
-    plugins = [p["name"] for p in marketplace["plugins"]]
+    local = [p for p in marketplace["plugins"] if not isinstance(p.get("source"), dict)]
+    plugins = [p["name"] for p in local]
     dirs = sorted(p.name for p in PLUGINS.iterdir() if p.is_dir())
     if sorted(plugins) != dirs:
         errors.append(f"marketplace plugins {sorted(plugins)} must match plugins/ dirs {dirs}")
@@ -78,7 +81,7 @@ def main() -> int:
     seen: dict[str, str] = {}
     expected: dict[Path, str] = {}
     codex_entries = []
-    for entry in marketplace["plugins"]:
+    for entry in local:
         name = entry["name"]
         skills = plugin_skills(name, errors)
         for skill in skills:

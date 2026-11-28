@@ -160,6 +160,14 @@
           "sensitive": true
         }
       }
+    },
+    {
+      "name": "marketing",
+      "description": "マーケの skill と tool（wwwyo/marketingskills の fork）。CRO・コピー・SEO・広告・分析・SNS など。入口は marketing-mode。mcp-marketing（GA4・Search Console・Bing・キーワードプランナー・Buffer）を同梱する",
+      "source": {
+        "source": "github",
+        "repo": "wwwyo/marketingskills"
+      }
     }
   ]
 }
